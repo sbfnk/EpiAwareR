@@ -1,0 +1,32 @@
+Package: EpiAwareR
+Type: Package
+Title: R Interface to the EpiAware Compositional Infectious Disease Modelling Framework
+Version: 0.1.0
+Authors@R: person("Sebastian", "Funk", email = "sebastian.funk@lshtm.ac.uk", role = c("aut", "cre"))
+Description: Provides an R interface to the Julia-based EpiAware compositional
+    infectious disease modelling framework. EpiAwareR enables R users to build
+    flexible epidemiological models by composing reusable components for latent
+    processes, infection dynamics, and observation models without requiring
+    Julia expertise.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.0.0)
+Imports:
+    JuliaCall (>= 0.17.0),
+    tibble,
+    posterior,
+    ggplot2,
+    checkmate
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    readr,
+    bayesplot
+VignetteBuilder: knitr
+RoxygenNote: 7.3.2
+SystemRequirements: Julia (>= 1.9.0), Julia packages: EpiAware, Turing, Distributions
+URL: https://github.com/CDCgov/Rt-without-renewal
+BugReports: https://github.com/CDCgov/Rt-without-renewal/issues

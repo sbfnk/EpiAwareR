@@ -1,0 +1,39 @@
+# --------------------------------------------
+# CITATION file created with {cffr} R package
+# See also: https://docs.ropensci.org/cffr/
+# --------------------------------------------
+ 
+cff-version: 1.2.0
+message: 'To cite package "EpiAwareR" in publications use:'
+type: software
+license: MIT
+title: 'EpiAwareR: R Interface to the EpiAware Compositional Infectious Disease Modelling
+  Framework'
+version: 0.1.0
+abstract: Provides an R interface to the Julia-based EpiAware compositional infectious
+  disease modelling framework. EpiAwareR enables R users to build flexible epidemiological
+  models by composing reusable components for latent processes, infection dynamics,
+  and observation models without requiring Julia expertise.
+authors:
+- family-names: Funk
+  given-names: Sebastian
+  email: sebastian.funk@lshtm.ac.uk
+repository-code: https://github.com/CDCgov/Rt-without-renewal
+url: https://github.com/CDCgov/Rt-without-renewal
+contact:
+- family-names: Funk
+  given-names: Sebastian
+  email: sebastian.funk@lshtm.ac.uk
+references:
+- type: software
+  title: 'R: A Language and Environment for Statistical Computing'
+  notes: Depends
+  url: https://www.R-project.org/
+  authors:
+  - name: R Core Team
+  institution:
+    name: R Foundation for Statistical Computing
+    address: Vienna, Austria
+  year: '2025'
+  version: '>= 4.0.0'
+

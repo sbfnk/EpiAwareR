@@ -1,0 +1,17 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^\.git$
+^\.gitignore$
+^README\.Rmd$
+^LICENSE\.md$
+^CONTRIBUTING\.md$
+^NEWS\.md$
+^docs$
+^_pkgdown\.yml$
+^pkgdown$
+^\.vscode$
+^\.DS_Store$
+^doc$
+^Meta$
+^CITATION\.cff$

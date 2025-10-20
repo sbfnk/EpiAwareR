@@ -1,0 +1,29 @@
+# R specific
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Generated files
+/doc/
+/Meta/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+*.o
+*.so
+*.dll
+*.tar.gz
+
+# Temporary files
+*~
+*.swp
+*.swo

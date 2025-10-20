@@ -1,0 +1,210 @@
+---
+title: "Replicating EpiNow2 Models"
+author: "Sebastian Funk"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Replicating EpiNow2 Models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+[EpiNow2](https://epiforecasts.io/EpiNow2/) is a popular R package for estimating time-varying reproduction numbers using renewal equation models. This vignette shows how to replicate a typical EpiNow2 analysis using EpiAwareR's compositional approach.
+
+Both packages use renewal equations and Bayesian inference, but EpiAwareR's compositional design allows you to build a much wider class of models by assembling components.
+
+```{r load, message = FALSE}
+library(EpiAwareR)
+```
+
+## Example: A Typical EpiNow2 Analysis
+
+We'll replicate a standard EpiNow2 workflow for estimating $R_t$ from case data.
+
+```{r data}
+set.seed(123)
+dates <- seq.Date(as.Date("2024-01-01"), by = "day", length.out = 50)
+
+# Epidemic with intervention at day 25
+infections <- numeric(50)
+infections[1:7] <- 30
+for (i in 8:50) {
+  rt <- if (i < 25) 2.0 else 0.7 # Intervention effect
+  infections[i] <- rpois(1, rt * mean(infections[max(1, i - 7):(i - 1)]))
+}
+
+outbreak_data <- data.frame(
+  date = dates,
+  confirm = pmax(infections + rnorm(50, 0, 5), 1) # Add noise
+)
+
+head(outbreak_data, 10)
+```
+
+### Step 1: The EpiNow2 Approach
+
+A typical EpiNow2 analysis with a daily random walk looks like this:
+
+```{r epinow2_example, eval = FALSE}
+library(EpiNow2)
+
+# Define generation time
+generation_time <- dist_spec(
+  mean = 5.0,
+  sd = 2.0,
+  distribution = "gamma"
+)
+
+# Define reporting delay
+reporting_delay <- LogNormal(
+  mean = 2.0,
+  sd = 1.0
+)
+
+# Use daily random walk for Rt (alternative to GP)
+rt_settings <- rt_opts(
+  prior = Normal(mean = 1, sd = 1),
+  rw = 1 # Daily random walk
+)
+
+# Run estimation
+epinow2_results <- epinow(
+  reported_cases = outbreak_data,
+  generation_time = generation_time_opts(generation_time),
+  delays = delay_opts(reporting_delay),
+  rt = rt_settings,
+  stan = stan_opts(cores = 4, chains = 4)
+)
+
+# View results
+summary(epinow2_results)
+plot(epinow2_results)
+```
+
+The `rw = 1` option creates a daily random walk for $R_t$, which is an alternative choice to the default Gaussian Process.
+
+### Step 2: The EpiAwareR Equivalent
+
+To replicate this in EpiAwareR, we explicitly build the model from components:
+
+```{r epiaware_equivalent}
+# 1. Latent process: daily random walk for Rt
+# AR(1) with damping ≈ 1 creates a random walk (equivalent to EpiNow2's rw=1)
+latent <- AR(
+  order = 1,
+  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)), # Near 1 = random walk
+  init_priors = list(norm(0, 1)),
+  std_prior = halfnorm(0.2)
+)
+
+# 2. Infection model: renewal equation with generation time
+infection <- Renewal(
+  gen_distribution = gamma_dist(5.0, 0.4), # Mean 5, SD ~2
+  initialisation_prior = norm(log(30), 0.5)
+)
+
+# 3. Observation model: negative binomial with reporting delay
+observation <- LatentDelay(
+  model = NegativeBinomialError(
+    cluster_factor_prior = halfnorm(0.2)
+  ),
+  delay_distribution = lognorm(log(2), 0.5) # 2-day delay
+)
+
+# 4. Compose into complete model
+model <- EpiProblem(
+  epi_model = infection,
+  latent_model = latent,
+  observation_model = observation,
+  tspan = c(1, 50)
+)
+
+print(model)
+```
+
+### Fit the Model
+
+```{r fit, eval = FALSE}
+results <- fit(
+  model = model,
+  data = outbreak_data,
+  method = nuts_sampler(
+    warmup = 500,
+    draws = 500,
+    chains = 4
+  )
+)
+
+# View results
+print(results)
+summary(results)
+plot(results, type = "Rt")
+```
+
+## Why the Explicit Approach?
+
+EpiAwareR's compositional design makes the model structure transparent:
+
+1. **Latent model** explicitly states how $R_t$ evolves (random walk, AR, MA, etc.)
+2. **Infection model** clearly specifies generation time and renewal dynamics
+3. **Observation model** shows delays and overdispersion assumptions
+
+This explicitness enables:
+
+- **Testing alternatives**: Easily compare different smoothness levels, or swap e.g. for AR(2), moving average or mechanistic models (e.g. with susceptible depletion)
+- **Understanding priors**: See exactly what distributions drive each component
+- **Model comparison**: Systematically compare competing assumptions
+
+For example, comparing different levels of smoothness in the random walk:
+
+```{r rw_comparison, eval = FALSE}
+# Less smooth (more variable Rt)
+rw_flexible <- AR(
+  order = 1,
+  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)),
+  init_priors = list(norm(0, 1)),
+  std_prior = halfnorm(0.3) # Larger innovations
+)
+
+# More smooth (less variable Rt)
+rw_smooth <- AR(
+  order = 1,
+  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)),
+  init_priors = list(norm(0, 1)),
+  std_prior = halfnorm(0.1) # Smaller innovations
+)
+
+# Fit both and compare
+model_flexible <- EpiProblem(..., latent_model = rw_flexible, ...)
+model_smooth <- EpiProblem(..., latent_model = rw_smooth, ...)
+
+results_flexible <- fit(model_flexible, outbreak_data)
+results_smooth <- fit(model_smooth, outbreak_data)
+
+# Compare using LOO
+library(loo)
+loo_compare(loo(results_flexible$samples), loo(results_smooth$samples))
+```
+
+## Learn More
+
+- **[EpiNow2 Documentation](https://epiforecasts.io/EpiNow2/)** - The original package
+- **[Getting Started](getting-started.html)** - EpiAwareR basics
+- **[Mishra Case Study](mishra-case-study.html)** - Detailed worked example
+
+## Session Info
+
+```{r session_info}
+sessionInfo()
+```

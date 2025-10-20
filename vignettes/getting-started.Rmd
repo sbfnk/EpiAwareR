@@ -1,0 +1,336 @@
+---
+title: "Getting Started with EpiAwareR"
+author: "Sebastian Funk"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with EpiAwareR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## What is EpiAwareR?
+
+EpiAwareR is an R interface to the Julia-based [EpiAware](https://github.com/CDCgov/Rt-without-renewal) compositional infectious disease modelling framework. It enables you to build flexible epidemiological models by **composing** reusable components rather than writing monolithic models from scratch.
+
+### The Compositional Approach
+
+Instead of implementing complete models, you combine three types of components:
+
+```
+┌─────────────────┐
+│ Latent Model    │  How Rt evolves over time
+│ (e.g., AR, MA)  │  (random walk, autoregressive, etc.)
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ Infection Model │  How infections are generated
+│ (e.g., Renewal) │  (renewal equation, SIR, etc.)
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ Observation     │  How infections become data
+│ Model (e.g., NB)│  (negative binomial, delays, etc.)
+└─────────────────┘
+```
+
+This "LEGO-like" approach allows you to:
+
+- Build complex models from simple, well-tested pieces
+- Swap components to compare different assumptions
+- Reuse components across studies
+- Leverage joint Bayesian inference for uncertainty quantification
+
+## Installation
+
+Install EpiAwareR from GitHub:
+
+```{r install, eval = FALSE}
+# Install devtools if needed
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
+}
+
+# Install EpiAwareR
+devtools::install_github("CDCgov/Rt-without-renewal", subdir = "EpiAwareR")
+```
+
+### Setting Up Julia
+
+EpiAwareR uses Julia for high-performance computation. On first use:
+
+```{r julia_setup, eval = FALSE}
+library(EpiAwareR)
+
+# Automatically install Julia and EpiAware (if needed)
+epiaware_setup_julia()
+```
+
+This will:
+
+1. Install Julia (if not already present)
+2. Install required Julia packages (EpiAware, Turing, Distributions)
+3. Configure the Julia-R bridge
+
+```{r load_silent, echo = FALSE, message = FALSE}
+library(EpiAwareR)
+```
+
+## Basic Workflow
+
+### 1. Prepare Your Data
+
+EpiAwareR expects a data frame with:
+
+- **Case counts**: Column named `y_t`, `cases`, `confirm`, or `counts`
+- **Dates** (optional): Column named `date`
+
+```{r data}
+# Example: Simulated outbreak data
+set.seed(42)
+dates <- seq.Date(as.Date("2024-01-01"), by = "day", length.out = 30)
+
+# Simple epidemic curve
+cases <- c(
+  5, 8, 12, 18, 27, 35, 42, 48, 52, 54,
+  51, 47, 43, 38, 33, 29, 25, 22, 19, 17,
+  15, 13, 12, 10, 9, 8, 7, 6, 5, 5
+)
+
+outbreak_data <- data.frame(
+  date = dates,
+  y_t = cases
+)
+
+head(outbreak_data)
+```
+
+### 2. Define Model Components
+
+**Latent Model**: How does $R_t$ change over time?
+
+```{r latent}
+# AR(1) process: Rt depends on its previous value
+ar1 <- AR(
+  order = 1,
+  damp_priors = list(truncnorm(0.5, 0.2, 0, 1)), # Autocorrelation
+  init_priors = list(norm(0, 0.5)), # Initial log(Rt)
+  std_prior = halfnorm(0.2) # Variability
+)
+
+print(ar1)
+```
+
+**Infection Model**: How are infections generated?
+
+```{r infection}
+# Renewal equation with generation time
+renewal <- Renewal(
+  gen_distribution = gamma_dist(5, 1), # Mean 5 days
+  initialisation_prior = norm(log(10), 1)
+)
+
+print(renewal)
+```
+
+**Observation Model**: How do infections become observed cases?
+
+```{r observation}
+# Negative binomial accounts for overdispersion
+negbin <- NegativeBinomialError(
+  cluster_factor_prior = halfnorm(0.3)
+)
+
+print(negbin)
+```
+
+### 3. Compose the Model
+
+Combine components into a complete epidemiological model:
+
+```{r compose}
+model <- EpiProblem(
+  epi_model = renewal,
+  latent_model = ar1,
+  observation_model = negbin,
+  tspan = c(1, 30) # Days 1-30
+)
+
+print(model)
+```
+
+### 4. Fit to Data
+
+Use Bayesian MCMC to estimate parameters:
+
+```{r fit, eval = FALSE}
+results <- fit(
+  model = model,
+  data = outbreak_data,
+  method = nuts_sampler(
+    warmup = 500,
+    draws = 500,
+    chains = 2
+  )
+)
+```
+
+```{r fit_silent, echo = FALSE, eval = FALSE}
+# For vignette building
+results <- fit(
+  model = model,
+  data = outbreak_data,
+  method = nuts_sampler(warmup = 50, draws = 50, chains = 1)
+)
+```
+
+### 5. Examine Results
+
+```{r results, eval = FALSE}
+# Print summary
+print(results)
+
+# Detailed parameter estimates
+summary(results)
+
+# Visualize
+plot(results, type = "Rt")
+plot(results, type = "cases")
+```
+
+## Swapping Components
+
+The power of compositional modelling: easily test different assumptions!
+
+### Different Latent Processes
+
+```{r swap_latent, eval = FALSE}
+# Try a random walk instead of AR(1)
+rw <- AR(
+  order = 1,
+  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)), # Near 1 = random walk
+  init_priors = list(norm(0, 0.5)),
+  std_prior = halfnorm(0.1)
+)
+
+model_rw <- EpiProblem(
+  epi_model = renewal,
+  latent_model = rw, # Swapped!
+  observation_model = negbin,
+  tspan = c(1, 30)
+)
+
+results_rw <- fit(model_rw, data = outbreak_data)
+```
+
+### Adding Delays
+
+```{r add_delays, eval = FALSE}
+# Account for reporting delay
+delayed_obs <- LatentDelay(
+  model = negbin,
+  delay_distribution = lognorm(log(2), 0.5) # ~2 day delay
+)
+
+model_delayed <- EpiProblem(
+  epi_model = renewal,
+  latent_model = ar1,
+  observation_model = delayed_obs, # Swapped!
+  tspan = c(1, 30)
+)
+
+results_delayed <- fit(model_delayed, data = outbreak_data)
+```
+
+## Accessing Advanced Features
+
+For Julia features not yet wrapped in R, use `epiaware_call()`:
+
+```{r advanced, eval = FALSE}
+# Create HierarchicalNormal error model
+eps_model <- epiaware_call("HierarchicalNormal", halfnorm(0.1))
+
+# Create MA(2) latent model
+ma2 <- epiaware_call(
+  "MA",
+  theta_priors = list(norm(0, 0.1), norm(0, 0.1)),
+  eps_t = eps_model,
+  .param_map = c(theta_priors = "θ_priors", eps_t = "ϵ_t")
+)
+
+# Use in EpiProblem like any other component
+model_ma <- EpiProblem(
+  epi_model = renewal,
+  latent_model = ma2,
+  observation_model = negbin,
+  tspan = c(1, 30)
+)
+```
+
+The `.param_map` argument handles Greek letters in Julia parameter names.
+
+## Understanding the Components
+
+### Distribution Constructors
+
+EpiAwareR provides convenient functions for specifying priors:
+
+```{r distributions, eval = FALSE}
+# Normal distribution
+norm(mean = 0, sd = 1)
+
+# Truncated normal (bounded)
+truncnorm(mean = 0.5, sd = 0.2, lower = 0, upper = 1)
+
+# Half-normal (positive values)
+halfnorm(sd = 0.1)
+
+# Gamma distribution
+gamma_dist(shape = 5, scale = 1)
+
+# Log-normal distribution
+lognorm(meanlog = 0, sdlog = 0.5)
+
+# Exponential distribution
+exponential(rate = 0.1)
+```
+
+### Model Classes
+
+Each component type has specific classes:
+
+- **Latent**: `AR()`, or `epiaware_call("MA", ...)`, etc.
+- **Infection**: `Renewal()`, or `epiaware_call("SIR", ...)`, etc.
+- **Observation**: `NegativeBinomialError()`, `LatentDelay()`, etc.
+
+## Next Steps
+
+Explore more advanced usage:
+
+- **[Mishra Case Study](mishra-case-study.html)**: Replicate a published analysis
+- **[EpiNow2 Comparison](epinow2-comparison.html)**: Compare with EpiNow2 workflows
+- **Model Comparison**: Use LOO for model selection
+- **Custom Models**: Access cutting-edge Julia features via `epiaware_call()`
+
+## Getting Help
+
+- **Documentation**: `?AR`, `?Renewal`, `?fit`, etc.
+- **Issues**: [GitHub Issues](https://github.com/CDCgov/Rt-without-renewal/issues)
+- **EpiAware Docs**: [Julia Documentation](https://cdcgov.github.io/Rt-without-renewal/)
+
+## Session Info
+
+```{r session_info}
+sessionInfo()
+```
