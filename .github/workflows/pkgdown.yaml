@@ -4,9 +4,14 @@ on:
   push:
     branches: [main, master, develop]
     tags: ['*']
+  merge_group:
   workflow_dispatch:
   
 name: pkgdown
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pkgdown:
