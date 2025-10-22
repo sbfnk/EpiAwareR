@@ -64,6 +64,14 @@ jobs:
           fi
         shell: bash
 
+      - name: Rebuild RCall with correct R_HOME
+        if: runner.os == 'Linux'
+        run: |
+          # Ensure RCall is built against the current R installation, not cached version
+          echo "Current R_HOME: $(R RHOME)"
+          julia -e 'ENV["R_HOME"] = "'$(R RHOME)'"; using Pkg; Pkg.rm("RCall"); Pkg.add("RCall"); Pkg.build("RCall")'
+        shell: bash
+
       - name: Setup Julia dependencies
         run: |
           EpiAwareR::epiaware_setup_julia(verbose = TRUE)
