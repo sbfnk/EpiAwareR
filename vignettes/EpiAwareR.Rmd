@@ -63,7 +63,7 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 }
 
 # Install EpiAwareR
-devtools::install_github("CDCgov/Rt-without-renewal", subdir = "EpiAwareR")
+devtools::install_github("sbfnk/EpiAwareR")
 ```
 
 ### Setting Up Julia
@@ -326,7 +326,7 @@ Explore more advanced usage:
 ## Getting Help
 
 - **Documentation**: `?AR`, `?Renewal`, `?fit`, etc.
-- **Issues**: [GitHub Issues](https://github.com/CDCgov/Rt-without-renewal/issues)
+- **Issues**: [GitHub Issues](https://github.com/sbfnk/EpiAwareR/issues)
 - **EpiAware Docs**: [Julia Documentation](https://cdcgov.github.io/Rt-without-renewal/)
 
 ## Session Info

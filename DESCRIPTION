@@ -28,5 +28,5 @@ Suggests:
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
 SystemRequirements: Julia (>= 1.9.0), Julia packages: EpiAware, Turing, Distributions
-URL: https://github.com/CDCgov/Rt-without-renewal
-BugReports: https://github.com/CDCgov/Rt-without-renewal/issues
+URL: https://github.com/sbfnk/EpiAware
+BugReports: https://github.com/sbfnk/EpiAware/issues

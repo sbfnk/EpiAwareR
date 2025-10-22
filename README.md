@@ -24,12 +24,12 @@ EpiAwareR requires:
 
 ``` r
 # Install devtools if needed
-if (!requireNamespace("devtools", quietly = TRUE)) {
-  install.packages("devtools")
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
 }
 
 # Install EpiAwareR
-devtools::install_github("CDCgov/Rt-without-renewal", subdir = "EpiAwareR")
+remotes::install_github("sbfnk/EpiAwareR")
 ```
 
 ### Setup
