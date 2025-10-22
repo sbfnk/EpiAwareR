@@ -107,17 +107,28 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Contributors
 
 
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
-All contributions to this project are gratefully acknowledged using the [`allcontributors` package](https://github.com/ropensci/allcontributors) following the [all-contributors](https://allcontributors.org) specification. Contributions of any kind are welcome!
+All contributions to this project are gratefully acknowledged using the [`allcontributors` package](https://github.com/ropensci/allcontributors) following the [allcontributors](https://allcontributors.org) specification. Contributions of any kind are welcome!
+
+### Code
 
 
 <a href="https://github.com/sbfnk/EpiAwareR/commits?author=sbfnk">sbfnk</a>
 
 
+
+### Issues
+
+
+<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>
+
+
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
 
