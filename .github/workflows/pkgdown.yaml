@@ -24,7 +24,7 @@ jobs:
           version: '1.11'  # Match the Julia version EpiAware requires
 
       - name: Cache Julia packages
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
         with:
           cache-name: julia-cache-artifacts
           cache-compiled: true
