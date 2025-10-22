@@ -18,8 +18,8 @@ authors:
 - family-names: Funk
   given-names: Sebastian
   email: sebastian.funk@lshtm.ac.uk
-repository-code: https://github.com/CDCgov/Rt-without-renewal
-url: https://github.com/CDCgov/Rt-without-renewal
+repository-code: https://github.com/sbfnk/EpiAware
+url: https://github.com/sbfnk/EpiAware
 contact:
 - family-names: Funk
   given-names: Sebastian
