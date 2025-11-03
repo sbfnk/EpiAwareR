@@ -1,9 +1,5 @@
 # Tests for utility functions and generic wrapper
 
-skip_if_no_julia <- function() {
-  testthat::skip_if_not(epiaware_available(), "Julia/EpiAware not available")
-}
-
 # Generic Wrapper -------------------------------------------------------
 
 test_that("epiaware_call creates generic model object", {
@@ -85,7 +81,7 @@ test_that(".compute_diagnostics calculates Rhat and ESS", {
 
 test_that(".julia_chains_to_draws converts MCMCChains without DataFrames", {
   skip_on_cran()
-  skip_if_not(JuliaCall::julia_setup_ok(), "Julia not initialized")
+  skip_if_no_julia()
 
   # Create a simple MCMCChains.Chains object in Julia
   JuliaCall::julia_command("using MCMCChains")
