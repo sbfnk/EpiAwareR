@@ -116,6 +116,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Contributors
 
 
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
@@ -132,10 +133,12 @@ All contributions to this project are gratefully acknowledged using the [`allcon
 ### Issues
 
 
-<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>
+<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>, 
+<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
 
 
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
 
