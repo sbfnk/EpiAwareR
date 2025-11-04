@@ -321,9 +321,9 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
       # Get parameter names
       param_names <- .eval_julia_code("string.(names(chains_tmp))")
 
-      # Get chain values as matrix (flatten chains)
-      # For single chain, this is simpler
-      chain_array <- .eval_julia_code("Array(chains_tmp)")
+      # Get chain values as 3D array (iterations, parameters, chains)
+      # Use .value to get the underlying AxisArray data
+      chain_array <- .eval_julia_code("Array(chains_tmp.value)")
 
       # Convert to data frame
       # chain_array is (iterations, parameters, chains)

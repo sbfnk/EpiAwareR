@@ -1,5 +1,13 @@
 # EpiAwareR (development version)
 
+## Bug Fixes
+
+* Fixed fallback path in `.julia_chains_to_draws()` when DataFrames.jl is not available.
+  The function now correctly uses `Array(chains.value)` to extract the 3D array
+  (iterations × parameters × chains) instead of `Array(chains)` which only returns
+  a 2D array. This resolves the "incorrect number of dimensions" error reported in #5.
+  Thanks to @owenjonesuob for the diagnosis and suggested fix.
+
 ## EpiAwareR 0.1.0 (MVP Release)
 
 Initial MVP release of EpiAwareR providing R interface to Julia-based EpiAware framework.

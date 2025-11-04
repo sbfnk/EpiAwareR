@@ -72,8 +72,12 @@ jobs:
           needs: check
 
       - name: Install JuliaCall dependencies
-        run: |
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall")'
+        run: >
+          julia -e 'ENV["R_HOME"] = raw"'$(R RHOME)'";
+          using Pkg;
+          Pkg.add("Suppressor");
+          Pkg.add("RCall");
+          Pkg.build("RCall")'
         shell: bash
 
       - name: Preload Julia's libunwind (Linux workaround)

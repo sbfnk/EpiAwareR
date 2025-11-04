@@ -1,9 +1,5 @@
 # Tests for Bayesian inference
 
-skip_if_no_julia <- function() {
-  testthat::skip_if_not(epiaware_available(), "Julia/EpiAware not available")
-}
-
 # NUTS Sampler Configuration --------------------------------------------
 
 test_that("nuts_sampler creates valid configuration", {

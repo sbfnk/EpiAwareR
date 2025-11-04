@@ -1,9 +1,5 @@
 # Tests for utility functions and generic wrapper
 
-skip_if_no_julia <- function() {
-  testthat::skip_if_not(epiaware_available(), "Julia/EpiAware not available")
-}
-
 # Generic Wrapper -------------------------------------------------------
 
 test_that("epiaware_call creates generic model object", {
@@ -81,4 +77,44 @@ test_that(".prepare_data_for_julia validates data length", {
 test_that(".compute_diagnostics calculates Rhat and ESS", {
   skip_if_no_julia()
   skip("Requires posterior draws object")
+})
+
+test_that(".julia_chains_to_draws converts MCMCChains without DataFrames", {
+  skip_on_cran()
+  skip_if_no_julia()
+
+  # Create a simple MCMCChains.Chains object in Julia
+  JuliaCall::julia_command("using MCMCChains")
+
+  # Create a chains object with 2 parameters, 10 iterations, 2 chains
+  JuliaCall::julia_command("test_array = randn(10, 2, 2)")
+  JuliaCall::julia_command(
+    "test_chains = Chains(test_array, [:param1, :param2])"
+  )
+
+  chains <- JuliaCall::julia_eval("test_chains")
+
+  # Test the fallback path by directly calling it
+  # This should work even without DataFrames.jl
+  result <- tryCatch({
+    .julia_chains_to_draws(chains)
+  }, error = function(e) {
+    # If this errors with "incorrect number of dimensions", the bug is present
+    stop(paste("Fallback path failed:", e$message))
+  })
+
+  # Verify the result structure
+  expect_s3_class(result, "draws_df")
+  expect_true("param1" %in% names(result))
+  expect_true("param2" %in% names(result))
+  expect_true(".chain" %in% names(result))
+  expect_true(".iteration" %in% names(result))
+  expect_true(".draw" %in% names(result))
+
+  # Check dimensions: 10 iterations × 2 chains = 20 draws
+  expect_equal(nrow(result), 20)
+
+  # Verify chain and iteration numbering
+  expect_equal(sort(unique(result$.chain)), c(1, 2))
+  expect_equal(sort(unique(result$.iteration)), 1:10)
 })
