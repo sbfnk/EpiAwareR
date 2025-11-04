@@ -48,7 +48,7 @@ jobs:
 
       - name: Install JuliaCall dependencies
         run: >
-          julia -e 'ENV["R_HOME"] = "'$(R RHOME)'";
+          julia -e 'ENV["R_HOME"] = raw"'$(R RHOME)'";
           using Pkg;
           Pkg.add("Suppressor");
           Pkg.add("RCall");
