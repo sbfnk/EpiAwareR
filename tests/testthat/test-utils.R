@@ -88,7 +88,9 @@ test_that(".julia_chains_to_draws converts MCMCChains without DataFrames", {
 
   # Create a chains object with 2 parameters, 10 iterations, 2 chains
   JuliaCall::julia_command("test_array = randn(10, 2, 2)")
-  JuliaCall::julia_command("test_chains = Chains(test_array, [:param1, :param2])")
+  JuliaCall::julia_command(
+    "test_chains = Chains(test_array, [:param1, :param2])"
+  )
 
   chains <- JuliaCall::julia_eval("test_chains")
 
