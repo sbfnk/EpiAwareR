@@ -47,8 +47,12 @@ jobs:
           needs: coverage
 
       - name: Install JuliaCall dependencies
-        run: |
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall")'
+        run: >
+          julia -e 'ENV["R_HOME"] = "'$(R RHOME)'";
+          using Pkg;
+          Pkg.add("Suppressor");
+          Pkg.add("RCall");
+          Pkg.build("RCall")'
         shell: bash
 
       - name: Setup Julia dependencies

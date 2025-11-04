@@ -46,8 +46,12 @@ jobs:
           needs: website
 
       - name: Install JuliaCall dependencies
-        run: |
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall")'
+        run: >
+          julia -e 'ENV["R_HOME"] = "'$(R RHOME)'";
+          using Pkg;
+          Pkg.add("Suppressor");
+          Pkg.add("RCall");
+          Pkg.build("RCall")'
         shell: bash
 
       - name: Preload Julia's libunwind (Linux workaround)
@@ -62,14 +66,6 @@ jobs:
           else
             echo "Warning: Julia's libunwind not found, may segfault"
           fi
-        shell: bash
-
-      - name: Rebuild RCall with correct R_HOME
-        if: runner.os == 'Linux'
-        run: |
-          # Ensure RCall is built against the current R installation, not cached version
-          echo "Current R_HOME: $(R RHOME)"
-          julia -e 'ENV["R_HOME"] = "'$(R RHOME)'"; using Pkg; Pkg.rm("RCall"); Pkg.add("RCall"); Pkg.build("RCall")'
         shell: bash
 
       - name: Setup Julia dependencies
