@@ -73,8 +73,10 @@ jobs:
 
       - name: Install JuliaCall dependencies
         run: |
+          # Install and initialize Conda.jl first to set up conda environment
+          julia -e 'using Pkg; Pkg.add("Conda"); using Conda'
+          # Now install RCall with system R
           export R_HOME=$(R RHOME)
-          export JULIA_CONDA=""
           julia -e "ENV[\"R_HOME\"] = \"$R_HOME\"; using Pkg; Pkg.add(\"Suppressor\"); Pkg.add(\"RCall\"); Pkg.build(\"RCall\")"
         shell: bash
 
