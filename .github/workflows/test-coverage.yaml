@@ -48,8 +48,9 @@ jobs:
 
       - name: Install JuliaCall dependencies
         run: |
-          export R_HOME="$(R RHOME)"
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
+          export R_HOME=$(R RHOME)
+          export JULIA_CONDA=""
+          julia -e "ENV[\"R_HOME\"] = \"$R_HOME\"; using Pkg; Pkg.add(\"Suppressor\"); Pkg.add(\"RCall\"); Pkg.build(\"RCall\")"
         shell: bash
 
       - name: Setup Julia dependencies
