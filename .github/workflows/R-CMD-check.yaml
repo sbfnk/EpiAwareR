@@ -101,7 +101,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           $env:R_HOME = (& R.exe RHOME | Out-String).Trim()
-          julia -e "ENV[`"R_HOME`"] = `"$env:R_HOME`"; using Pkg; Pkg.add(`"Suppressor`"); Pkg.add(`"RCall`"); Pkg.build(`"RCall`")"
+          julia -e "ENV[`"R_HOME`"] = raw`"$env:R_HOME`"; using Pkg; Pkg.add(`"Suppressor`"); Pkg.add(`"RCall`"); Pkg.build(`"RCall`")"
         shell: pwsh
 
       - name: Preload Julia's libunwind (Linux workaround)
