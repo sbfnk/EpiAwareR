@@ -46,14 +46,19 @@ jobs:
           extra-packages: any::covr, local::.
           needs: coverage
 
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          activate-environment: ""
+
+      - name: Link conda for Julia
+        run: |
+          mkdir -p "$HOME/.julia/conda/3"
+          ln -sf "$CONDA" "$HOME/.julia/conda/3/$(uname -m)"
+        shell: bash
+
       - name: Install JuliaCall dependencies
         run: |
-          CONDA_DIR="$HOME/.julia/conda/3"
-          mkdir -p "$CONDA_DIR"
-          wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O /tmp/miniconda.sh
-          bash /tmp/miniconda.sh -b -p "$CONDA_DIR/$(uname -m)" -f
-          rm /tmp/miniconda.sh
-          julia -e 'using Pkg; Pkg.add("Conda"); using Conda'
           export R_HOME=$(R RHOME)
           julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
         shell: bash
