@@ -71,13 +71,37 @@ jobs:
           extra-packages: any::rcmdcheck, local::.
           needs: check
 
-      - name: Install JuliaCall dependencies
-        run: >
-          julia -e 'ENV["R_HOME"] = raw"'$(R RHOME)'";
-          using Pkg;
-          Pkg.add("Suppressor");
-          Pkg.add("RCall");
-          Pkg.build("RCall")'
+      - name: Install JuliaCall dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $CONDA_DIR = "$env:USERPROFILE\.julia\conda\3"
+          New-Item -ItemType Directory -Force -Path $CONDA_DIR
+          Invoke-WebRequest -Uri "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe" -OutFile "$env:TEMP\miniconda.exe"
+          Start-Process -FilePath "$env:TEMP\miniconda.exe" -ArgumentList "/S", "/D=$CONDA_DIR\x86_64" -Wait
+          Remove-Item "$env:TEMP\miniconda.exe"
+          julia -e "using Pkg; Pkg.add(`"Conda`"); using Conda"
+          $env:R_HOME = (& R.exe RHOME | Out-String).Trim()
+          julia -e "ENV[`"R_HOME`"] = `"$env:R_HOME`"; using Pkg; Pkg.add(`"Suppressor`"); Pkg.add(`"RCall`"); Pkg.build(`"RCall`")"
+        shell: pwsh
+
+      - name: Install JuliaCall dependencies (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          # Create the directory that Conda.jl expects and install miniconda there
+          CONDA_DIR="$HOME/.julia/conda/3"
+          mkdir -p "$CONDA_DIR"
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+          fi
+          wget -q $MINICONDA_URL -O /tmp/miniconda.sh
+          bash /tmp/miniconda.sh -b -p "$CONDA_DIR/$(uname -m)" -f
+          rm /tmp/miniconda.sh
+          # Now install Conda.jl and RCall
+          julia -e 'using Pkg; Pkg.add("Conda"); using Conda'
+          export R_HOME=$(R RHOME)
+          julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
         shell: bash
 
       - name: Preload Julia's libunwind (Linux workaround)

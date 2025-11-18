@@ -47,12 +47,15 @@ jobs:
           needs: coverage
 
       - name: Install JuliaCall dependencies
-        run: >
-          julia -e 'ENV["R_HOME"] = raw"'$(R RHOME)'";
-          using Pkg;
-          Pkg.add("Suppressor");
-          Pkg.add("RCall");
-          Pkg.build("RCall")'
+        run: |
+          CONDA_DIR="$HOME/.julia/conda/3"
+          mkdir -p "$CONDA_DIR"
+          wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O /tmp/miniconda.sh
+          bash /tmp/miniconda.sh -b -p "$CONDA_DIR/$(uname -m)" -f
+          rm /tmp/miniconda.sh
+          julia -e 'using Pkg; Pkg.add("Conda"); using Conda'
+          export R_HOME=$(R RHOME)
+          julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
         shell: bash
 
       - name: Setup Julia dependencies
