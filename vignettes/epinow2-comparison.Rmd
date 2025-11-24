@@ -60,10 +60,9 @@ A typical EpiNow2 analysis with a daily random walk looks like this:
 library(EpiNow2)
 
 # Define generation time
-generation_time <- dist_spec(
+generation_time <- Gamma(
   mean = 5.0,
-  sd = 2.0,
-  distribution = "gamma"
+  sd = 2.0
 )
 
 # Define reporting delay
