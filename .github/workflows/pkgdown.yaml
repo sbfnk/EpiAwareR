@@ -45,36 +45,8 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-          activate-environment: ""
-
-      - name: Link conda for Julia
-        run: |
-          mkdir -p "$HOME/.julia/conda/3"
-          ln -sf "$CONDA" "$HOME/.julia/conda/3/x86_64"
-        shell: bash
-
-      - name: Install JuliaCall dependencies
-        run: |
-          export R_HOME=$(R RHOME)
-          julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
-        shell: bash
-
-      - name: Preload Julia's libunwind (Linux workaround)
-        if: runner.os == 'Linux'
-        run: |
-          # Workaround for JuliaCall issue #238
-          # Ubuntu's libunwind 1.6.2 has bugs. Preload Julia's own libunwind instead.
-          JULIA_LIBUNWIND=$(find $(julia -e 'print(Sys.BINDIR)')/../lib/julia -name "libunwind.so.8*" 2>/dev/null | head -1)
-          if [ -n "$JULIA_LIBUNWIND" ]; then
-            echo "Preloading Julia's libunwind: $JULIA_LIBUNWIND"
-            echo "LD_PRELOAD=$JULIA_LIBUNWIND" >> $GITHUB_ENV
-          else
-            echo "Warning: Julia's libunwind not found, may segfault"
-          fi
-        shell: bash
+      - name: Setup JuliaCall
+        uses: epiforecasts/actions/setup-juliacall@v1
 
       - name: Setup Julia dependencies
         run: |
