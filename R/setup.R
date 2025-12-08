@@ -57,11 +57,12 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     if (verbose) message("[4.4/7] EpiAware installed from local path")
   } else {
     if (verbose) message("[4.3/7] Installing EpiAware from GitHub...")
-    # Install from GitHub
+    # Install from GitHub using PackageSpec for proper subdir handling
     JuliaCall::julia_eval(
       paste0(
-        'Pkg.add(url="https://github.com/CDCgov/Rt-without-renewal", ',
-        'subdir="EpiAware")'
+        'Pkg.add(PackageSpec(',
+        'url="https://github.com/CDCgov/Rt-without-renewal", ',
+        'subdir="EpiAware"))'
       )
     )
     if (verbose) message("[4.4/7] EpiAware installed from GitHub")
