@@ -1,3 +1,108 @@
+#' Setup specific Julia version using juliaup
+#'
+#' Installs and configures a specific Julia version using juliaup if available.
+#'
+#' @param version Character string with the required Julia version (e.g., "1.11").
+#' @param verbose Logical. If TRUE, prints progress messages.
+#'
+#' @return Path to the Julia bin directory, or NULL if juliaup is not available.
+#'
+#' @keywords internal
+.setup_julia_version <- function(version, verbose = TRUE) {
+  # Check if juliaup is available
+  juliaup_path <- Sys.which("juliaup")
+  if (juliaup_path == "") {
+    if (verbose) {
+      message(
+        "juliaup not found. Install it from https://github.com/JuliaLang/juliaup"
+      )
+      message("Falling back to default Julia installation...")
+    }
+    return(NULL)
+  }
+
+  if (verbose) message("Using juliaup to set up Julia ", version, "...")
+
+  # Install the required version (juliaup add is idempotent)
+  install_result <- tryCatch(
+    {
+      system2(
+        "juliaup", c("add", version),
+        stdout = if (verbose) "" else FALSE,
+        stderr = if (verbose) "" else FALSE
+      )
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+
+  if (!install_result) {
+    if (verbose) message("Failed to install Julia ", version, " via juliaup")
+    return(NULL)
+  }
+
+  # Get the path to the installed Julia version
+  # juliaup stores versions in ~/.julia/juliaup/
+  julia_base <- path.expand("~/.julia/juliaup")
+
+  # Find the directory for this version
+  julia_dirs <- list.dirs(julia_base, recursive = FALSE, full.names = TRUE)
+  version_pattern <- paste0("julia-", version)
+  matching_dirs <- julia_dirs[grepl(version_pattern, julia_dirs)]
+
+  if (length(matching_dirs) == 0) {
+    if (verbose) message("Could not find Julia ", version, " installation path")
+    return(NULL)
+  }
+
+  # Use the first match (most recent if multiple patch versions)
+  julia_dir <- matching_dirs[1]
+  julia_bin <- file.path(julia_dir, "bin")
+
+  if (dir.exists(julia_bin)) {
+    if (verbose) message("Found Julia ", version, " at: ", julia_bin)
+    return(julia_bin)
+  }
+
+  NULL
+}
+
+#' Get required Julia version from EpiAware Project.toml
+#'
+#' Fetches the Julia version compatibility from the upstream EpiAware package.
+#'
+#' @return Character string with the required Julia version (e.g., "1.11"),
+#'   or NULL if it cannot be determined.
+#'
+#' @keywords internal
+.get_epiaware_julia_version <- function() {
+  url <- paste0(
+    "https://raw.githubusercontent.com/CDCgov/Rt-without-renewal/",
+    "main/EpiAware/Project.toml"
+  )
+
+
+  tryCatch(
+    {
+      lines <- readLines(url, warn = FALSE)
+      # Find the julia compat line (e.g., 'julia = "1.11"')
+      julia_line <- grep("^julia[[:space:]]*=", lines, value = TRUE)
+      if (length(julia_line) > 0) {
+        # Extract version string
+        match <- regmatches(
+          julia_line,
+          regexpr('"[0-9]+\\.[0-9]+(\\.[0-9]+)?"', julia_line)
+        )
+        if (length(match) > 0) {
+          return(gsub('"', "", match))
+        }
+      }
+      NULL
+    },
+    error = function(e) NULL
+  )
+}
+
 #' Setup Julia and EpiAware
 #'
 #' Configures Julia and installs required Julia packages for EpiAwareR.
@@ -17,9 +122,26 @@
 epiaware_setup_julia <- function(verbose = TRUE) {
   if (verbose) message("[1/7] Setting up Julia...")
 
+  # Get required Julia version from EpiAware
+  required_version <- .get_epiaware_julia_version()
+  if (verbose && !is.null(required_version)) {
+    message("EpiAware requires Julia ", required_version)
+  }
+
+  # Try to use juliaup to install/switch to the required version
+  julia_home <- NULL
+  if (!is.null(required_version)) {
+    julia_home <- .setup_julia_version(required_version, verbose)
+  }
+
   # Setup Julia - will install if not present
   if (verbose) message("[2/7] Calling JuliaCall::julia_setup()...")
-  JuliaCall::julia_setup(installJulia = TRUE, verbose = verbose)
+  JuliaCall::julia_setup(
+    JULIA_HOME = julia_home,
+    installJulia = is.null(julia_home), # Only auto-install if we didn't set it up
+    version = required_version,
+    verbose = verbose
+  )
   if (verbose) message("[3/7] JuliaCall::julia_setup() completed")
 
   if (verbose) message("[4/7] Installing Julia packages...")
@@ -140,23 +262,5 @@ epiaware_available <- function() {
 
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
-  # Try automatic setup
-  tryCatch(
-    {
-      # Setup Julia connection (don't install Julia automatically in .onLoad)
-      JuliaCall::julia_setup()
-
-      # Try to load required Julia packages if they exist
-      JuliaCall::julia_eval("using EpiAware")
-      JuliaCall::julia_eval("using Turing")
-      JuliaCall::julia_eval("using Distributions")
-
-      packageStartupMessage("EpiAware Julia backend loaded successfully")
-    },
-    error = function(e) {
-      packageStartupMessage(
-        "Julia setup incomplete. Run epiaware_setup_julia() to configure."
-      )
-    }
-  )
+  # Julia initialization deferred to epiaware_setup_julia()
 }
