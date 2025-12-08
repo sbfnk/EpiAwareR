@@ -46,7 +46,7 @@ for (i in 8:50) {
 
 outbreak_data <- data.frame(
   date = dates,
-  confirm = pmax(infections + rnorm(50, 0, 5), 1) # Add noise
+  confirm = as.integer(pmax(round(infections + rnorm(50, 0, 5)), 1)) # Integer counts
 )
 
 head(outbreak_data, 10)
@@ -102,21 +102,21 @@ To replicate this in EpiAwareR, we explicitly build the model from components:
 # AR(1) with damping ≈ 1 creates a random walk (equivalent to EpiNow2's rw=1)
 latent <- AR(
   order = 1,
-  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)), # Near 1 = random walk
-  init_priors = list(norm(0, 1)),
-  std_prior = halfnorm(0.2)
+  damp_priors = list(truncnorm(0.9, 0.1, 0, 1)), # Centered at 0.9, allows flexibility
+  init_priors = list(norm(0, 0.5)),
+  std_prior = halfnorm(0.1)
 )
 
 # 2. Infection model: renewal equation with generation time
 infection <- Renewal(
   gen_distribution = gamma_dist(5.0, 0.4), # Mean 5, SD ~2
-  initialisation_prior = norm(log(30), 0.5)
+  initialisation_prior = norm(log(100), 2) # Wider prior for initial infections
 )
 
 # 3. Observation model: negative binomial with reporting delay
 observation <- LatentDelay(
   model = NegativeBinomialError(
-    cluster_factor_prior = halfnorm(0.2)
+    cluster_factor_prior = halfnorm(0.5)
   ),
   delay_distribution = lognorm(log(2), 0.5) # 2-day delay
 )
@@ -134,7 +134,7 @@ print(model)
 
 ### Fit the Model
 
-```{r fit, eval = FALSE}
+```{r fit}
 results <- fit(
   model = model,
   data = outbreak_data,
@@ -151,7 +151,7 @@ summary(results)
 plot(results, type = "Rt")
 ```
 
-## Why the Explicit Approach?
+## Benefits of the explicit approach
 
 EpiAwareR's compositional design makes the model structure transparent:
 

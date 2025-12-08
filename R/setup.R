@@ -23,7 +23,7 @@
 
   if (verbose) message("Using juliaup to set up Julia ", version, "...")
 
-  # Install the required version (juliaup add is idempotent)
+  # Install the required version
   install_result <- tryCatch(
     {
       system2(
@@ -42,7 +42,6 @@
   }
 
   # Get the path to the installed Julia version
-  # juliaup stores versions in ~/.julia/juliaup/
   julia_base <- path.expand("~/.julia/juliaup")
 
   # Find the directory for this version
@@ -55,7 +54,6 @@
     return(NULL)
   }
 
-  # Use the first match (most recent if multiple patch versions)
   julia_dir <- matching_dirs[1]
   julia_bin <- file.path(julia_dir, "bin")
 
@@ -81,14 +79,11 @@
     "main/EpiAware/Project.toml"
   )
 
-
   tryCatch(
     {
       lines <- readLines(url, warn = FALSE)
-      # Find the julia compat line (e.g., 'julia = "1.11"')
       julia_line <- grep("^julia[[:space:]]*=", lines, value = TRUE)
       if (length(julia_line) > 0) {
-        # Extract version string
         match <- regmatches(
           julia_line,
           regexpr('"[0-9]+\\.[0-9]+(\\.[0-9]+)?"', julia_line)
@@ -128,17 +123,15 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     message("EpiAware requires Julia ", required_version)
   }
 
-  # Try to use juliaup to install/switch to the required version
   julia_home <- NULL
   if (!is.null(required_version)) {
     julia_home <- .setup_julia_version(required_version, verbose)
   }
 
-  # Setup Julia - will install if not present
   if (verbose) message("[2/7] Calling JuliaCall::julia_setup()...")
   JuliaCall::julia_setup(
     JULIA_HOME = julia_home,
-    installJulia = is.null(julia_home), # Only auto-install if we didn't set it up
+    installJulia = is.null(julia_home),
     version = required_version,
     verbose = verbose
   )
@@ -146,21 +139,15 @@ epiaware_setup_julia <- function(verbose = TRUE) {
 
   if (verbose) message("[4/7] Installing Julia packages...")
 
-  # Install packages
   if (verbose) message("[4.1/7] Loading Pkg...")
   JuliaCall::julia_eval("using Pkg")
   if (verbose) message("[4.2/7] Pkg loaded")
 
-  # Install EpiAware from GitHub (since it's not a registered package)
-  # Find the EpiAware path - it should be in the parent directory
   epiaware_r_path <- system.file(package = "EpiAwareR")
-
   if (epiaware_r_path == "") {
-    # Package not installed, try to find it relative to current location
     epiaware_r_path <- getwd()
   }
 
-  # Try to find EpiAware/EpiAware directory (the Julia package)
   epiaware_julia_path <- file.path(
     dirname(epiaware_r_path), "EpiAware", "EpiAware"
   )
@@ -171,7 +158,6 @@ epiaware_setup_julia <- function(verbose = TRUE) {
         "[4.3/7] Installing EpiAware from local path: ", epiaware_julia_path
       )
     }
-    # Install from local development path
     julia_code <- sprintf(
       'Pkg.develop(path="%s")', gsub("\\\\", "/", epiaware_julia_path)
     )
@@ -179,7 +165,6 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     if (verbose) message("[4.4/7] EpiAware installed from local path")
   } else {
     if (verbose) message("[4.3/7] Installing EpiAware from GitHub...")
-    # Install from GitHub using PackageSpec for proper subdir handling
     JuliaCall::julia_eval(
       paste0(
         'Pkg.add(PackageSpec(',
@@ -190,7 +175,6 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     if (verbose) message("[4.4/7] EpiAware installed from GitHub")
   }
 
-  # Install other required packages
   if (verbose) message("[4.5/7] Installing Turing...")
   JuliaCall::julia_eval('Pkg.add("Turing")')
   if (verbose) message("[4.6/7] Installing Distributions...")
@@ -262,5 +246,25 @@ epiaware_available <- function() {
 
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
-  # Julia initialization deferred to epiaware_setup_julia()
+  tryCatch(
+    {
+      required_version <- .get_epiaware_julia_version()
+      julia_home <- NULL
+      if (!is.null(required_version)) {
+        julia_home <- .setup_julia_version(required_version, verbose = FALSE)
+      }
+
+      JuliaCall::julia_setup(JULIA_HOME = julia_home)
+      JuliaCall::julia_eval("using EpiAware")
+      JuliaCall::julia_eval("using Turing")
+      JuliaCall::julia_eval("using Distributions")
+
+      packageStartupMessage("EpiAware Julia backend loaded successfully")
+    },
+    error = function(e) {
+      packageStartupMessage(
+        "Julia setup incomplete. Run epiaware_setup_julia() to configure."
+      )
+    }
+  )
 }
