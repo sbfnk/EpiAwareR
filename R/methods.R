@@ -126,26 +126,54 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 #' Plot Rt trajectory
 #' @keywords internal
 .plot_rt_trajectory <- function(fit, ...) {
-  if (is.null(fit$generated_quantities) ||
-        is.null(fit$generated_quantities$Rt)) {
-    message("Rt trajectories not available in generated quantities.")
-    message(
-      "This is a placeholder plot - full implementation would extract Rt ",
-      "from Julia."
-    )
+  draws <- posterior::as_draws_matrix(fit$samples)
+  vars <- colnames(draws)
+
+  # Get epsilon columns and sort by time index
+  eps_vars <- grep("latent\\..*_t\\.", vars, value = TRUE)
+  if (length(eps_vars) == 0) {
+    message("No latent process parameters found.")
     return(ggplot2::ggplot() + ggplot2::theme_minimal())
   }
+  eps_idx <- as.integer(gsub(".*\\.(\\d+)\\.$", "\\1", eps_vars))
+  eps_vars <- eps_vars[order(eps_idx)]
+  n_time <- length(eps_vars)
+  n_draws <- nrow(draws)
 
-  # Placeholder for actual Rt plotting
-  # Real implementation would extract Rt samples from generated_quantities
-  # and create ribbon plots with credible intervals
+  # Get AR parameter columns
+  damp_var <- grep("latent\\.damp_AR", vars, value = TRUE)[1]
+  std_var <- grep("latent\\.std$", vars, value = TRUE)[1]
+  init_var <- grep("latent\\.ar_init", vars, value = TRUE)[1]
 
-  ggplot2::ggplot() +
-    ggplot2::labs(
-      title = "Time-Varying Reproduction Number (Rt)",
-      x = "Time",
-      y = "Rt"
-    ) +
+  # Reconstruct latent AR process for each draw
+  rt_matrix <- matrix(NA, n_draws, n_time)
+  for (i in seq_len(n_draws)) {
+    damp <- draws[i, damp_var]
+    std <- draws[i, std_var]
+    init <- draws[i, init_var]
+    eps <- draws[i, eps_vars]
+
+    latent <- numeric(n_time)
+    latent[1] <- init + std * eps[1]
+    for (t in 2:n_time) {
+      latent[t] <- damp * latent[t - 1] + std * eps[t]
+    }
+    rt_matrix[i, ] <- exp(latent)
+  }
+
+  df <- data.frame(
+    time = seq_len(n_time),
+    median = apply(rt_matrix, 2, median),
+    q5 = apply(rt_matrix, 2, quantile, 0.05),
+    q95 = apply(rt_matrix, 2, quantile, 0.95)
+  )
+
+  ggplot2::ggplot(df, ggplot2::aes(x = time)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = q5, ymax = q95),
+                         fill = "steelblue", alpha = 0.3) +
+    ggplot2::geom_line(ggplot2::aes(y = median), color = "steelblue") +
+    ggplot2::geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+    ggplot2::labs(title = "Rt", x = "Time", y = expression(R[t])) +
     ggplot2::theme_minimal()
 }
 

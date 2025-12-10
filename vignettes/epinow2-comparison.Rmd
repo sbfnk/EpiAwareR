@@ -56,7 +56,7 @@ head(outbreak_data, 10)
 
 A typical EpiNow2 analysis with a daily random walk looks like this:
 
-```{r epinow2_example, eval = FALSE}
+```{r epinow2_example}
 library(EpiNow2)
 
 # Define generation time
@@ -79,7 +79,7 @@ rt_settings <- rt_opts(
 
 # Run estimation
 epinow2_results <- epinow(
-  reported_cases = outbreak_data,
+  outbreak_data,
   generation_time = generation_time_opts(generation_time),
   delays = delay_opts(reporting_delay),
   rt = rt_settings,
@@ -102,23 +102,25 @@ To replicate this in EpiAwareR, we explicitly build the model from components:
 # AR(1) with damping ≈ 1 creates a random walk (equivalent to EpiNow2's rw=1)
 latent <- AR(
   order = 1,
-  damp_priors = list(truncnorm(0.9, 0.1, 0, 1)), # Centered at 0.9, allows flexibility
-  init_priors = list(norm(0, 0.5)),
+  damp_priors = list(truncnorm(0.99, 0.01, 0.9, 1)), # Near 1 for random walk
+  init_priors = list(norm(0, 1)), # log(Rt) prior: Rt centered at 1
   std_prior = halfnorm(0.1)
 )
 
 # 2. Infection model: renewal equation with generation time
+# EpiNow2: Gamma(mean=5, sd=2) -> shape=6.25, scale=0.8
 infection <- Renewal(
-  gen_distribution = gamma_dist(5.0, 0.4), # Mean 5, SD ~2
-  initialisation_prior = norm(log(100), 2) # Wider prior for initial infections
+  gen_distribution = gamma_dist(6.25, 0.8),
+  initialisation_prior = norm(log(100), 2)
 )
 
 # 3. Observation model: negative binomial with reporting delay
+# EpiNow2: LogNormal(mean=2, sd=1) -> meanlog=0.58, sdlog=0.47
 observation <- LatentDelay(
   model = NegativeBinomialError(
     cluster_factor_prior = halfnorm(0.5)
   ),
-  delay_distribution = lognorm(log(2), 0.5) # 2-day delay
+  delay_distribution = lognorm(0.58, 0.47)
 )
 
 # 4. Compose into complete model
