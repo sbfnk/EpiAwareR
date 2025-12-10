@@ -156,7 +156,7 @@ The `EpiProblem` combines components into a joint Bayesian model with automatic 
 
 We use NUTS (No-U-Turn Sampler) for posterior inference:
 
-```{r fit_model, eval = FALSE}
+```{r fit_model}
 results <- fit(
   model = model,
   data = training_data,
@@ -168,22 +168,13 @@ results <- fit(
 )
 ```
 
-```{r fit_model_fast, echo = FALSE, eval = FALSE}
-# For vignette building, use fewer samples
-results <- fit(
-  model = model,
-  data = training_data,
-  method = nuts_sampler(warmup = 100, draws = 100, chains = 2)
-)
-```
-
 **Note**: Fitting typically takes 2-5 minutes on modern hardware.
 
 ## Results
 
 ### Convergence Diagnostics
 
-```{r results, eval = FALSE}
+```{r results}
 print(results)
 ```
 
@@ -195,7 +186,7 @@ Check for:
 
 ### Parameter Summaries
 
-```{r summaries, eval = FALSE}
+```{r summaries}
 # Detailed posterior summaries
 summary(results)
 ```
@@ -209,7 +200,7 @@ Key parameters to examine:
 
 ### Visualization
 
-```{r plots, eval = FALSE}
+```{r plots}
 # Time-varying reproduction number with credible intervals
 plot(results, type = "Rt")
 
@@ -226,7 +217,7 @@ plot(results, type = "posterior")
 
 Test sensitivity to AR order:
 
-```{r compare_ar, eval = FALSE}
+```{r compare_ar}
 # AR(1) alternative
 ar1 <- AR(
   order = 1,
@@ -244,16 +235,18 @@ model_ar1 <- EpiProblem(
 
 results_ar1 <- fit(model_ar1, data = training_data)
 
-# Compare using LOO (leave-one-out cross-validation)
-library(loo)
-loo_compare(loo(results$samples), loo(results_ar1$samples))
+# Visual inspection of results
+# Formal model comparison would require LOO cross-validation (for fit)
+# or leave-future-out validation (for forecasting)
+print(results)
+print(results_ar1)
 ```
 
 ### Adding Observation Delays
 
 Account for incubation and reporting delays:
 
-```{r add_delays, eval = FALSE}
+```{r add_delays}
 # Incubation period (~5 days)
 obs_incubation <- LatentDelay(
   model = negbin,

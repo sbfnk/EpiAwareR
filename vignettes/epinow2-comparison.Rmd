@@ -77,14 +77,18 @@ rt_settings <- rt_opts(
   rw = 1 # Daily random walk
 )
 
-# Run estimation
-epinow2_results <- epinow(
-  outbreak_data,
-  generation_time = generation_time_opts(generation_time),
-  delays = delay_opts(reporting_delay),
-  rt = rt_settings,
-  stan = stan_opts(cores = 4, chains = 4)
-)
+# Run estimation with timing
+epinow2_time <- system.time({
+  epinow2_results <- epinow(
+    outbreak_data,
+    generation_time = generation_time_opts(generation_time),
+    delays = delay_opts(reporting_delay),
+    rt = rt_settings,
+    stan = stan_opts(cores = 4, chains = 4)
+  )
+})
+
+cat("EpiNow2 runtime:", epinow2_time["elapsed"], "seconds\n")
 
 # View results
 summary(epinow2_results)
@@ -137,20 +141,34 @@ print(model)
 ### Fit the Model
 
 ```{r fit}
-results <- fit(
-  model = model,
-  data = outbreak_data,
-  method = nuts_sampler(
-    warmup = 500,
-    draws = 500,
-    chains = 4
+# Run estimation with timing (4 chains to match EpiNow2)
+epiaware_time <- system.time({
+  results <- fit(
+    model = model,
+    data = outbreak_data,
+    method = nuts_sampler(
+      warmup = 500,
+      draws = 500,
+      chains = 4
+    )
   )
-)
+})
+
+cat("EpiAwareR runtime:", epiaware_time["elapsed"], "seconds\n")
 
 # View results
 print(results)
 summary(results)
 plot(results, type = "Rt")
+```
+
+### Runtime Comparison
+
+```{r runtime_comparison}
+cat("Runtime comparison (4 chains each):\n")
+cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
+cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
+cat("  Speedup:   ", round(epinow2_time["elapsed"] / epiaware_time["elapsed"], 1), "x\n")
 ```
 
 ## Benefits of the explicit approach
@@ -193,9 +211,11 @@ model_smooth <- EpiProblem(..., latent_model = rw_smooth, ...)
 results_flexible <- fit(model_flexible, outbreak_data)
 results_smooth <- fit(model_smooth, outbreak_data)
 
-# Compare using LOO
-library(loo)
-loo_compare(loo(results_flexible$samples), loo(results_smooth$samples))
+# Visual inspection of results
+# Formal model comparison would require LOO cross-validation (for fit)
+# or leave-future-out validation (for forecasting)
+print(results_flexible)
+print(results_smooth)
 ```
 
 ## Learn More
