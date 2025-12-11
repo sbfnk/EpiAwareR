@@ -118,6 +118,8 @@ jobs:
           fi
         shell: bash
 
+      # Workaround for LinearSolve v3 SparseArrays extension bug
+      # TODO: Remove when EpiAware adds LinearSolve compat bounds
       - name: Pin LinearSolve
         run: julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
 
