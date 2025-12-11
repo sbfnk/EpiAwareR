@@ -127,3 +127,4 @@ jobs:
         with:
           upload-snapshots: true
           error-on: '"error"'
+          args: 'c("--no-manual", "--no-build-vignettes")'
