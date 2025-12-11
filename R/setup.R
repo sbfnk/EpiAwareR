@@ -175,8 +175,12 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     if (verbose) message("[4.4/7] EpiAware installed from GitHub")
   }
 
-  # Turing, Distributions, MCMCChains are dependencies of EpiAware
-  # No need to install them separately
+  if (verbose) message("[4.5/7] Installing Turing...")
+  JuliaCall::julia_eval('Pkg.add("Turing")')
+  if (verbose) message("[4.6/7] Installing Distributions...")
+  JuliaCall::julia_eval('Pkg.add("Distributions")')
+  if (verbose) message("[4.7/7] Installing MCMCChains...")
+  JuliaCall::julia_eval('Pkg.add("MCMCChains")')
 
   # Precompile packages to avoid runtime errors
   if (verbose) message("[4.8/7] Precompiling packages (this may take a while)...")
