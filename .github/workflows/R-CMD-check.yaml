@@ -118,11 +118,6 @@ jobs:
           fi
         shell: bash
 
-      - name: Pin LinearSolve to avoid extension conflict
-        run: |
-          julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
-        shell: bash
-
       - name: Setup Julia dependencies
         run: |
           EpiAwareR::epiaware_setup_julia(verbose = TRUE)
