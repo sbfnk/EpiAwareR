@@ -212,7 +212,6 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     message("Package 'bayesplot' recommended for posterior plots.")
     message("Install it with: install.packages('bayesplot')")
 
-    # Fallback to simple density plots
     return(
       ggplot2::ggplot() +
         ggplot2::labs(title = "Posterior Distributions") +
@@ -220,6 +219,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     )
   }
 
-  # Use bayesplot for nice posterior visualization
-  bayesplot::mcmc_areas(fit$samples)
+  draws <- posterior::as_draws_matrix(fit$samples)
+  vars <- setdiff(colnames(draws), c(".chain", ".iteration", ".draw"))
+  finite_vars <- vars[vapply(vars, function(v) all(is.finite(draws[, v])), logical(1))]
+  bayesplot::mcmc_areas(draws[, finite_vars, drop = FALSE])
 }
