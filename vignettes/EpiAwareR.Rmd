@@ -174,7 +174,7 @@ print(model)
 
 Use Bayesian MCMC to estimate parameters:
 
-```{r fit, eval = FALSE}
+```{r fit}
 results <- fit(
   model = model,
   data = outbreak_data,
@@ -186,18 +186,9 @@ results <- fit(
 )
 ```
 
-```{r fit_silent, echo = FALSE, eval = FALSE}
-# For vignette building
-results <- fit(
-  model = model,
-  data = outbreak_data,
-  method = nuts_sampler(warmup = 50, draws = 50, chains = 1)
-)
-```
-
 ### 5. Examine Results
 
-```{r results, eval = FALSE}
+```{r results}
 # Print summary
 print(results)
 
