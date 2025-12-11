@@ -118,6 +118,9 @@ jobs:
           fi
         shell: bash
 
+      - name: Pin LinearSolve
+        run: julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
+
       - name: Setup Julia dependencies
         run: |
           EpiAwareR::epiaware_setup_julia(verbose = TRUE)

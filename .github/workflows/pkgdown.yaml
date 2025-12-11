@@ -42,11 +42,14 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: any::pkgdown, any::EpiNow2, local::.
           needs: website
 
       - name: Setup JuliaCall
         uses: epiforecasts/actions/setup-juliacall@v1
+
+      - name: Pin LinearSolve
+        run: julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
 
       - name: Setup Julia dependencies
         run: |
