@@ -56,7 +56,7 @@ head(outbreak_data, 10)
 
 A typical EpiNow2 analysis with a daily random walk looks like this:
 
-```{r epinow2_example, eval = requireNamespace("EpiNow2", quietly = TRUE)}
+```{r epinow2_example}
 library(EpiNow2)
 
 # Define generation time
@@ -164,7 +164,7 @@ plot(results, type = "Rt")
 
 ### Runtime Comparison
 
-```{r runtime_comparison, eval = requireNamespace("EpiNow2", quietly = TRUE)}
+```{r runtime_comparison}
 cat("Runtime comparison (4 chains each):\n")
 cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
 cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
