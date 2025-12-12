@@ -84,7 +84,7 @@ epinow2_time <- system.time({
     generation_time = generation_time_opts(generation_time),
     delays = delay_opts(reporting_delay),
     rt = rt_settings,
-    stan = stan_opts(cores = 4, chains = 4)
+    stan = stan_opts(cores = 2, chains = 2, samples = 500, warmup = 250)
   )
 })
 
@@ -141,15 +141,15 @@ print(model)
 ### Fit the Model
 
 ```{r fit}
-# Run estimation with timing (4 chains to match EpiNow2)
+# Run estimation with timing (2 chains to match EpiNow2)
 epiaware_time <- system.time({
   results <- fit(
     model = model,
     data = outbreak_data,
     method = nuts_sampler(
-      warmup = 500,
+      warmup = 250,
       draws = 500,
-      chains = 4
+      chains = 2
     )
   )
 })
@@ -165,7 +165,7 @@ plot(results, type = "Rt")
 ### Runtime Comparison
 
 ```{r runtime_comparison}
-cat("Runtime comparison (4 chains each):\n")
+cat("Runtime comparison (2 chains each):\n")
 cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
 cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
 cat("  Speedup:   ", round(epinow2_time["elapsed"] / epiaware_time["elapsed"], 1), "x\n")
