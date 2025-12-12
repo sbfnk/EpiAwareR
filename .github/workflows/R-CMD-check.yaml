@@ -71,6 +71,12 @@ jobs:
           extra-packages: any::rcmdcheck, any::EpiNow2, local::.
           needs: check
 
+      - name: Install CmdStan
+        run: |
+          cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
+          cmdstanr::install_cmdstan(cores = 2, quiet = TRUE)
+        shell: Rscript {0}
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
