@@ -132,3 +132,5 @@ jobs:
         with:
           upload-snapshots: true
           error-on: '"error"'
+          # Skip vignettes on Windows (EpiNow2 requires CmdStan)
+          args: ${{ runner.os == 'Windows' && 'c("--no-manual", "--no-build-vignettes")' || 'c("--no-manual")' }}
