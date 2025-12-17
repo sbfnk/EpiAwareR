@@ -24,7 +24,8 @@ Suggests:
     knitr,
     rmarkdown,
     readr,
-    bayesplot
+    bayesplot,
+    EpiNow2
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 SystemRequirements: Julia (>= 1.9.0), Julia packages: EpiAware, Turing, Distributions
