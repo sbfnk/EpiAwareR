@@ -54,7 +54,12 @@ jobs:
       - name: Link conda for Julia
         run: |
           mkdir -p "$HOME/.julia/conda/3"
-          ln -sf "$CONDA" "$HOME/.julia/conda/3/$(uname -m)"
+          ARCH=$(uname -m)
+          ln -sf "$CONDA" "$HOME/.julia/conda/3/$ARCH"
+          # macOS reports arm64, but Julia uses aarch64
+          if [ "$ARCH" = "arm64" ]; then
+            ln -sf "$CONDA" "$HOME/.julia/conda/3/aarch64"
+          fi
         shell: bash
 
       - name: Install JuliaCall dependencies
