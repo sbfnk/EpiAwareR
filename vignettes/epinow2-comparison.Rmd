@@ -16,6 +16,10 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.height = 5
 )
+
+# Skip EpiNow2 fitting on CI (too slow and times out)
+# Users can run locally for full comparison
+run_epinow2 <- !nzchar(Sys.getenv("CI"))
 ```
 
 ## Introduction
@@ -28,13 +32,11 @@ Both packages use renewal equations and Bayesian inference, but EpiAwareR's comp
 
 We'll replicate a standard EpiNow2 workflow for estimating $R_t$ from case data.
 
-### Step 1: The EpiNow2 Approach
+### Test Data
 
-First, we run EpiNow2. Note: EpiNow2 must be loaded and run before EpiAwareR due to a runtime conflict between Stan and Julia.
+We generate simulated epidemic data with an intervention effect at day 25:
 
-```{r epinow2_example, message = FALSE}
-library(EpiNow2)
-
+```{r generate_data}
 # Generate test data
 set.seed(123)
 dates <- seq.Date(as.Date("2024-01-01"), by = "day", length.out = 50)
@@ -53,6 +55,16 @@ outbreak_data <- data.frame(
 )
 
 head(outbreak_data, 10)
+```
+
+### Step 1: The EpiNow2 Approach
+
+First, we run EpiNow2. Note: EpiNow2 must be loaded and run before EpiAwareR due to a runtime conflict between Stan and Julia.
+
+**Note:** EpiNow2 fitting is skipped on CI due to runtime constraints. Run locally for the full comparison.
+
+```{r epinow2_example, message = FALSE, eval = run_epinow2}
+library(EpiNow2)
 
 # Define generation time
 generation_time <- Gamma(
@@ -163,7 +175,7 @@ plot(results, type = "Rt")
 
 ### Runtime Comparison
 
-```{r runtime_comparison}
+```{r runtime_comparison, eval = run_epinow2}
 cat("Runtime comparison (2 chains each):\n")
 cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
 cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
