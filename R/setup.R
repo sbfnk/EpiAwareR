@@ -248,27 +248,47 @@ epiaware_available <- function() {
   )
 }
 
+# Environment to track Julia initialization state
+.epiaware_env <- new.env(parent = emptyenv())
+.epiaware_env$julia_initialized <- FALSE
+
+#' Initialize Julia lazily (on first use)
+#' @keywords internal
+.ensure_julia_initialized <- function() {
+  if (!.epiaware_env$julia_initialized) {
+    tryCatch(
+      {
+        required_version <- .get_epiaware_julia_version()
+        julia_home <- NULL
+        if (!is.null(required_version)) {
+          julia_home <- .setup_julia_version(required_version, verbose = FALSE)
+        }
+
+        JuliaCall::julia_setup(JULIA_HOME = julia_home)
+        JuliaCall::julia_eval("using EpiAware")
+        JuliaCall::julia_eval("using Turing")
+        JuliaCall::julia_eval("using Distributions")
+
+        .epiaware_env$julia_initialized <- TRUE
+        message("EpiAware Julia backend loaded successfully")
+      },
+      error = function(e) {
+        stop(
+          "Julia setup failed. Run epiaware_setup_julia() first.\n",
+          "Error: ", conditionMessage(e),
+          call. = FALSE
+        )
+      }
+    )
+  }
+  invisible(TRUE)
+}
+
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
-  tryCatch(
-    {
-      required_version <- .get_epiaware_julia_version()
-      julia_home <- NULL
-      if (!is.null(required_version)) {
-        julia_home <- .setup_julia_version(required_version, verbose = FALSE)
-      }
+  # Don't initialize Julia on package load - use lazy initialization instead
 
-      JuliaCall::julia_setup(JULIA_HOME = julia_home)
-      JuliaCall::julia_eval("using EpiAware")
-      JuliaCall::julia_eval("using Turing")
-      JuliaCall::julia_eval("using Distributions")
+  # This avoids conflicts with Stan (used by EpiNow2) which crashes if Julia
 
-      packageStartupMessage("EpiAware Julia backend loaded successfully")
-    },
-    error = function(e) {
-      packageStartupMessage(
-        "Julia setup incomplete. Run epiaware_setup_julia() to configure."
-      )
-    }
-  )
+  # is initialized first
 }

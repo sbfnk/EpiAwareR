@@ -1,16 +1,10 @@
 # Internal validation helper functions
 
-#' Check Julia/EpiAware availability
+#' Check Julia/EpiAware availability (with lazy initialization)
 #' @keywords internal
 .check_julia <- function() {
-  if (!epiaware_available()) {
-    stop(
-      "Julia is not available. Please run:\n",
-      "  epiaware_setup_julia()\n",
-      "to install and configure Julia.",
-      call. = FALSE
-    )
-  }
+  # Try lazy initialization first
+  .ensure_julia_initialized()
   invisible(TRUE)
 }
 

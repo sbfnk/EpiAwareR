@@ -16,10 +16,6 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.height = 5
 )
-
-# Skip EpiNow2 fitting on CI (too slow and times out)
-# Users can run locally for full comparison
-run_epinow2 <- !nzchar(Sys.getenv("CI"))
 ```
 
 ## Introduction
@@ -61,9 +57,7 @@ head(outbreak_data, 10)
 
 First, we run EpiNow2. Note: EpiNow2 must be loaded and run before EpiAwareR due to a runtime conflict between Stan and Julia.
 
-**Note:** EpiNow2 fitting is skipped on CI due to runtime constraints. Run locally for the full comparison.
-
-```{r epinow2_example, message = FALSE, eval = run_epinow2}
+```{r epinow2_example, message = FALSE}
 library(EpiNow2)
 
 # Define generation time
@@ -175,7 +169,7 @@ plot(results, type = "Rt")
 
 ### Runtime Comparison
 
-```{r runtime_comparison, eval = run_epinow2}
+```{r runtime_comparison}
 cat("Runtime comparison (2 chains each):\n")
 cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
 cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
