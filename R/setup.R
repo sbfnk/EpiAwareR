@@ -175,20 +175,22 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     if (verbose) message("[4.4/7] EpiAware installed from GitHub")
   }
 
-  if (verbose) message("[4.5/8] Installing Turing...")
+  if (verbose) message("[4.5/7] Installing Turing...")
   JuliaCall::julia_eval('Pkg.add("Turing")')
-  if (verbose) message("[4.6/8] Installing Distributions...")
+  if (verbose) message("[4.6/7] Installing Distributions...")
   JuliaCall::julia_eval('Pkg.add("Distributions")')
-  if (verbose) message("[4.7/8] Installing MCMCChains...")
+  if (verbose) message("[4.7/7] Installing MCMCChains...")
+  # MCMCChains depends on DataFrames, so it will be installed automatically
   JuliaCall::julia_eval('Pkg.add("MCMCChains")')
-  if (verbose) message("[4.8/8] Installing DataFrames...")
-  JuliaCall::julia_eval('Pkg.add("DataFrames")')
+  # Resolve to ensure consistent package versions
+  if (verbose) message("[4.8/7] Resolving package versions...")
+  JuliaCall::julia_eval('Pkg.resolve()')
 
   # Precompile packages to avoid runtime errors
-  if (verbose) message("[4.9/9] Precompiling packages (this may take a while)...")
+  if (verbose) message("[4.9/7] Precompiling packages (this may take a while)...")
   tryCatch({
     JuliaCall::julia_eval('Pkg.precompile()')
-    if (verbose) message("[4.10/9] Precompilation complete")
+    if (verbose) message("[4.10/7] Precompilation complete")
   }, error = function(e) {
     if (verbose) {
       message("Warning: Precompilation failed: ", conditionMessage(e))
