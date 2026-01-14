@@ -71,12 +71,12 @@ where $\epsilon_t \sim \text{Normal}(0, \sigma^2)$.
 ar2 <- AR(
   order = 2,
   damp_priors = list(
-    truncnorm(0.2, 0.2, 0, 1), # φ₁: First damping coefficient
-    truncnorm(0.1, 0.05, 0, 1) # φ₂: Second damping coefficient
+    truncnorm(0.8, 0.05, 0, 1), # ρ₁: Strong autocorrelation
+    truncnorm(0.1, 0.05, 0, 1)  # ρ₂: Second damping coefficient
   ),
   init_priors = list(
     norm(0, 0.2), # Initial value for lag 1
-    norm(0, 0.2) # Initial value for lag 2
+    norm(0, 0.2)  # Initial value for lag 2
   ),
   std_prior = halfnorm(0.1) # σ: Innovation standard deviation
 )
@@ -86,7 +86,8 @@ print(ar2)
 
 **Prior choices (from Mishra et al. 2020):**
 
-- Damping coefficients truncated to [0,1] ensure stationarity
+- First damping coefficient ρ₁ centered at 0.8 reflects strong autocorrelation in log Rt
+- Second damping coefficient ρ₂ centered at 0.1 for smooth second-order dynamics
 - Weak priors on initial values (centered at 0 on log scale → $R_t \approx 1$)
 - Small innovation variance for smooth trajectories
 
@@ -218,10 +219,10 @@ plot(results, type = "posterior")
 Test sensitivity to AR order:
 
 ```{r compare_ar}
-# AR(1) alternative
+# AR(1) alternative - strong autocorrelation like AR(2)
 ar1 <- AR(
   order = 1,
-  damp_priors = list(truncnorm(0.5, 0.2, 0, 1)),
+  damp_priors = list(truncnorm(0.9, 0.05, 0, 1)),  # High autocorrelation
   init_priors = list(norm(0, 0.2)),
   std_prior = halfnorm(0.1)
 )

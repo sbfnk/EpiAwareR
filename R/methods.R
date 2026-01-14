@@ -180,34 +180,101 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 #' Plot posterior predictive for cases
 #' @keywords internal
 .plot_posterior_predictive <- function(fit, ...) {
-  if (is.null(fit$generated_quantities) ||
-        is.null(fit$generated_quantities$predicted_cases)) {
-    message("Posterior predictive samples not available.")
-    message(
-      "This is a placeholder plot - full implementation would extract ",
-      "predictions from Julia."
-    )
+  # Get observed data
+  if (is.null(fit$data)) {
+    message("No data available for cases plot.")
     return(ggplot2::ggplot() + ggplot2::theme_minimal())
   }
 
-  # Placeholder for actual posterior predictive plotting
-  # Real implementation would:
-  # 1. Extract predicted case samples
-  # 2. Compute quantiles
-  # 3. Plot ribbons with observed data overlay
+  obs_data <- fit$data
 
-  ggplot2::ggplot() +
+  # Determine the case column name
+  case_col <- intersect(c("confirm", "y_t", "cases", "count"), names(obs_data))
+  if (length(case_col) == 0) {
+    case_col <- names(obs_data)[2]  # Assume second column if no match
+  } else {
+    case_col <- case_col[1]
+  }
+
+  # Determine time/date column
+  date_col <- intersect(c("date", "time", "t"), names(obs_data))
+  if (length(date_col) > 0) {
+    date_col <- date_col[1]
+    obs_data$time_idx <- seq_len(nrow(obs_data))
+    use_date <- inherits(obs_data[[date_col]], "Date")
+  } else {
+    obs_data$time_idx <- seq_len(nrow(obs_data))
+    use_date <- FALSE
+  }
+
+  # Try to reconstruct expected cases from latent infections
+  draws <- posterior::as_draws_matrix(fit$samples)
+  vars <- colnames(draws)
+
+  # Look for infection-related parameters
+  inf_vars <- grep("epi\\.I_t\\.", vars, value = TRUE)
+
+  if (length(inf_vars) > 0) {
+    # Extract infection trajectories
+    inf_idx <- as.integer(gsub(".*\\.(\\d+)\\.$", "\\1", inf_vars))
+    inf_vars <- inf_vars[order(inf_idx)]
+    n_time <- min(length(inf_vars), nrow(obs_data))
+
+    inf_matrix <- as.matrix(draws[, inf_vars[seq_len(n_time)]])
+
+    pred_df <- data.frame(
+      time_idx = seq_len(n_time),
+      median = apply(inf_matrix, 2, median),
+      q5 = apply(inf_matrix, 2, quantile, 0.05),
+      q95 = apply(inf_matrix, 2, quantile, 0.95)
+    )
+
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_ribbon(
+        data = pred_df,
+        ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
+        fill = "steelblue", alpha = 0.3
+      ) +
+      ggplot2::geom_line(
+        data = pred_df,
+        ggplot2::aes(x = time_idx, y = median),
+        color = "steelblue"
+      ) +
+      ggplot2::geom_point(
+        data = obs_data[seq_len(n_time), ],
+        ggplot2::aes(x = time_idx, y = .data[[case_col]]),
+        color = "black", size = 2
+      ) +
+      ggplot2::labs(
+        title = "Observed vs Fitted Cases",
+        subtitle = "Points: observed, Line: posterior median, Ribbon: 90% CI",
+        x = "Time",
+        y = "Cases"
+      ) +
+      ggplot2::theme_minimal()
+
+    return(p)
+  }
+
+  # Fallback: just plot observed data
+  p <- ggplot2::ggplot(obs_data, ggplot2::aes(x = time_idx, y = .data[[case_col]])) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::geom_line() +
     ggplot2::labs(
-      title = "Observed vs Predicted Cases",
+      title = "Observed Cases",
+      subtitle = "Predicted cases not available",
       x = "Time",
       y = "Cases"
     ) +
     ggplot2::theme_minimal()
+
+  return(p)
 }
 
 #' Plot posterior distributions for parameters
 #' @keywords internal
 .plot_posterior_distributions <- function(fit, ...) {
+
   if (!requireNamespace("bayesplot", quietly = TRUE)) {
     message("Package 'bayesplot' recommended for posterior plots.")
     message("Install it with: install.packages('bayesplot')")
@@ -221,6 +288,33 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- setdiff(colnames(draws), c(".chain", ".iteration", ".draw"))
-  finite_vars <- vars[vapply(vars, function(v) all(is.finite(draws[, v])), logical(1))]
+
+  # Filter to key parameters only (exclude time-indexed parameters like _t.1., _t.2., etc.)
+  # Keep: damp_AR, std, ar_init, cluster_factor, init (scalar parameters)
+  key_patterns <- c("damp_AR", "^latent\\.std$", "ar_init", "cluster_factor",
+                    "^epi\\.init$", "initialisation")
+  key_vars <- vars[grepl(paste(key_patterns, collapse = "|"), vars)]
+
+  # If no key vars found, fall back to non-time-indexed parameters
+
+  if (length(key_vars) == 0) {
+    key_vars <- vars[!grepl("_t\\.\\d+\\.", vars)]
+  }
+
+  # Filter to finite values only
+  finite_vars <- key_vars[vapply(key_vars, function(v) {
+    all(is.finite(draws[, v]))
+  }, logical(1))]
+
+
+  if (length(finite_vars) == 0) {
+    message("No finite parameters found for posterior plot.")
+    return(
+      ggplot2::ggplot() +
+        ggplot2::labs(title = "Posterior Distributions") +
+        ggplot2::theme_minimal()
+    )
+  }
+
   bayesplot::mcmc_areas(draws[, finite_vars, drop = FALSE])
 }
