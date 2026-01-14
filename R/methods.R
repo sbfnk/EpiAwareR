@@ -129,37 +129,109 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- colnames(draws)
 
-  # Get epsilon columns and sort by time index
-  eps_vars <- grep("latent\\..*_t\\.", vars, value = TRUE)
-  if (length(eps_vars) == 0) {
-    message("No latent process parameters found.")
-    return(ggplot2::ggplot() + ggplot2::theme_minimal())
+  # Try multiple patterns for Rt/latent process variables
+  # Pattern 1: Direct Rt output (e.g., Rt[1], Rt[2], etc.)
+  rt_direct <- .find_time_indexed_vars(vars, c("^Rt\\[", "^R_t\\[", "^rt\\["))
+
+  if (length(rt_direct) > 0) {
+    # Rt is directly available
+    rt_matrix <- as.matrix(draws[, rt_direct])
+    return(.make_rt_plot(rt_matrix))
   }
-  eps_idx <- as.integer(gsub(".*\\.(\\d+)\\.$", "\\1", eps_vars))
-  eps_vars <- eps_vars[order(eps_idx)]
-  n_time <- length(eps_vars)
-  n_draws <- nrow(draws)
 
-  # Get AR parameter columns
-  damp_var <- grep("latent\\.damp_AR", vars, value = TRUE)[1]
-  std_var <- grep("latent\\.std$", vars, value = TRUE)[1]
-  init_var <- grep("latent\\.ar_init", vars, value = TRUE)[1]
+  # Pattern 2: Latent process output (e.g., latent.Z_t[1])
+  latent_patterns <- c(
+    "latent\\.Z_t\\[",      # EpiAware latent output
+    "latent\\..*_t\\[",     # General latent time series
+    "latent\\..*_t\\.",     # Alternative separator
+    "^Z_t\\[",              # Direct Z_t
+    "^log_Rt\\["            # Log Rt
+  )
+  latent_vars <- .find_time_indexed_vars(vars, latent_patterns)
 
-  # Reconstruct latent AR process for each draw
-  rt_matrix <- matrix(NA, n_draws, n_time)
-  for (i in seq_len(n_draws)) {
-    damp <- draws[i, damp_var]
-    std <- draws[i, std_var]
-    init <- draws[i, init_var]
-    eps <- draws[i, eps_vars]
+  if (length(latent_vars) > 0) {
+    # Got latent process, assume it's log(Rt)
+    latent_matrix <- as.matrix(draws[, latent_vars])
+    rt_matrix <- exp(latent_matrix)
+    return(.make_rt_plot(rt_matrix))
+  }
 
-    latent <- numeric(n_time)
-    latent[1] <- init + std * eps[1]
-    for (t in 2:n_time) {
-      latent[t] <- damp * latent[t - 1] + std * eps[t]
+  # Pattern 3: Try to reconstruct from AR parameters
+  eps_patterns <- c("latent\\.eps", "epsilon", "innovations")
+  eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
+
+  if (length(eps_vars) > 0) {
+    # Get AR parameters
+    damp_var <- .find_first_match(vars, c("latent\\.damp", "damp_AR", "phi", "rho"))
+    std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
+    init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
+
+    if (!is.na(damp_var) && !is.na(std_var)) {
+      # Reconstruct AR process
+      n_draws <- nrow(draws)
+      n_time <- length(eps_vars)
+      rt_matrix <- matrix(NA, n_draws, n_time)
+
+      for (i in seq_len(n_draws)) {
+        damp <- draws[i, damp_var]
+        std <- draws[i, std_var]
+        init <- if (!is.na(init_var)) draws[i, init_var] else 0
+        eps <- as.numeric(draws[i, eps_vars])
+
+        latent <- numeric(n_time)
+        latent[1] <- init + std * eps[1]
+        for (t in 2:n_time) {
+          latent[t] <- damp * latent[t - 1] + std * eps[t]
+        }
+        rt_matrix[i, ] <- exp(latent)
+      }
+      return(.make_rt_plot(rt_matrix))
     }
-    rt_matrix[i, ] <- exp(latent)
   }
+
+  # No Rt parameters found - show diagnostic info
+  message("Could not find Rt/latent process parameters.")
+  message("Available parameters: ", paste(head(vars, 10), collapse = ", "),
+          if (length(vars) > 10) ", ..." else "")
+
+  ggplot2::ggplot() +
+    ggplot2::annotate("text", x = 0.5, y = 0.5,
+                      label = "Rt trajectory not available",
+                      size = 5) +
+    ggplot2::theme_void()
+}
+
+#' Find time-indexed variables matching patterns
+#' @keywords internal
+.find_time_indexed_vars <- function(vars, patterns) {
+  for (pattern in patterns) {
+    matches <- grep(pattern, vars, value = TRUE)
+    if (length(matches) > 0) {
+      # Sort by time index
+      idx <- as.integer(gsub(".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$", "\\1\\2", matches))
+      if (all(!is.na(idx))) {
+        return(matches[order(idx)])
+      }
+      return(matches)
+    }
+  }
+  character(0)
+}
+
+#' Find first matching variable
+#' @keywords internal
+.find_first_match <- function(vars, patterns) {
+  for (pattern in patterns) {
+    matches <- grep(pattern, vars, value = TRUE)
+    if (length(matches) > 0) return(matches[1])
+  }
+  NA_character_
+}
+
+#' Create the Rt plot from a matrix
+#' @keywords internal
+.make_rt_plot <- function(rt_matrix) {
+  n_time <- ncol(rt_matrix)
 
   df <- data.frame(
     time = seq_len(n_time),
@@ -211,16 +283,23 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- colnames(draws)
 
-  # Look for infection-related parameters
-  inf_vars <- grep("epi\\.I_t\\.", vars, value = TRUE)
+  # Look for infection-related parameters with multiple patterns
+  inf_patterns <- c(
+    "epi\\.I_t\\[",        # EpiAware infection output
+    "epi\\.I_t\\.",        # Alternative separator
+    "^I_t\\[",             # Direct I_t
+    "^infections\\[",      # infections[t]
+    "^expected_cases\\[",  # expected_cases[t]
+    "obs\\.y_t\\["         # Observation model output
+  )
+  inf_vars <- .find_time_indexed_vars(vars, inf_patterns)
 
   if (length(inf_vars) > 0) {
-    # Extract infection trajectories
-    inf_idx <- as.integer(gsub(".*\\.(\\d+)\\.$", "\\1", inf_vars))
-    inf_vars <- inf_vars[order(inf_idx)]
+    # Variables are already sorted by find_time_indexed_vars
     n_time <- min(length(inf_vars), nrow(obs_data))
+    inf_vars_use <- inf_vars[seq_len(n_time)]
 
-    inf_matrix <- as.matrix(draws[, inf_vars[seq_len(n_time)]])
+    inf_matrix <- as.matrix(draws[, inf_vars_use])
 
     pred_df <- data.frame(
       time_idx = seq_len(n_time),
