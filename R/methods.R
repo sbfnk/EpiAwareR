@@ -335,13 +335,21 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     return(p)
   }
 
-  # Fallback: just plot observed data
+  # Fallback: just plot observed data with diagnostic info
+  message("Could not find infection/case prediction parameters.")
+  message("Looking for patterns: epi.I_t[, I_t[, infections[, expected_cases[, obs.y_t[")
+  message(
+    "Available parameters: ",
+    paste(head(vars, 15), collapse = ", "),
+    if (length(vars) > 15) ", ..." else ""
+  )
+
   p <- ggplot2::ggplot(obs_data, ggplot2::aes(x = time_idx, y = .data[[case_col]])) +
     ggplot2::geom_point(size = 2) +
     ggplot2::geom_line() +
     ggplot2::labs(
       title = "Observed Cases",
-      subtitle = "Predicted cases not available",
+      subtitle = "Predicted cases not available (see console for diagnostics)",
       x = "Time",
       y = "Cases"
     ) +

@@ -60,21 +60,18 @@ First, we run EpiNow2. Note: EpiNow2 must be loaded and run before EpiAwareR due
 ```{r epinow2_example, message = FALSE}
 library(EpiNow2)
 
-# Define generation time
+# Define generation time (mean ~5 days)
 generation_time <- Gamma(
   mean = 5.0,
   sd = 2.0
 )
 
-# Define reporting delay
-reporting_delay <- LogNormal(
-  mean = 2.0,
-  sd = 1.0
-)
+# No reporting delay for this simple example (data is directly observed)
+# For real data, you would add: delays = delay_opts(reporting_delay)
 
 # Use daily random walk for Rt (alternative to GP)
 rt_settings <- rt_opts(
-  prior = Normal(mean = 1, sd = 1),
+  prior = Normal(mean = 1, sd = 0.5), # Tighter prior
   rw = 1 # Daily random walk
 )
 
@@ -86,7 +83,6 @@ epinow2_time <- tryCatch({
     epinow2_results <- epinow(
       outbreak_data,
       generation_time = generation_time_opts(generation_time),
-      delays = delay_opts(reporting_delay),
       rt = rt_settings,
       stan = stan_opts(cores = 2, chains = 2, samples = 500, warmup = 250)
     )
@@ -121,7 +117,7 @@ library(EpiAwareR)
 latent <- AR(
   order = 1,
   damp_priors = list(truncnorm(0.99, 0.01, 0.9, 1)), # Near 1 for random walk
-  init_priors = list(norm(0, 1)), # log(Rt) prior: Rt centered at 1
+  init_priors = list(norm(0, 0.5)), # log(Rt) prior: tighter to match EpiNow2
   std_prior = halfnorm(0.1)
 )
 
@@ -129,16 +125,12 @@ latent <- AR(
 # EpiNow2: Gamma(mean=5, sd=2) -> shape=6.25, scale=0.8
 infection <- Renewal(
   gen_distribution = gamma_dist(6.25, 0.8),
-  initialisation_prior = norm(log(100), 2)
+  initialisation_prior = norm(log(30), 0.5) # Match simulated initial infections
 )
 
-# 3. Observation model: negative binomial with reporting delay
-# EpiNow2: LogNormal(mean=2, sd=1) -> meanlog=0.58, sdlog=0.47
-observation <- LatentDelay(
-  model = NegativeBinomialError(
-    cluster_factor_prior = halfnorm(0.5)
-  ),
-  delay_distribution = lognorm(0.58, 0.47)
+# 3. Observation model: negative binomial (no delay for this simple example)
+observation <- NegativeBinomialError(
+  cluster_factor_prior = halfnorm(0.5)
 )
 
 # 4. Compose into complete model
@@ -210,17 +202,17 @@ For example, comparing different levels of smoothness in the random walk:
 # Less smooth (more variable Rt)
 rw_flexible <- AR(
   order = 1,
-  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)),
-  init_priors = list(norm(0, 1)),
+  damp_priors = list(truncnorm(0.99, 0.01, 0.9, 1)),
+  init_priors = list(norm(0, 0.5)),
   std_prior = halfnorm(0.3) # Larger innovations
 )
 
 # More smooth (less variable Rt)
 rw_smooth <- AR(
   order = 1,
-  damp_priors = list(truncnorm(1.0, 0.01, 0.99, 1)),
-  init_priors = list(norm(0, 1)),
-  std_prior = halfnorm(0.1) # Smaller innovations
+  damp_priors = list(truncnorm(0.99, 0.01, 0.9, 1)),
+  init_priors = list(norm(0, 0.5)),
+  std_prior = halfnorm(0.05) # Smaller innovations
 )
 
 # Fit both and compare
