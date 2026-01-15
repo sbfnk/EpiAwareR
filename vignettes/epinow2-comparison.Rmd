@@ -117,7 +117,7 @@ library(EpiAwareR)
 latent <- AR(
   order = 1,
   damp_priors = list(truncnorm(0.99, 0.01, 0.9, 1)), # Near 1 for random walk
-  init_priors = list(norm(0, 0.5)), # log(Rt) prior: tighter to match EpiNow2
+  init_priors = list(norm(log(1.5), 0.3)), # log(Rt) centered at 1.5 for growing epidemic
   std_prior = halfnorm(0.1)
 )
 
@@ -167,6 +167,8 @@ print(results)
 summary(results)
 plot(results, type = "Rt")
 ```
+
+**Note on initial uncertainty:** Renewal models often show high uncertainty in the initial period (first ~7 days) due to limited infection history for estimating $R_t$. This "burn-in" effect is a known characteristic of these models.
 
 ### Runtime Comparison
 

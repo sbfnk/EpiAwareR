@@ -157,7 +157,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   }
 
   # Pattern 3: Try to reconstruct from AR parameters
-  eps_patterns <- c("latent\\.eps", "epsilon", "innovations")
+  # Note: EpiAware uses Greek epsilon (ϵ) in variable names
+  eps_patterns <- c("latent\\.ϵ_t\\[", "latent\\.eps", "epsilon", "innovations")
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
 
   if (length(eps_vars) > 0) {
