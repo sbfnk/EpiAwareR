@@ -79,21 +79,30 @@ rt_settings <- rt_opts(
 )
 
 # Run estimation with timing
-epinow2_time <- system.time({
-  epinow2_results <- epinow(
-    outbreak_data,
-    generation_time = generation_time_opts(generation_time),
-    delays = delay_opts(reporting_delay),
-    rt = rt_settings,
-    stan = stan_opts(cores = 2, chains = 2, samples = 500, warmup = 250)
-  )
+# Wrap in tryCatch to handle CI environments where Stan may fail
+epinow2_results <- NULL
+epinow2_time <- tryCatch({
+  system.time({
+    epinow2_results <- epinow(
+      outbreak_data,
+      generation_time = generation_time_opts(generation_time),
+      delays = delay_opts(reporting_delay),
+      rt = rt_settings,
+      stan = stan_opts(cores = 2, chains = 2, samples = 500, warmup = 250)
+    )
+  })
+}, error = function(e) {
+  message("EpiNow2 fitting failed (may occur in some CI environments): ", e$message)
+  NULL
 })
 
-cat("EpiNow2 runtime:", epinow2_time["elapsed"], "seconds\n")
-
-# View results
-summary(epinow2_results)
-plot(epinow2_results)
+if (!is.null(epinow2_results)) {
+  cat("EpiNow2 runtime:", epinow2_time["elapsed"], "seconds\n")
+  summary(epinow2_results)
+  plot(epinow2_results)
+} else {
+  cat("EpiNow2 results not available - see message above\n")
+}
 ```
 
 The `rw = 1` option creates a daily random walk for $R_t$, which is an alternative choice to the default Gaussian Process.
@@ -171,9 +180,14 @@ plot(results, type = "Rt")
 
 ```{r runtime_comparison}
 cat("Runtime comparison (2 chains each):\n")
-cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
-cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
-cat("  Speedup:   ", round(epinow2_time["elapsed"] / epiaware_time["elapsed"], 1), "x\n")
+if (!is.null(epinow2_time)) {
+  cat("  EpiNow2:   ", round(epinow2_time["elapsed"], 1), "seconds\n")
+  cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
+  cat("  Speedup:   ", round(epinow2_time["elapsed"] / epiaware_time["elapsed"], 1), "x\n")
+} else {
+  cat("  EpiNow2:    (not available)\n")
+  cat("  EpiAwareR: ", round(epiaware_time["elapsed"], 1), "seconds\n")
+}
 ```
 
 ## Benefits of the explicit approach
