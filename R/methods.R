@@ -336,9 +336,79 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     return(p)
   }
 
-  # Fallback: just plot observed data with diagnostic info
-  message("Could not find infection/case prediction parameters.")
-  message("Looking for patterns: epi.I_t[, I_t[, infections[, expected_cases[, obs.y_t[")
+  # Try to simulate infections from Rt using renewal equation
+  rt_matrix <- .reconstruct_rt_from_ar(fit)
+
+  if (!is.null(rt_matrix) && !is.null(fit$model$components$epi_model$spec)) {
+    # Get generation time distribution
+    gen_spec <- fit$model$components$epi_model$spec$gen_distribution
+    init_spec <- fit$model$components$epi_model$spec$initialisation_prior
+
+    if (!is.null(gen_spec)) {
+      # Discretize generation time (PMF for days 1 to max_gen)
+      max_gen <- 14  # Maximum generation time to consider
+      gen_pmf <- .discretize_distribution(gen_spec, max_gen)
+
+      # Get initial infections from prior median
+      init_infections <- if (!is.null(init_spec)) {
+        exp(init_spec$params[1])  # First param is mean of log-normal
+      } else {
+        obs_data[[case_col]][1]  # Fallback to first observation
+      }
+
+      # Simulate infections for each posterior draw
+      n_draws <- nrow(rt_matrix)
+      n_time <- ncol(rt_matrix)
+      inf_matrix <- matrix(NA, n_draws, n_time)
+
+      # Use observed data for seeding the renewal equation
+      observed_cases <- obs_data[[case_col]]
+
+      for (i in seq_len(n_draws)) {
+        inf_matrix[i, ] <- .simulate_renewal(
+          rt_matrix[i, ], gen_pmf, init_infections, n_time,
+          observed = observed_cases
+        )
+      }
+
+      # Create prediction data frame
+      pred_df <- data.frame(
+        time_idx = seq_len(n_time),
+        median = apply(inf_matrix, 2, median),
+        q5 = apply(inf_matrix, 2, quantile, 0.05),
+        q95 = apply(inf_matrix, 2, quantile, 0.95)
+      )
+
+      p <- ggplot2::ggplot() +
+        ggplot2::geom_ribbon(
+          data = pred_df,
+          ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
+          fill = "steelblue", alpha = 0.3
+        ) +
+        ggplot2::geom_line(
+          data = pred_df,
+          ggplot2::aes(x = time_idx, y = median),
+          color = "steelblue"
+        ) +
+        ggplot2::geom_point(
+          data = obs_data[seq_len(n_time), ],
+          ggplot2::aes(x = time_idx, y = .data[[case_col]]),
+          color = "black", size = 2
+        ) +
+        ggplot2::labs(
+          title = "Observed vs Simulated Cases",
+          subtitle = "Points: observed, Line: simulated median, Ribbon: 90% CI",
+          x = "Time",
+          y = "Cases"
+        ) +
+        ggplot2::theme_minimal()
+
+      return(p)
+    }
+  }
+
+  # Final fallback: just plot observed data
+  message("Could not simulate cases from model parameters.")
   message(
     "Available parameters: ",
     paste(head(vars, 15), collapse = ", "),
@@ -350,7 +420,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     ggplot2::geom_line() +
     ggplot2::labs(
       title = "Observed Cases",
-      subtitle = "Predicted cases not available (see console for diagnostics)",
+      subtitle = "Simulated cases not available",
       x = "Time",
       y = "Cases"
     ) +
@@ -405,4 +475,120 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   }
 
   bayesplot::mcmc_areas(draws[, finite_vars, drop = FALSE])
+}
+
+#' Reconstruct Rt from AR parameters
+#' @keywords internal
+.reconstruct_rt_from_ar <- function(fit) {
+  draws <- posterior::as_draws_matrix(fit$samples)
+  vars <- colnames(draws)
+
+  # Look for AR innovation parameters (Greek epsilon)
+  eps_patterns <- c("latent\\.ϵ_t\\.", "latent\\.eps", "epsilon", "innovations")
+  eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
+
+  if (length(eps_vars) == 0) {
+    return(NULL)
+  }
+
+  # Get AR parameters
+  damp_var <- .find_first_match(vars, c("latent\\.damp", "damp_AR", "phi", "rho"))
+  std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
+  init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
+
+  if (is.na(damp_var) || is.na(std_var)) {
+    return(NULL)
+  }
+
+  # Reconstruct AR process for each draw
+
+  n_draws <- nrow(draws)
+  n_time <- length(eps_vars)
+  rt_matrix <- matrix(NA, n_draws, n_time)
+
+  for (i in seq_len(n_draws)) {
+    damp <- as.numeric(draws[i, damp_var])
+    std <- as.numeric(draws[i, std_var])
+    init <- if (!is.na(init_var)) as.numeric(draws[i, init_var]) else 0
+    eps <- as.numeric(draws[i, eps_vars])
+
+    latent <- numeric(n_time)
+    latent[1] <- init + std * eps[1]
+    for (t in 2:n_time) {
+      latent[t] <- damp * latent[t - 1] + std * eps[t]
+    }
+    rt_matrix[i, ] <- exp(latent)
+  }
+
+  rt_matrix
+}
+
+#' Discretize a continuous distribution to a PMF
+#' @keywords internal
+.discretize_distribution <- function(dist_spec, max_days) {
+  # Get CDF values at each day boundary
+  type <- dist_spec$type
+  params <- dist_spec$params
+
+  # Calculate PMF by differencing CDF
+  pmf <- numeric(max_days)
+
+  if (type == "Gamma") {
+    shape <- params[1]
+    scale <- params[2]
+    for (d in seq_len(max_days)) {
+      pmf[d] <- stats::pgamma(d, shape = shape, scale = scale) -
+        stats::pgamma(d - 1, shape = shape, scale = scale)
+    }
+  } else if (type == "LogNormal") {
+    meanlog <- params[1]
+    sdlog <- params[2]
+    for (d in seq_len(max_days)) {
+      pmf[d] <- stats::plnorm(d, meanlog = meanlog, sdlog = sdlog) -
+        stats::plnorm(d - 1, meanlog = meanlog, sdlog = sdlog)
+    }
+  } else {
+    # Default: uniform
+    pmf <- rep(1 / max_days, max_days)
+  }
+
+  # Normalize to sum to 1
+
+  pmf / sum(pmf)
+}
+
+#' Simulate infections using renewal equation
+#' @keywords internal
+.simulate_renewal <- function(rt, gen_pmf, init_infections, n_time, observed = NULL) {
+  max_gen <- length(gen_pmf)
+  infections <- numeric(n_time)
+
+  # Use observed data for seeding if available, otherwise use constant
+  # This provides the "past infections" needed for the renewal equation
+  if (!is.null(observed) && length(observed) > 0) {
+    seed_length <- min(max_gen, n_time, length(observed))
+    infections[seq_len(seed_length)] <- observed[seq_len(seed_length)]
+  } else {
+    seed_length <- min(max_gen, n_time)
+    infections[seq_len(seed_length)] <- init_infections
+  }
+
+  # Simulate forward using renewal equation
+  for (t in (seed_length + 1):n_time) {
+    # Convolution: sum over generation time
+    infectivity <- 0
+    for (s in seq_len(max_gen)) {
+      if (t - s >= 1) {
+        infectivity <- infectivity + gen_pmf[s] * infections[t - s]
+      }
+    }
+    infections[t] <- rt[t] * infectivity
+
+    # Ensure positive and finite
+    if (infections[t] < 0.1 || !is.finite(infections[t])) {
+      infections[t] <- 0.1
+    }
+  }
+
+  infections
 }
