@@ -126,11 +126,16 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 #' Plot Rt trajectory
 #' @keywords internal
 .plot_rt_trajectory <- function(fit, ...) {
+  # Priority 1: Use generated_quantities from EpiAware if available
+  if (!is.null(fit$generated_quantities$Rt)) {
+    rt_matrix <- fit$generated_quantities$Rt
+    return(.make_rt_plot(rt_matrix))
+  }
+
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- colnames(draws)
 
-  # Try multiple patterns for Rt/latent process variables
-  # Pattern 1: Direct Rt output (e.g., Rt[1], Rt[2], etc.)
+  # Priority 2: Direct Rt output (e.g., Rt[1], Rt[2], etc.)
   rt_direct <- .find_time_indexed_vars(vars, c("^Rt\\[", "^R_t\\[", "^rt\\["))
 
   if (length(rt_direct) > 0) {
@@ -139,7 +144,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     return(.make_rt_plot(rt_matrix))
   }
 
-  # Pattern 2: Latent process output (e.g., latent.Z_t[1])
+  # Priority 3: Latent process output (e.g., latent.Z_t[1])
   latent_patterns <- c(
     "latent\\.Z_t\\[",      # EpiAware latent output
     "latent\\..*_t\\[",     # General latent time series
@@ -253,6 +258,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 #' Plot posterior predictive for cases
 #' @keywords internal
 .plot_posterior_predictive <- function(fit, ...) {
+
   # Get observed data
   if (is.null(fit$data)) {
     message("No data available for cases plot.")
@@ -280,7 +286,46 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     use_date <- FALSE
   }
 
-  # Try to reconstruct expected cases from latent infections
+  # Priority 1: Use generated_quantities from EpiAware if available
+  if (!is.null(fit$generated_quantities$infections)) {
+    inf_matrix <- fit$generated_quantities$infections
+    n_time <- min(ncol(inf_matrix), nrow(obs_data))
+
+    pred_df <- data.frame(
+      time_idx = seq_len(n_time),
+      median = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, median),
+      q5 = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, quantile, 0.05),
+      q95 = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, quantile, 0.95)
+    )
+
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_ribbon(
+        data = pred_df,
+        ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
+        fill = "steelblue", alpha = 0.3
+      ) +
+      ggplot2::geom_line(
+        data = pred_df,
+        ggplot2::aes(x = time_idx, y = median),
+        color = "steelblue"
+      ) +
+      ggplot2::geom_point(
+        data = obs_data[seq_len(n_time), ],
+        ggplot2::aes(x = time_idx, y = .data[[case_col]]),
+        color = "black", size = 2
+      ) +
+      ggplot2::labs(
+        title = "Observed vs Fitted Cases",
+        subtitle = "Points: observed, Line: posterior median, Ribbon: 90% CI",
+        x = "Time",
+        y = "Infections"
+      ) +
+      ggplot2::theme_minimal()
+
+    return(p)
+  }
+
+  # Priority 2: Try to find infections from MCMC samples directly
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- colnames(draws)
 

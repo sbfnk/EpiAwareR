@@ -146,6 +146,9 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
     message("  Draws: ", method$draws)
 
     samples <- .run_nuts_sampling(julia_model, method)
+
+    # Store chains in Julia for generated_observables
+    JuliaCall::julia_assign("chains_tmp", samples)
   } else {
     stop(
       "Unknown inference method: ", class(method)[1],
@@ -160,8 +163,8 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
   # Compute diagnostics
   diagnostics <- .compute_diagnostics(draws_obj)
 
-  # Generate quantities (Rt, infections, etc.)
-  gen_quantities <- .generate_quantities(julia_model, draws_obj)
+  # Generate quantities (Rt, infections, etc.) using EpiAware's generated_observables
+  gen_quantities <- .generate_quantities(julia_model, samples)
 
   # Return results object
   structure(
@@ -211,23 +214,114 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
 
 #' Generate quantities from fitted model
 #' @keywords internal
-.generate_quantities <- function(julia_model, draws_obj) {
-  # Placeholder - actual implementation would extract
-  # generated quantities like Rt trajectories, predicted infections, etc.
+.generate_quantities <- function(julia_model, julia_chains) {
+  # Use EpiAware's generated_observables to compute derived quantities
+
+  # This is the proper way to get Rt, infections, etc. from the posterior
   tryCatch(
     {
-      list(
-        Rt = NULL, # Would extract Rt trajectories
-        infections = NULL, # Would extract infection trajectories
-        predicted_cases = NULL # Would extract posterior predictive samples
+      # Store the model in Julia scope
+      JuliaCall::julia_assign("turing_model_gq", julia_model)
+      JuliaCall::julia_assign("chains_gq", julia_chains)
+
+      # Try to generate observables using EpiAware's function
+      # Note: data_tmp should still be in scope from the fit() call
+      .eval_julia_code("using EpiAware")
+
+      # Call generated_observables and extract fields
+      obs_result <- tryCatch(
+        {
+          JuliaCall::julia_command(
+            "global _gq_observables = generated_observables(turing_model_gq, data_tmp, chains_gq)"
+          )
+          JuliaCall::julia_command("global _gq_gen = _gq_observables.generated")
+
+          # _gq_gen is a Matrix of NamedTuples, get fields from first element
+          JuliaCall::julia_command("global _gq_fields = propertynames(_gq_gen[1])")
+          fields <- unlist(JuliaCall::julia_eval("string.(_gq_fields)"))
+
+          # Extract available quantities - iterate over matrix elements
+          # I_t = infections, Z_t = latent (log Rt), generated_y_t = expected obs
+          I_t <- if ("I_t" %in% fields) {
+            JuliaCall::julia_eval("reduce(hcat, [g.I_t for g in _gq_gen])'")
+          } else {
+            NULL
+          }
+
+          Z_t <- if ("Z_t" %in% fields) {
+            JuliaCall::julia_eval("reduce(hcat, [g.Z_t for g in _gq_gen])'")
+          } else {
+            NULL
+          }
+
+          generated_y_t <- if ("generated_y_t" %in% fields) {
+            JuliaCall::julia_eval("reduce(hcat, [g.generated_y_t for g in _gq_gen])'")
+          } else {
+            NULL
+          }
+
+          list(
+            success = TRUE,
+            fields = fields,
+            I_t = I_t,
+            Z_t = Z_t,
+            generated_y_t = generated_y_t
+          )
+        },
+        error = function(e) {
+          list(success = FALSE, error = conditionMessage(e), fields = character(0))
+        }
       )
+
+      if (isTRUE(obs_result$success)) {
+        # Z_t is the latent process (log Rt for renewal models)
+        # Julia's reduce(hcat, ...)' already returns a matrix
+        # Convert to Rt by exponentiating
+        rt_data <- if (!is.null(obs_result$Z_t)) {
+          z_matrix <- as.matrix(obs_result$Z_t)
+          exp(z_matrix)  # Convert log(Rt) to Rt
+        } else {
+          NULL
+        }
+
+        # I_t is infections - already a matrix from Julia
+        infections_data <- if (!is.null(obs_result$I_t)) {
+          as.matrix(obs_result$I_t)
+        } else {
+          NULL
+        }
+
+        # generated_y_t is expected observations - already a matrix from Julia
+        predicted_data <- if (!is.null(obs_result$generated_y_t)) {
+          as.matrix(obs_result$generated_y_t)
+        } else {
+          NULL
+        }
+
+        list(
+          Rt = rt_data,
+          infections = infections_data,
+          predicted_cases = predicted_data,
+          available_fields = obs_result$fields
+        )
+      } else {
+        # Fall back to NULL if generated_observables fails
+        list(
+          Rt = NULL,
+          infections = NULL,
+          predicted_cases = NULL,
+          error = obs_result$error
+        )
+      }
     },
     error = function(e) {
-      warning(
-        "Failed to generate quantities: ",
-        conditionMessage(e)
+      # If anything fails, return empty list (plotting will use fallback)
+      list(
+        Rt = NULL,
+        infections = NULL,
+        predicted_cases = NULL,
+        error = conditionMessage(e)
       )
-      NULL
     }
   )
 }
