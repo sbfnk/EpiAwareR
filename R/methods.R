@@ -117,19 +117,64 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   }
 
   switch(type,
-    "Rt" = .plot_rt_trajectory(x, ...),
+    "Rt" = .plot_latent_trajectory(x, ...),
     "cases" = .plot_posterior_predictive(x, ...),
     "posterior" = .plot_posterior_distributions(x, ...)
   )
 }
 
-#' Plot Rt trajectory
+#' Get plot settings based on infection model type
 #' @keywords internal
-.plot_rt_trajectory <- function(fit, ...) {
+.get_latent_plot_settings <- function(fit) {
+
+  epi_model <- fit$model$components$epi_model
+
+  # Determine settings based on infection model type
+
+  if (inherits(epi_model, "epiaware_renewal")) {
+    # Renewal models: latent is log(Rt), transform with exp, reference at 1
+    list(
+      title = "Reproduction Number",
+      y_label = expression(R[t]),
+      transform = exp,
+      reference_line = 1
+    )
+  } else if (inherits(epi_model, "epiaware_generic") &&
+             !is.null(epi_model$fn_name) &&
+             grepl("Renewal", epi_model$fn_name, ignore.case = TRUE)) {
+    # Generic model wrapping a Renewal-type function
+    list(
+      title = "Reproduction Number",
+      y_label = expression(R[t]),
+      transform = exp,
+      reference_line = 1
+    )
+  } else {
+    # Default: show raw latent process
+    list(
+      title = "Latent Process",
+      y_label = "Value",
+      transform = identity,
+      reference_line = NULL
+    )
+  }
+}
+
+#' Plot latent process trajectory
+#' @keywords internal
+.plot_latent_trajectory <- function(fit, ...) {
+  # Get model-specific plot settings
+  settings <- .get_latent_plot_settings(fit)
+
   # Priority 1: Use generated_quantities from EpiAware if available
   if (!is.null(fit$generated_quantities$Rt)) {
-    rt_matrix <- fit$generated_quantities$Rt
-    return(.make_rt_plot(rt_matrix))
+    # Rt is already transformed (exp applied in .generate_quantities)
+    return(.make_trajectory_plot(
+      fit$generated_quantities$Rt,
+      title = settings$title,
+      y_label = settings$y_label,
+      reference_line = settings$reference_line
+    ))
   }
 
   draws <- posterior::as_draws_matrix(fit$samples)
@@ -139,9 +184,14 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   rt_direct <- .find_time_indexed_vars(vars, c("^Rt\\[", "^R_t\\[", "^rt\\["))
 
   if (length(rt_direct) > 0) {
-    # Rt is directly available
-    rt_matrix <- as.matrix(draws[, rt_direct])
-    return(.make_rt_plot(rt_matrix))
+    # Rt is directly available (already transformed)
+    latent_matrix <- as.matrix(draws[, rt_direct])
+    return(.make_trajectory_plot(
+      latent_matrix,
+      title = settings$title,
+      y_label = settings$y_label,
+      reference_line = settings$reference_line
+    ))
   }
 
   # Priority 3: Latent process output (e.g., latent.Z_t[1])
@@ -155,13 +205,17 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   latent_vars <- .find_time_indexed_vars(vars, latent_patterns)
 
   if (length(latent_vars) > 0) {
-    # Got latent process, assume it's log(Rt)
     latent_matrix <- as.matrix(draws[, latent_vars])
-    rt_matrix <- exp(latent_matrix)
-    return(.make_rt_plot(rt_matrix))
+    transformed_matrix <- settings$transform(latent_matrix)
+    return(.make_trajectory_plot(
+      transformed_matrix,
+      title = settings$title,
+      y_label = settings$y_label,
+      reference_line = settings$reference_line
+    ))
   }
 
-  # Pattern 3: Try to reconstruct from AR parameters
+  # Priority 4: Try to reconstruct from AR parameters
   # Note: EpiAware uses Greek epsilon (ϵ) in variable names
   eps_patterns <- c("latent\\.ϵ_t\\[", "latent\\.eps", "epsilon", "innovations")
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
@@ -176,7 +230,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
       # Reconstruct AR process
       n_draws <- nrow(draws)
       n_time <- length(eps_vars)
-      rt_matrix <- matrix(NA, n_draws, n_time)
+      latent_matrix <- matrix(NA, n_draws, n_time)
 
       for (i in seq_len(n_draws)) {
         damp <- draws[i, damp_var]
@@ -189,20 +243,27 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
         for (t in 2:n_time) {
           latent[t] <- damp * latent[t - 1] + std * eps[t]
         }
-        rt_matrix[i, ] <- exp(latent)
+        latent_matrix[i, ] <- latent
       }
-      return(.make_rt_plot(rt_matrix))
+
+      transformed_matrix <- settings$transform(latent_matrix)
+      return(.make_trajectory_plot(
+        transformed_matrix,
+        title = settings$title,
+        y_label = settings$y_label,
+        reference_line = settings$reference_line
+      ))
     }
   }
 
-  # No Rt parameters found - show diagnostic info
-  message("Could not find Rt/latent process parameters.")
+  # No latent parameters found - show diagnostic info
+  message("Could not find latent process parameters.")
   message("Available parameters: ", paste(head(vars, 10), collapse = ", "),
           if (length(vars) > 10) ", ..." else "")
 
   ggplot2::ggplot() +
     ggplot2::annotate("text", x = 0.5, y = 0.5,
-                      label = "Rt trajectory not available",
+                      label = "Latent trajectory not available",
                       size = 5) +
     ggplot2::theme_void()
 }
@@ -234,25 +295,40 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   NA_character_
 }
 
-#' Create the Rt plot from a matrix
+#' Create a trajectory plot from a matrix of posterior samples
+#' @param matrix Matrix of samples (rows) x time (columns)
+#' @param title Plot title
+#' @param y_label Y-axis label (can be an expression)
+#' @param reference_line Optional horizontal reference line (e.g., 1 for Rt)
 #' @keywords internal
-.make_rt_plot <- function(rt_matrix) {
-  n_time <- ncol(rt_matrix)
+.make_trajectory_plot <- function(matrix, title = "Latent Process",
+                                   y_label = "Value",
+                                   reference_line = NULL) {
+  n_time <- ncol(matrix)
 
   df <- data.frame(
     time = seq_len(n_time),
-    median = apply(rt_matrix, 2, median),
-    q5 = apply(rt_matrix, 2, quantile, 0.05),
-    q95 = apply(rt_matrix, 2, quantile, 0.95)
+    median = apply(matrix, 2, median),
+    q5 = apply(matrix, 2, quantile, 0.05),
+    q95 = apply(matrix, 2, quantile, 0.95)
   )
 
-  ggplot2::ggplot(df, ggplot2::aes(x = time)) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = time)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = q5, ymax = q95),
                          fill = "steelblue", alpha = 0.3) +
     ggplot2::geom_line(ggplot2::aes(y = median), color = "steelblue") +
-    ggplot2::geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-    ggplot2::labs(title = "Rt", x = "Time", y = expression(R[t])) +
+    ggplot2::labs(title = title, x = "Time", y = y_label) +
     ggplot2::theme_minimal()
+
+  if (!is.null(reference_line)) {
+    p <- p + ggplot2::geom_hline(
+      yintercept = reference_line,
+      linetype = "dashed",
+      color = "red"
+    )
+  }
+
+  p
 }
 
 #' Plot posterior predictive for cases
