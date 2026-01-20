@@ -34,27 +34,29 @@ library(EpiAwareR)
 
 ## Data Preparation
 
-For this vignette, we simulate data similar to the South Korea COVID-19 outbreak analyzed in Mishra et al. (2020):
+We use the actual South Korea COVID-19 data from the preprint, which is included in the package. The data comes from the `covidregionaldata` R package and contains daily confirmed cases from January to July 2020.
 
-```{r simulated_data}
-# Simulated daily case counts
-set.seed(123)
-dates <- seq.Date(as.Date("2020-02-15"), by = "day", length.out = 36)
+```{r load_data}
+# Load South Korea COVID-19 data
+data_path <- system.file("extdata", "south_korea_data.csv", package = "EpiAwareR")
+south_korea <- read.csv(data_path)
+south_korea$date <- as.Date(south_korea$date)
 
-# Simulate epidemic with changing Rt (intervention effect)
-infections <- numeric(36)
-infections[1:7] <- 50
-for (i in 8:36) {
-  rt <- if (i < 20) 2.5 else 0.8 # Intervention reduces transmission
-  infections[i] <- rpois(1, rt * mean(infections[(i - 7):(i - 1)]))
-}
-
+# Use tspan = (45, 80) to match the preprint exactly
+# This corresponds to Feb 13 - Mar 19, 2020 (the main epidemic wave)
 training_data <- data.frame(
-  date = dates,
-  y_t = pmax(infections, 1) # Ensure positive counts
+  date = south_korea$date[45:80],
+  y_t = south_korea$cases_new[45:80]
 )
 
+# Preview the data
 head(training_data)
+tail(training_data)
+
+# Plot the training data
+plot(training_data$date, training_data$y_t, type = "b",
+     xlab = "Date", ylab = "Daily Cases",
+     main = "South Korea COVID-19 Cases (Feb 13 - Mar 19, 2020)")
 ```
 
 ## Model Components
@@ -145,7 +147,7 @@ model <- EpiProblem(
   epi_model = renewal,
   latent_model = ar2,
   observation_model = negbin,
-  tspan = c(1, 36) # Time span matching our data
+  tspan = c(1, 36) # 36 days matching preprint's tspan=(45,80) window
 )
 
 print(model)
