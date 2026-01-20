@@ -182,8 +182,12 @@ epiaware_setup_julia <- function(verbose = TRUE) {
   if (verbose) message("[4.7/7] Installing MCMCChains...")
   # MCMCChains depends on DataFrames, so it will be installed automatically
   JuliaCall::julia_eval('Pkg.add("MCMCChains")')
+  if (verbose) message("[4.8/7] Installing Pathfinder and ADTypes...")
+  # Pathfinder for initialization, ADTypes for AutoReverseDiff
+  JuliaCall::julia_eval('Pkg.add("Pathfinder")')
+  JuliaCall::julia_eval('Pkg.add("ADTypes")')
   # Resolve to ensure consistent package versions
-  if (verbose) message("[4.8/7] Resolving package versions...")
+  if (verbose) message("[4.9/7] Resolving package versions...")
   JuliaCall::julia_eval('Pkg.resolve()')
 
   # Precompile packages to avoid runtime errors

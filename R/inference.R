@@ -181,32 +181,66 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
   )
 }
 
-#' Run NUTS sampling via Julia
+#' Run NUTS sampling via Julia with Pathfinder initialization
 #' @keywords internal
 .run_nuts_sampling <- function(julia_model, method) {
   tryCatch(
     {
       # Import required Julia packages
-      .eval_julia_code("using Turing, MCMCChains")
+      .eval_julia_code("using Turing, MCMCChains, Pathfinder, ADTypes")
 
-      # Run NUTS
-      # Note: This is simplified - actual implementation would need to
-      # properly pass the julia_model object and handle the result
-      .call_julia_function(
-        "sample",
-        julia_model,
-        .eval_julia_code(sprintf("NUTS(%f)", method$target_acceptance)),
-        .eval_julia_code("MCMCThreads()"),
-        method$draws,
-        method$chains
-      )
+      # Assign model to Julia scope for multi-line operations
+      JuliaCall::julia_assign("_nuts_model", julia_model)
+
+      # Stage 1: Pathfinder initialization to find good starting points
+      # This matches the preprint: ManyPathfinder(nruns=3, maxiters=100)
+      message("  Running Pathfinder initialization...")
+      .eval_julia_code(paste0(
+        "_pathfinder_result = multipathfinder(_nuts_model, 1000; ",
+        "nruns=4, maxiters=100)"
+      ))
+
+      # Extract initial parameters from Pathfinder result
+      .eval_julia_code(paste0(
+        "_init_params = [_pathfinder_result.draws_transformed[:, 1, i] ",
+        "for i in 1:", method$chains, "]"
+      ))
+
+      # Stage 2: Run NUTS with Pathfinder initialization
+      # Using AutoReverseDiff for AD (matches preprint)
+      message("  Running NUTS sampling...")
+      .eval_julia_code(sprintf(paste0(
+        "_nuts_chains = sample(_nuts_model, ",
+        "NUTS(%f, adtype=AutoReverseDiff()), ",
+        "MCMCThreads(), %d, %d; ",
+        "init_params=_init_params)"
+      ), method$target_acceptance, method$draws, method$chains))
+
+      # Return the chains
+      .eval_julia_code("_nuts_chains")
     },
     error = function(e) {
-      stop(
-        "NUTS sampling failed:\n",
-        conditionMessage(e),
-        "\n\nTry running with fewer chains or draws for testing.",
-        call. = FALSE
+      # If Pathfinder fails, fall back to standard NUTS
+      message("  Pathfinder initialization failed, using default initialization...")
+      tryCatch(
+        {
+          .call_julia_function(
+            "sample",
+            julia_model,
+            .eval_julia_code(sprintf("NUTS(%f)", method$target_acceptance)),
+            .eval_julia_code("MCMCThreads()"),
+            method$draws,
+            method$chains
+          )
+        },
+        error = function(e2) {
+          stop(
+            "NUTS sampling failed:\n",
+            conditionMessage(e2),
+            "\n\nTry running with fewer chains or draws for testing.",
+            call. = FALSE
+          )
+        }
       )
     }
   )
