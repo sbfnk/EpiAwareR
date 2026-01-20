@@ -10,7 +10,7 @@
 #' @param draws Integer. Number of post-warmup samples to draw. Default: 1000.
 #' @param chains Integer. Number of MCMC chains to run. Default: 4.
 #' @param target_acceptance Numeric. Target acceptance rate for adaptation.
-#'   Default: 0.8.
+#'   Default: 0.9 (recommended for complex models).
 #'
 #' @return An S3 object of class \code{c("epiaware_nuts", "epiaware_sampler")}
 #'   containing sampler configuration.
@@ -30,7 +30,7 @@
 #'
 #' @export
 nuts_sampler <- function(warmup = 1000, draws = 1000, chains = 4,
-                         target_acceptance = 0.8) {
+                         target_acceptance = 0.9) {
   # Validate inputs
   checkmate::assert_int(warmup, lower = 1)
   checkmate::assert_int(draws, lower = 1)
