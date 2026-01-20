@@ -10,7 +10,7 @@ test_that("nuts_sampler creates valid configuration", {
   expect_equal(sampler$warmup, 1000)
   expect_equal(sampler$draws, 1000)
   expect_equal(sampler$chains, 4)
-  expect_equal(sampler$target_acceptance, 0.8)
+  expect_equal(sampler$target_acceptance, 0.9)
 })
 
 test_that("nuts_sampler accepts custom parameters", {
