@@ -42,19 +42,20 @@ data_path <- system.file("extdata", "south_korea_data.csv", package = "EpiAwareR
 south_korea <- read.csv(data_path)
 south_korea$date <- as.Date(south_korea$date)
 
-# Use tspan = (45, 80) to match the preprint exactly
-# This corresponds to Feb 13 - Mar 19, 2020 (the main epidemic wave)
-training_data <- data.frame(
-  date = south_korea$date[45:80],
-  y_t = south_korea$cases_new[45:80]
+# Prepare full dataset - tspan will select the window
+# Column must be named 'y_t' for EpiAware
+full_data <- data.frame(
+  date = south_korea$date,
+  y_t = south_korea$cases_new
 )
 
-# Preview the data
-head(training_data)
-tail(training_data)
+# Preview the training window (days 45-80)
+# This corresponds to Feb 13 - Mar 19, 2020 (the main epidemic wave)
+cat("Training window (tspan 45-80):\n")
+print(full_data[45:80, ])
 
 # Plot the training data
-plot(training_data$date, training_data$y_t, type = "b",
+plot(full_data$date[45:80], full_data$y_t[45:80], type = "b",
      xlab = "Date", ylab = "Daily Cases",
      main = "South Korea COVID-19 Cases (Feb 13 - Mar 19, 2020)")
 ```
@@ -147,22 +148,22 @@ model <- EpiProblem(
   epi_model = renewal,
   latent_model = ar2,
   observation_model = negbin,
-  tspan = c(1, 36) # 36 days matching preprint's tspan=(45,80) window
+  tspan = c(45, 80) # Exact tspan from preprint (Feb 13 - Mar 19, 2020)
 )
 
 print(model)
 ```
 
-The `EpiProblem` combines components into a joint Bayesian model with automatic validation.
+The `EpiProblem` combines components into a joint Bayesian model with automatic validation. The `tspan = c(45, 80)` selects days 45-80 from the full dataset, matching the preprint exactly.
 
 ### Bayesian Inference
 
-We use NUTS (No-U-Turn Sampler) for posterior inference:
+We use NUTS (No-U-Turn Sampler) with Pathfinder initialization for posterior inference:
 
 ```{r fit_model}
 results <- fit(
   model = model,
-  data = training_data,
+  data = full_data, # Pass full dataset; tspan selects the window
   method = nuts_sampler(
     warmup = 1000, # Adaptation iterations
     draws = 1000, # Posterior samples per chain
