@@ -410,15 +410,28 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 #' Compute MCMC diagnostics
 #' @keywords internal
 .compute_diagnostics <- function(draws_obj) {
+
   # Extract Rhat and ESS from posterior summary
   summ <- posterior::summarise_draws(draws_obj)
 
-  tibble::tibble(
+  result <- tibble::tibble(
     parameter = summ$variable,
     rhat = summ$rhat,
     ess_bulk = summ$ess_bulk,
     ess_tail = summ$ess_tail
   )
+
+
+  # Filter out MCMC internal parameters (step_size, nom_step_size, etc.)
+  # These are NUTS sampler internals, not model parameters
+  mcmc_internals <- c(
+    "step_size", "nom_step_size", "tree_depth", "n_steps",
+    "divergent__", "energy__", "treedepth__", "accept_stat__"
+  )
+  result <- result[!result$parameter %in% mcmc_internals, ]
+  result <- result[!is.na(result$parameter), ]
+
+  result
 }
 
 #' Print method for generic EpiAware calls
