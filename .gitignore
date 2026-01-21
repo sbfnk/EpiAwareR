@@ -22,6 +22,17 @@ Thumbs.db
 *.so
 *.dll
 *.tar.gz
+*.Rcheck/
+
+# Generated documentation
+README.html
+Rplots.pdf
+
+# Vignette build artifacts
+vignettes/*.html
+vignettes/*.R
+vignettes/*_files/
+vignettes/.build.timestamp
 
 # Temporary files
 *~
