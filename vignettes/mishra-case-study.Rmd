@@ -74,14 +74,14 @@ where $\epsilon_t \sim \text{Normal}(0, \sigma^2)$.
 ar2 <- AR(
   order = 2,
   damp_priors = list(
-    truncnorm(0.8, 0.05, 0, 1), # ρ₁: Strong autocorrelation
-    truncnorm(0.1, 0.05, 0, 1)  # ρ₂: Second damping coefficient
+    truncnorm(0.1, 0.05, 0, 1), # ρ₁: Second-order coefficient
+    truncnorm(0.8, 0.05, 0, 1)  # ρ₂: First-order (strong autocorrelation)
   ),
   init_priors = list(
-    norm(0, 0.2), # Initial value for lag 1
-    norm(0, 0.2)  # Initial value for lag 2
+    norm(-1.0, 0.1), # Initial value for lag 1
+    norm(-1.0, 0.5)  # Initial value for lag 2
   ),
-  std_prior = halfnorm(0.1) # σ: Innovation standard deviation
+  std_prior = halfnorm(0.5) # σ: Innovation standard deviation
 )
 
 print(ar2)
@@ -89,10 +89,10 @@ print(ar2)
 
 **Prior choices (from Mishra et al. 2020):**
 
-- First damping coefficient ρ₁ centered at 0.8 reflects strong autocorrelation in log Rt
-- Second damping coefficient ρ₂ centered at 0.1 for smooth second-order dynamics
-- Weak priors on initial values (centered at 0 on log scale → $R_t \approx 1$)
-- Small innovation variance for smooth trajectories
+- First-order damping coefficient ρ₂ centered at 0.8 reflects strong autocorrelation in log Rt
+- Second-order damping coefficient ρ₁ centered at 0.1 for smooth dynamics
+- Initial values centered at -1 on log scale (Rt ≈ 0.37 initially)
+- Innovation std of 0.5 allows flexibility in Rt changes
 
 ### 2. Infection Model: Renewal Equation
 
@@ -105,7 +105,7 @@ where $g_s$ is the discretized generation time distribution.
 ```{r infection_model}
 renewal <- Renewal(
   gen_distribution = gamma_dist(6.5, 0.62), # Shape and scale parameters
-  initialisation_prior = norm(log(1.0), 0.1) # Prior on initial log infections
+  initialisation_prior = norm(log(1.0), 1.0) # Prior on initial log infections (wide)
 )
 
 print(renewal)
@@ -115,7 +115,7 @@ print(renewal)
 
 - Generation time: Mean ~6.5 days (typical for COVID-19 in early 2020)
 - Gamma distribution allows flexible shape
-- Initial infections seeded near 1 (on natural scale)
+- Initial infections seeded near 1 with wide prior (sd=1.0 on log scale)
 
 ### 3. Observation Model: Negative Binomial
 
@@ -126,8 +126,10 @@ $$Y_t \sim \text{NegBinom}(\mu = I_t, \phi)$$
 where $\phi$ controls overdispersion (clustering).
 
 ```{r observation_model}
+# The preprint fixes cluster_factor to 0.25
+# We approximate this with a tight truncated normal prior
 negbin <- NegativeBinomialError(
-  cluster_factor_prior = halfnorm(0.1)
+  cluster_factor_prior = truncnorm(0.25, 0.01, 0, 1)
 )
 
 print(negbin)
@@ -136,7 +138,7 @@ print(negbin)
 **Parameterization:**
 
 - Cluster factor = $\sqrt{1/\phi}$ (coefficient of variation)
-- Half-normal prior encourages moderate overdispersion
+- Fixed to 0.25 (via tight prior) as in the preprint
 - More interpretable than directly specifying $\phi$
 
 ## Compose and Fit
@@ -225,9 +227,9 @@ Test sensitivity to AR order:
 # AR(1) alternative - strong autocorrelation like AR(2)
 ar1 <- AR(
   order = 1,
-  damp_priors = list(truncnorm(0.9, 0.05, 0, 1)),  # High autocorrelation
-  init_priors = list(norm(0, 0.2)),
-  std_prior = halfnorm(0.1)
+  damp_priors = list(truncnorm(0.8, 0.05, 0, 1)),  # High autocorrelation
+  init_priors = list(norm(-1.0, 0.5)),
+  std_prior = halfnorm(0.5)
 )
 
 model_ar1 <- EpiProblem(
