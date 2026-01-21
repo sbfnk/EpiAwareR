@@ -234,10 +234,10 @@ model_ar1 <- EpiProblem(
   epi_model = renewal,
   latent_model = ar1,
   observation_model = negbin,
-  tspan = c(1, 36)
+  tspan = c(45, 80)
 )
 
-results_ar1 <- fit(model_ar1, data = training_data)
+results_ar1 <- fit(model_ar1, data = full_data)
 
 # Visual inspection of results
 # Formal model comparison would require LOO cross-validation (for fit)
@@ -267,10 +267,10 @@ model_delays <- EpiProblem(
   epi_model = renewal,
   latent_model = ar2,
   observation_model = obs_full,
-  tspan = c(1, 36)
+  tspan = c(45, 80)
 )
 
-results_delays <- fit(model_delays, data = training_data)
+results_delays <- fit(model_delays, data = full_data)
 ```
 
 ## Interpretation
