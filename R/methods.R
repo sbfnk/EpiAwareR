@@ -343,6 +343,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 
   obs_data <- fit$data
 
+  # Get tspan from model to extract correct data window
+  tspan <- fit$model$tspan
+  start_idx <- as.integer(tspan[1])
+  end_idx <- as.integer(tspan[2])
+
   # Determine the case column name
   case_col <- intersect(c("confirm", "y_t", "cases", "count"), names(obs_data))
   if (length(case_col) == 0) {
@@ -350,6 +355,9 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   } else {
     case_col <- case_col[1]
   }
+
+  # Extract the correct data window based on tspan
+  obs_data <- obs_data[start_idx:end_idx, , drop = FALSE]
 
   # Determine time/date column
   date_col <- intersect(c("date", "time", "t"), names(obs_data))
@@ -386,7 +394,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
         color = "steelblue"
       ) +
       ggplot2::geom_point(
-        data = obs_data[seq_len(n_time), ],
+        data = obs_data,
         ggplot2::aes(x = time_idx, y = .data[[case_col]]),
         color = "black", size = 2
       ) +
@@ -442,7 +450,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
         color = "steelblue"
       ) +
       ggplot2::geom_point(
-        data = obs_data[seq_len(n_time), ],
+        data = obs_data,
         ggplot2::aes(x = time_idx, y = .data[[case_col]]),
         color = "black", size = 2
       ) +
@@ -512,7 +520,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
           color = "steelblue"
         ) +
         ggplot2::geom_point(
-          data = obs_data[seq_len(n_time), ],
+          data = obs_data,
           ggplot2::aes(x = time_idx, y = .data[[case_col]]),
           color = "black", size = 2
         ) +
