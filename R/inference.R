@@ -207,11 +207,11 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
       ))
 
       # Stage 2: Run NUTS with Pathfinder initialization
-      # Using AutoReverseDiff for AD (matches preprint)
+      # Using AutoReverseDiff with compile=true for AD (matches preprint)
       message("  Running NUTS sampling...")
       .eval_julia_code(sprintf(paste0(
         "_nuts_chains = sample(_nuts_model, ",
-        "NUTS(%f, adtype=AutoReverseDiff()), ",
+        "NUTS(%f, adtype=AutoReverseDiff(compile=true)), ",
         "MCMCThreads(), %d, %d; ",
         "init_params=_init_params)"
       ), method$target_acceptance, method$draws, method$chains))

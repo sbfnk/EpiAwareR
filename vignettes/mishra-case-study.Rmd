@@ -168,7 +168,7 @@ results <- fit(
   data = full_data, # Pass full dataset; tspan selects the window
   method = nuts_sampler(
     warmup = 1000, # Adaptation iterations
-    draws = 1000, # Posterior samples per chain
+    draws = 2000, # Posterior samples per chain (matches preprint)
     chains = 4 # Independent chains for convergence assessment
   )
 )
