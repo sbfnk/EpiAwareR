@@ -34,7 +34,7 @@ references:
   institution:
     name: R Foundation for Statistical Computing
     address: Vienna, Austria
-  year: '2025'
+  year: '2026'
   version: '>= 4.0.0'
 - type: software
   title: JuliaCall
@@ -46,7 +46,7 @@ references:
   - family-names: Li
     given-names: Changcheng
     email: cxl508@psu.edu
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.JuliaCall
   version: '>= 0.17.0'
 - type: software
@@ -63,7 +63,7 @@ references:
   - family-names: Wickham
     given-names: Hadley
     email: hadley@rstudio.com
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.tibble
 - type: software
   title: posterior
@@ -84,7 +84,7 @@ references:
   - family-names: Vehtari
     given-names: Aki
     email: Aki.Vehtari@aalto.fi
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.posterior
 - type: software
   title: ggplot2
@@ -124,7 +124,7 @@ references:
     given-names: Teun
     name-particle: van den
     orcid: https://orcid.org/0000-0002-9335-7468
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.ggplot2
 - type: software
   title: checkmate
@@ -137,7 +137,7 @@ references:
     given-names: Michel
     email: michellang@gmail.com
     orcid: https://orcid.org/0000-0001-9754-0393
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.checkmate
 - type: software
   title: testthat
@@ -149,7 +149,7 @@ references:
   - family-names: Wickham
     given-names: Hadley
     email: hadley@posit.co
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.testthat
   version: '>= 3.0.0'
 - type: software
@@ -163,7 +163,7 @@ references:
     given-names: Yihui
     email: xie@yihui.name
     orcid: https://orcid.org/0000-0003-0645-5666
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.knitr
 - type: software
   title: rmarkdown
@@ -207,7 +207,7 @@ references:
     given-names: Richard
     email: rich@posit.co
     orcid: https://orcid.org/0000-0003-3925-190X
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.rmarkdown
 - type: software
   title: readr
@@ -225,7 +225,7 @@ references:
     given-names: Jennifer
     email: jenny@posit.co
     orcid: https://orcid.org/0000-0002-6983-2759
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.readr
 - type: software
   title: bayesplot
@@ -240,8 +240,21 @@ references:
   - family-names: Mahr
     given-names: Tristan
     orcid: https://orcid.org/0000-0002-8890-5116
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.bayesplot
+- type: software
+  title: patchwork
+  abstract: 'patchwork: The Composer of Plots'
+  notes: Suggests
+  url: https://patchwork.data-imaginist.com
+  repository: https://CRAN.R-project.org/package=patchwork
+  authors:
+  - family-names: Pedersen
+    given-names: Thomas Lin
+    email: thomasp85@gmail.com
+    orcid: https://orcid.org/0000-0002-5147-4711
+  year: '2026'
+  doi: 10.32614/CRAN.package.patchwork
 - type: software
   title: EpiNow2
   abstract: 'EpiNow2: Estimate Real-Time Case Counts and Time-Varying Epidemiological
@@ -284,6 +297,6 @@ references:
     given-names: Sebastian
     email: sebastian.funk@lshtm.ac.uk
     orcid: https://orcid.org/0000-0002-2842-3406
-  year: '2025'
+  year: '2026'
   doi: 10.32614/CRAN.package.EpiNow2
 
