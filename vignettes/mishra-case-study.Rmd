@@ -240,13 +240,26 @@ model_ar1 <- EpiProblem(
 )
 
 results_ar1 <- fit(model_ar1, data = full_data)
-
-# Visual inspection of results
-# Formal model comparison would require LOO cross-validation (for fit)
-# or leave-future-out validation (for forecasting)
-print(results)
-print(results_ar1)
 ```
+
+Compare the $R_t$ estimates from both models:
+
+```{r compare_ar_plot, fig.width=10, fig.height=4}
+library(ggplot2)
+library(patchwork)
+
+p_ar2 <- plot(results, type = "Rt") +
+  ggtitle("AR(2) Model") +
+  coord_cartesian(ylim = c(0, 6))
+
+p_ar1 <- plot(results_ar1, type = "Rt") +
+  ggtitle("AR(1) Model") +
+  coord_cartesian(ylim = c(0, 6))
+
+p_ar2 + p_ar1
+```
+
+The AR(2) model typically produces smoother $R_t$ trajectories due to the additional lag term, while AR(1) may show more rapid fluctuations.
 
 ### Adding Observation Delays
 
@@ -274,6 +287,22 @@ model_delays <- EpiProblem(
 
 results_delays <- fit(model_delays, data = full_data)
 ```
+
+Compare models with and without observation delays:
+
+```{r compare_delays_plot, fig.width=10, fig.height=4}
+p_no_delay <- plot(results, type = "Rt") +
+  ggtitle("Without Delays") +
+  coord_cartesian(ylim = c(0, 6))
+
+p_delay <- plot(results_delays, type = "Rt") +
+  ggtitle("With Incubation + Reporting Delays") +
+  coord_cartesian(ylim = c(0, 6))
+
+p_no_delay + p_delay
+```
+
+Accounting for delays shifts the $R_t$ trajectory earlier in time, as infections precede observed cases.
 
 ## Interpretation
 

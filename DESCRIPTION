@@ -25,6 +25,7 @@ Suggests:
     rmarkdown,
     readr,
     bayesplot,
+    patchwork,
     EpiNow2
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
