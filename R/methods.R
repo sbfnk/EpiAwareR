@@ -219,7 +219,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 
   # Priority 4: Try to reconstruct from AR parameters
   # Note: EpiAware uses Greek epsilon (ϵ) in variable names
-  eps_patterns <- c("latent\\.ϵ_t\\[", "latent\\.eps", "epsilon", "innovations")
+  eps_patterns <- c("latent\\.\\u03F5_t\\[", "latent\\.eps", "epsilon", "innovations")
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
 
   if (length(eps_vars) > 0) {
@@ -615,7 +615,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   vars <- colnames(draws)
 
   # Look for AR innovation parameters (Greek epsilon)
-  eps_patterns <- c("latent\\.ϵ_t\\.", "latent\\.eps", "epsilon", "innovations")
+  eps_patterns <- c("latent\\.\\u03F5_t\\.", "latent\\.eps", "epsilon", "innovations")
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
 
   if (length(eps_vars) == 0) {

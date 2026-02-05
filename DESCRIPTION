@@ -18,7 +18,8 @@ Imports:
     tibble,
     posterior,
     ggplot2,
-    checkmate
+    checkmate,
+    rlang
 Suggests:
     testthat (>= 3.0.0),
     knitr,
