@@ -4,7 +4,7 @@
 \alias{.generate_quantities}
 \title{Generate quantities from fitted model}
 \usage{
-.generate_quantities(julia_model, draws_obj)
+.generate_quantities(julia_model, julia_chains)
 }
 \description{
 Generate quantities from fitted model

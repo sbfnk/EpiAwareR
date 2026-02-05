@@ -2,11 +2,11 @@
 % Please edit documentation in R/validation.R
 \name{.check_julia}
 \alias{.check_julia}
-\title{Check Julia/EpiAware availability}
+\title{Check Julia/EpiAware availability (with lazy initialization)}
 \usage{
 .check_julia()
 }
 \description{
-Check Julia/EpiAware availability
+Check Julia/EpiAware availability (with lazy initialization)
 }
 \keyword{internal}

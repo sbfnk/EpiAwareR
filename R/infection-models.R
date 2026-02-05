@@ -92,6 +92,9 @@ Renewal <- function(gen_distribution, initialisation_prior = NULL) {
 #'
 #' @param x An \code{epiaware_renewal} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_renewal <- function(x, ...) {
   cat("<EpiAware Renewal Infection Model>\n")

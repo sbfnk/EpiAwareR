@@ -364,6 +364,9 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
 #'
 #' @param x An \code{epiaware_nuts} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_nuts <- function(x, ...) {
   cat("<EpiAware NUTS Sampler Configuration>\n")

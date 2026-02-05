@@ -16,6 +16,8 @@
 #' @param x An \code{epiaware_fit} object from \code{fit()}.
 #' @param ... Additional arguments (currently unused).
 #'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_fit <- function(x, ...) {
   cat("<EpiAware Model Fit>\n\n")

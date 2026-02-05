@@ -4,7 +4,7 @@
 \alias{nuts_sampler}
 \title{Configure NUTS Sampler}
 \usage{
-nuts_sampler(warmup = 1000, draws = 1000, chains = 4, target_acceptance = 0.8)
+nuts_sampler(warmup = 1000, draws = 1000, chains = 4, target_acceptance = 0.9)
 }
 \arguments{
 \item{warmup}{Integer. Number of warmup/adaptation iterations. Default: 1000.}
@@ -14,7 +14,7 @@ nuts_sampler(warmup = 1000, draws = 1000, chains = 4, target_acceptance = 0.8)
 \item{chains}{Integer. Number of MCMC chains to run. Default: 4.}
 
 \item{target_acceptance}{Numeric. Target acceptance rate for adaptation.
-Default: 0.8.}
+Default: 0.9 (recommended for complex models).}
 }
 \value{
 An S3 object of class \code{c("epiaware_nuts", "epiaware_sampler")}

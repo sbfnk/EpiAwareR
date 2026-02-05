@@ -439,6 +439,8 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 #' @param x An \code{epiaware_generic} object.
 #' @param ... Additional arguments (currently unused).
 #'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_generic <- function(x, ...) {
   cat("<EpiAware Generic: ", x$fn_name, ">\n", sep = "")

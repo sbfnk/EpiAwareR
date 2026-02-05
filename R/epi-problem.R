@@ -97,6 +97,9 @@ EpiProblem <- function(epi_model, latent_model, observation_model, tspan) {
 #'
 #' @param x An \code{epiaware_problem} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_problem <- function(x, ...) {
   cat("<EpiAware Epidemiological Model>\n")

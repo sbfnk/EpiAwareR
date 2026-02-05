@@ -2,11 +2,11 @@
 % Please edit documentation in R/inference.R
 \name{.run_nuts_sampling}
 \alias{.run_nuts_sampling}
-\title{Run NUTS sampling via Julia}
+\title{Run NUTS sampling via Julia with Pathfinder initialization}
 \usage{
 .run_nuts_sampling(julia_model, method)
 }
 \description{
-Run NUTS sampling via Julia
+Run NUTS sampling via Julia with Pathfinder initialization
 }
 \keyword{internal}
