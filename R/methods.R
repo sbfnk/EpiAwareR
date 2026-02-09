@@ -281,8 +281,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     matches <- grep(pattern, vars, value = TRUE)
     if (length(matches) > 0) {
       # Sort by time index
-      pattern <- ".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$"
-      idx <- as.integer(gsub(pattern, "\\1\\2", matches))
+      idx_pattern <- ".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$"
+      idx <- as.integer(gsub(idx_pattern, "\\1\\2", matches))
       if (all(!is.na(idx))) {
         return(matches[order(idx)])
       }
@@ -705,14 +705,22 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   # This provides the "past infections" needed for the renewal equation
   if (!is.null(observed) && length(observed) > 0) {
     seed_length <- min(max_gen, n_time, length(observed))
-    infections[seq_len(seed_length)] <- observed[seq_len(seed_length)]
+    seed_vals <- observed[seq_len(seed_length)]
+    # Validate seed values: replace NA/NaN/Inf/negative with small positive
+    seed_vals[!is.finite(seed_vals) | seed_vals < 0] <- 0.1
+    infections[seq_len(seed_length)] <- seed_vals
   } else {
     seed_length <- min(max_gen, n_time)
     infections[seq_len(seed_length)] <- init_infections
   }
 
+  # Early return if seed covers entire time series
+  if (seed_length >= n_time) {
+    return(infections)
+  }
+
   # Simulate forward using renewal equation
-  for (t in (seed_length + 1):n_time) {
+  for (t in seq(seed_length + 1, n_time)) {
     # Convolution: sum over generation time
     infectivity <- 0
     for (s in seq_len(max_gen)) {
