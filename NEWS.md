@@ -1,4 +1,27 @@
-# EpiAwareR (development version)
+# EpiAwareR 0.1.1
+
+## New Features
+
+* Added Pathfinder initialisation for NUTS sampling, improving convergence for
+  complex models.
+
+* Increased default `target_acceptance` to 0.9 for more robust sampling.
+
+## Improvements
+
+* Plotting methods (`plot.epiaware_fit()`) now fully functional with Rt trajectories,
+  case predictions, and posterior distributions - no longer placeholders.
+
+* Uses EpiAware's `generated_observables()` for Rt and infections extraction,
+  providing more reliable posterior summaries.
+
+* MCMC internal parameters (e.g., `n_steps`, `step_size`) now filtered from
+  diagnostics output for cleaner summaries.
+
+## Documentation
+
+* Enhanced Mishra et al. case study vignette with comparison plots and parameters
+  matching the original preprint exactly.
 
 ## Bug Fixes
 

@@ -89,6 +89,9 @@ AR <- function(order = 1, damp_priors, init_priors, std_prior) {
 #'
 #' @param x An \code{epiaware_ar} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_ar <- function(x, ...) {
   cat("<EpiAware AR(", x$spec$order, ") Latent Model>\n", sep = "")

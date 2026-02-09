@@ -16,6 +16,8 @@
 #' @param x An \code{epiaware_fit} object from \code{fit()}.
 #' @param ... Additional arguments (currently unused).
 #'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_fit <- function(x, ...) {
   cat("<EpiAware Model Fit>\n\n")
@@ -140,8 +142,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
       reference_line = 1
     )
   } else if (inherits(epi_model, "epiaware_generic") &&
-             !is.null(epi_model$fn_name) &&
-             grepl("Renewal", epi_model$fn_name, ignore.case = TRUE)) {
+               !is.null(epi_model$fn_name) &&
+               grepl("Renewal", epi_model$fn_name, ignore.case = TRUE)) {
     # Generic model wrapping a Renewal-type function
     list(
       title = "Reproduction Number",
@@ -216,13 +218,17 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   }
 
   # Priority 4: Try to reconstruct from AR parameters
-  # Note: EpiAware uses Greek epsilon (ϵ) in variable names
-  eps_patterns <- c("latent\\.ϵ_t\\[", "latent\\.eps", "epsilon", "innovations")
+  # Note: EpiAware uses Greek epsilon in variable names
+  eps_patterns <- c(
+    "latent\\.\\u03F5_t\\[", "latent\\.eps", "epsilon", "innovations"
+  )
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
 
   if (length(eps_vars) > 0) {
     # Get AR parameters
-    damp_var <- .find_first_match(vars, c("latent\\.damp", "damp_AR", "phi", "rho"))
+    damp_var <- .find_first_match(
+      vars, c("latent\\.damp", "damp_AR", "phi", "rho")
+    )
     std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
     init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
 
@@ -275,7 +281,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     matches <- grep(pattern, vars, value = TRUE)
     if (length(matches) > 0) {
       # Sort by time index
-      idx <- as.integer(gsub(".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$", "\\1\\2", matches))
+      idx_pattern <- ".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$"
+      idx <- as.integer(gsub(idx_pattern, "\\1\\2", matches))
       if (all(!is.na(idx))) {
         return(matches[order(idx)])
       }
@@ -302,8 +309,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 #' @param reference_line Optional horizontal reference line (e.g., 1 for Rt)
 #' @keywords internal
 .make_trajectory_plot <- function(matrix, title = "Latent Process",
-                                   y_label = "Value",
-                                   reference_line = NULL) {
+                                  y_label = "Value",
+                                  reference_line = NULL) {
   n_time <- ncol(matrix)
 
   df <- data.frame(
@@ -359,27 +366,20 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   # Extract the correct data window based on tspan
   obs_data <- obs_data[start_idx:end_idx, , drop = FALSE]
 
-  # Determine time/date column
-  date_col <- intersect(c("date", "time", "t"), names(obs_data))
-  if (length(date_col) > 0) {
-    date_col <- date_col[1]
-    obs_data$time_idx <- seq_len(nrow(obs_data))
-    use_date <- inherits(obs_data[[date_col]], "Date")
-  } else {
-    obs_data$time_idx <- seq_len(nrow(obs_data))
-    use_date <- FALSE
-  }
+  # Add time index for plotting
+  obs_data$time_idx <- seq_len(nrow(obs_data))
 
   # Priority 1: Use generated_quantities from EpiAware if available
   if (!is.null(fit$generated_quantities$infections)) {
     inf_matrix <- fit$generated_quantities$infections
     n_time <- min(ncol(inf_matrix), nrow(obs_data))
+    inf_subset <- inf_matrix[, seq_len(n_time), drop = FALSE]
 
     pred_df <- data.frame(
       time_idx = seq_len(n_time),
-      median = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, median),
-      q5 = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, quantile, 0.05),
-      q95 = apply(inf_matrix[, seq_len(n_time), drop = FALSE], 2, quantile, 0.95)
+      median = apply(inf_subset, 2, median),
+      q5 = apply(inf_subset, 2, quantile, 0.05),
+      q95 = apply(inf_subset, 2, quantile, 0.95)
     )
 
     p <- ggplot2::ggplot() +
@@ -415,12 +415,12 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 
   # Look for infection-related parameters with multiple patterns
   inf_patterns <- c(
-    "epi\\.I_t\\[",        # EpiAware infection output
-    "epi\\.I_t\\.",        # Alternative separator
-    "^I_t\\[",             # Direct I_t
-    "^infections\\[",      # infections[t]
-    "^expected_cases\\[",  # expected_cases[t]
-    "obs\\.y_t\\["         # Observation model output
+    "epi\\.I_t\\[",
+    "epi\\.I_t\\.",
+    "^I_t\\[",
+    "^infections\\[",
+    "^expected_cases\\[",
+    "obs\\.y_t\\["
   )
   inf_vars <- .find_time_indexed_vars(vars, inf_patterns)
 
@@ -544,7 +544,10 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     if (length(vars) > 15) ", ..." else ""
   )
 
-  p <- ggplot2::ggplot(obs_data, ggplot2::aes(x = time_idx, y = .data[[case_col]])) +
+  p <- ggplot2::ggplot(
+    obs_data,
+    ggplot2::aes(x = time_idx, y = .data[[case_col]])
+  ) +
     ggplot2::geom_point(size = 2) +
     ggplot2::geom_line() +
     ggplot2::labs(
@@ -555,7 +558,7 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
     ) +
     ggplot2::theme_minimal()
 
-  return(p)
+  p
 }
 
 #' Plot posterior distributions for parameters
@@ -576,8 +579,9 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   draws <- posterior::as_draws_matrix(fit$samples)
   vars <- setdiff(colnames(draws), c(".chain", ".iteration", ".draw"))
 
-  # Filter to key parameters only (exclude time-indexed parameters like _t.1., _t.2., etc.)
-  # Keep: damp_AR, std, ar_init, cluster_factor, init (scalar parameters)
+
+  # Filter to key parameters (exclude time-indexed like _t.1., _t.2.)
+  # Keep scalar parameters: damp_AR, std, ar_init, cluster_factor, init
   key_patterns <- c("damp_AR", "^latent\\.std$", "ar_init", "cluster_factor",
                     "^epi\\.init$", "initialisation")
   key_vars <- vars[grepl(paste(key_patterns, collapse = "|"), vars)]
@@ -613,7 +617,9 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   vars <- colnames(draws)
 
   # Look for AR innovation parameters (Greek epsilon)
-  eps_patterns <- c("latent\\.ϵ_t\\.", "latent\\.eps", "epsilon", "innovations")
+  eps_patterns <- c(
+    "latent\\.\\u03F5_t\\.", "latent\\.eps", "epsilon", "innovations"
+  )
   eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
 
   if (length(eps_vars) == 0) {
@@ -621,7 +627,9 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   }
 
   # Get AR parameters
-  damp_var <- .find_first_match(vars, c("latent\\.damp", "damp_AR", "phi", "rho"))
+  damp_var <- .find_first_match(
+    vars, c("latent\\.damp", "damp_AR", "phi", "rho")
+  )
   std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
   init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
 
@@ -688,7 +696,8 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 
 #' Simulate infections using renewal equation
 #' @keywords internal
-.simulate_renewal <- function(rt, gen_pmf, init_infections, n_time, observed = NULL) {
+.simulate_renewal <- function(rt, gen_pmf, init_infections, n_time,
+                              observed = NULL) {
   max_gen <- length(gen_pmf)
   infections <- numeric(n_time)
 
@@ -696,14 +705,22 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   # This provides the "past infections" needed for the renewal equation
   if (!is.null(observed) && length(observed) > 0) {
     seed_length <- min(max_gen, n_time, length(observed))
-    infections[seq_len(seed_length)] <- observed[seq_len(seed_length)]
+    seed_vals <- observed[seq_len(seed_length)]
+    # Validate seed values: replace NA/NaN/Inf/negative with small positive
+    seed_vals[!is.finite(seed_vals) | seed_vals < 0] <- 0.1
+    infections[seq_len(seed_length)] <- seed_vals
   } else {
     seed_length <- min(max_gen, n_time)
     infections[seq_len(seed_length)] <- init_infections
   }
 
+  # Early return if seed covers entire time series
+  if (seed_length >= n_time) {
+    return(infections)
+  }
+
   # Simulate forward using renewal equation
-  for (t in (seed_length + 1):n_time) {
+  for (t in seq(seed_length + 1, n_time)) {
     # Convolution: sum over generation time
     infectivity <- 0
     for (s in seq_len(max_gen)) {

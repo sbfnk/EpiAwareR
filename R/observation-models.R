@@ -127,6 +127,9 @@ LatentDelay <- function(model, delay_distribution) {
 #'
 #' @param x An \code{epiaware_negbin} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_negbin <- function(x, ...) {
   cat("<EpiAware Negative Binomial Observation Model>\n")
@@ -138,6 +141,9 @@ print.epiaware_negbin <- function(x, ...) {
 #'
 #' @param x An \code{epiaware_delay} object.
 #' @param ... Additional arguments (currently unused).
+#'
+#' @return Invisibly returns the input object \code{x}.
+#'
 #' @export
 print.epiaware_delay <- function(x, ...) {
   cat("<EpiAware Latent Delay Observation Model>\n")
