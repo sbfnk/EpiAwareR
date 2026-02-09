@@ -15,7 +15,7 @@
 * Uses EpiAware's `generated_observables()` for Rt and infections extraction,
   providing more reliable posterior summaries.
 
-* MCMC internal parameters (e.g., `lp__`, `n_steps__`) now filtered from
+* MCMC internal parameters (e.g., `n_steps`, `step_size`) now filtered from
   diagnostics output for cleaner summaries.
 
 ## Documentation

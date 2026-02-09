@@ -1,7 +1,7 @@
 #' @keywords internal
 "_PACKAGE"
 
-#' @importFrom stats median quantile time
+#' @importFrom stats median quantile
 #' @importFrom utils head
 #' @importFrom rlang .data
 NULL
