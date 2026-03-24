@@ -6,6 +6,12 @@
 \usage{
 .compute_diagnostics(draws_obj)
 }
+\arguments{
+\item{draws_obj}{A \code{posterior::draws} object.}
+}
+\value{
+A tibble with columns parameter, rhat, ess_bulk, and ess_tail.
+}
 \description{
 Compute MCMC diagnostics
 }

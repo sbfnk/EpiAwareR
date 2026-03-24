@@ -6,6 +6,12 @@
 \usage{
 .to_julia_tuple(x)
 }
+\arguments{
+\item{x}{An R vector.}
+}
+\value{
+A Julia tuple object.
+}
 \description{
 Convert R vector to Julia tuple
 }

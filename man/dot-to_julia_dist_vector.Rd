@@ -6,6 +6,12 @@
 \usage{
 .to_julia_dist_vector(dist_list)
 }
+\arguments{
+\item{dist_list}{A list of distribution specification lists.}
+}
+\value{
+A Julia vector of Distribution objects, or \code{NULL} if empty.
+}
 \description{
 Convert R list of Julia distributions to Julia vector
 }

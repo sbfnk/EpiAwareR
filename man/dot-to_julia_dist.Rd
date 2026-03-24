@@ -6,6 +6,12 @@
 \usage{
 .to_julia_dist(dist_spec)
 }
+\arguments{
+\item{dist_spec}{A distribution specification list with type and params fields, or \code{NULL}.}
+}
+\value{
+A Julia Distribution object, or \code{NULL} if input is \code{NULL}.
+}
 \description{
 Convert R distribution specification to Julia Distribution object
 }

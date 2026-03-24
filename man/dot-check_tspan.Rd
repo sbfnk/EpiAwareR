@@ -6,6 +6,14 @@
 \usage{
 .check_tspan(tspan, name = "tspan")
 }
+\arguments{
+\item{tspan}{Numeric vector to validate.}
+
+\item{name}{Character string. Name for error messages.}
+}
+\value{
+Invisibly returns \code{TRUE} if valid.
+}
 \description{
 Validate tspan
 }

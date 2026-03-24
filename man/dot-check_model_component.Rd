@@ -6,6 +6,16 @@
 \usage{
 .check_model_component(x, type, name = deparse(substitute(x)))
 }
+\arguments{
+\item{x}{Object to validate.}
+
+\item{type}{Character string. One of "latent", "epi", "observation", or "problem".}
+
+\item{name}{Character string. Name for error messages.}
+}
+\value{
+Invisibly returns \code{TRUE} if valid.
+}
 \description{
 Validate model component class
 }

@@ -6,6 +6,12 @@
 \usage{
 .julia_chains_to_draws(chains)
 }
+\arguments{
+\item{chains}{A Julia MCMCChains.Chains object.}
+}
+\value{
+A \code{posterior::draws_df} object.
+}
 \description{
 Convert Turing.jl chains to posterior::draws_df
 }

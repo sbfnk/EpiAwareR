@@ -6,6 +6,13 @@
 \usage{
 .reconstruct_rt_from_ar(fit)
 }
+\arguments{
+\item{fit}{An epiaware_fit object from \code{fit()}.}
+}
+\value{
+A matrix of Rt values with rows as draws and columns as time points,
+or \code{NULL} if AR parameters cannot be found.
+}
 \description{
 Reconstruct Rt from AR parameters
 }

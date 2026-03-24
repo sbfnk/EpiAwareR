@@ -6,6 +6,12 @@
 \usage{
 .from_julia_array(julia_obj)
 }
+\arguments{
+\item{julia_obj}{A Julia array object.}
+}
+\value{
+An R vector (passthrough; JuliaCall handles conversion).
+}
 \description{
 Convert Julia array to R vector
 }

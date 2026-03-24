@@ -6,6 +6,14 @@
 \usage{
 .plot_latent_trajectory(fit, ...)
 }
+\arguments{
+\item{fit}{An epiaware_fit object from \code{fit()}.}
+
+\item{...}{Additional arguments (currently unused).}
+}
+\value{
+A \code{ggplot2} object.
+}
 \description{
 Plot latent process trajectory
 }

@@ -6,6 +6,12 @@
 \usage{
 .to_julia_vector(x)
 }
+\arguments{
+\item{x}{An R vector.}
+}
+\value{
+A Julia-compatible vector (passthrough; JuliaCall handles conversion).
+}
 \description{
 Convert R vector to Julia vector
 }

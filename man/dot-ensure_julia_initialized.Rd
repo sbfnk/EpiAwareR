@@ -6,6 +6,9 @@
 \usage{
 .ensure_julia_initialized()
 }
+\value{
+Invisibly returns \code{TRUE} on success.
+}
 \description{
 Initialize Julia lazily (on first use)
 }

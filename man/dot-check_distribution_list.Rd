@@ -6,6 +6,16 @@
 \usage{
 .check_distribution_list(x, name = deparse(substitute(x)), len = NULL)
 }
+\arguments{
+\item{x}{A list to validate.}
+
+\item{name}{Character string. Name for error messages.}
+
+\item{len}{Optional integer. Expected length of the list.}
+}
+\value{
+Invisibly returns \code{TRUE} if valid.
+}
 \description{
 Validate list of distribution specifications
 }

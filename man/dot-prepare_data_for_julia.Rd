@@ -6,6 +6,14 @@
 \usage{
 .prepare_data_for_julia(data, tspan)
 }
+\arguments{
+\item{data}{A data frame containing case counts.}
+
+\item{tspan}{Numeric vector of length 2 specifying the time window.}
+}
+\value{
+A named list with y_t (numeric vector) and dates (date vector or \code{NULL}).
+}
 \description{
 Prepare R data frame for Julia
 }

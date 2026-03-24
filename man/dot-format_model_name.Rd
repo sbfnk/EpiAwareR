@@ -6,6 +6,12 @@
 \usage{
 .format_model_name(model)
 }
+\arguments{
+\item{model}{An EpiAware model object.}
+}
+\value{
+A character string with the formatted model name.
+}
 \description{
 Format model name for display
 }

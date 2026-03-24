@@ -6,6 +6,9 @@
 \usage{
 .check_julia()
 }
+\value{
+Invisibly returns \code{TRUE} on success.
+}
 \description{
 Check Julia/EpiAware availability (with lazy initialization)
 }

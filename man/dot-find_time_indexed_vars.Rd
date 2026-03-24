@@ -6,6 +6,15 @@
 \usage{
 .find_time_indexed_vars(vars, patterns)
 }
+\arguments{
+\item{vars}{Character vector of variable names to search.}
+
+\item{patterns}{Character vector of regex patterns to match against.}
+}
+\value{
+A character vector of matching variable names sorted by time index,
+or an empty character vector if no matches are found.
+}
 \description{
 Find time-indexed variables matching patterns
 }

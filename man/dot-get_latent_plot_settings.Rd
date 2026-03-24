@@ -6,6 +6,12 @@
 \usage{
 .get_latent_plot_settings(fit)
 }
+\arguments{
+\item{fit}{An epiaware_fit object from \code{fit()}.}
+}
+\value{
+A named list with title, y_label, transform (function), and reference_line (numeric or \code{NULL}).
+}
 \description{
 Get plot settings based on infection model type
 }

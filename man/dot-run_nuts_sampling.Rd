@@ -6,6 +6,14 @@
 \usage{
 .run_nuts_sampling(julia_model, method)
 }
+\arguments{
+\item{julia_model}{A Julia Turing model object.}
+
+\item{method}{An epiaware_nuts method specification containing chains, draws, and target_acceptance.}
+}
+\value{
+A Julia MCMCChains.Chains object with posterior samples.
+}
 \description{
 Run NUTS sampling via Julia with Pathfinder initialization
 }

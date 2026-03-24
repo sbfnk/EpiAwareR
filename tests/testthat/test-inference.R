@@ -143,3 +143,80 @@ test_that("plot.epiaware_fit creates ggplot objects", {
   skip_on_cran()
   skip("Long-running integration test")
 })
+
+# Posterior draws conversion methods ------------------------------------
+
+test_that("as_draws_array.epiaware_fit returns draws_array", {
+  draws <- posterior::draws_df(
+    x = rnorm(20), y = rnorm(20),
+    .chain = rep(1:2, each = 10),
+    .iteration = rep(1:10, 2),
+    .draw = 1:20
+  )
+  fit_obj <- structure(
+    list(samples = draws),
+    class = "epiaware_fit"
+  )
+  result <- posterior::as_draws_array(fit_obj)
+  expect_s3_class(result, "draws_array")
+})
+
+test_that("as_draws_df.epiaware_fit returns draws_df", {
+  draws <- posterior::draws_df(
+    x = rnorm(20), y = rnorm(20),
+    .chain = rep(1:2, each = 10),
+    .iteration = rep(1:10, 2),
+    .draw = 1:20
+  )
+  fit_obj <- structure(
+    list(samples = draws),
+    class = "epiaware_fit"
+  )
+  result <- posterior::as_draws_df(fit_obj)
+  expect_s3_class(result, "draws_df")
+})
+
+test_that("as_draws_matrix.epiaware_fit returns draws_matrix", {
+  draws <- posterior::draws_df(
+    x = rnorm(20), y = rnorm(20),
+    .chain = rep(1:2, each = 10),
+    .iteration = rep(1:10, 2),
+    .draw = 1:20
+  )
+  fit_obj <- structure(
+    list(samples = draws),
+    class = "epiaware_fit"
+  )
+  result <- posterior::as_draws_matrix(fit_obj)
+  expect_s3_class(result, "draws_matrix")
+})
+
+test_that("as_draws_rvars.epiaware_fit returns draws_rvars", {
+  draws <- posterior::draws_df(
+    x = rnorm(20), y = rnorm(20),
+    .chain = rep(1:2, each = 10),
+    .iteration = rep(1:10, 2),
+    .draw = 1:20
+  )
+  fit_obj <- structure(
+    list(samples = draws),
+    class = "epiaware_fit"
+  )
+  result <- posterior::as_draws_rvars(fit_obj)
+  expect_s3_class(result, "draws_rvars")
+})
+
+test_that("as_draws_list.epiaware_fit returns draws_list", {
+  draws <- posterior::draws_df(
+    x = rnorm(20), y = rnorm(20),
+    .chain = rep(1:2, each = 10),
+    .iteration = rep(1:10, 2),
+    .draw = 1:20
+  )
+  fit_obj <- structure(
+    list(samples = draws),
+    class = "epiaware_fit"
+  )
+  result <- posterior::as_draws_list(fit_obj)
+  expect_s3_class(result, "draws_list")
+})

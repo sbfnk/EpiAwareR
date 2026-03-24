@@ -6,6 +6,14 @@
 \usage{
 .discretize_distribution(dist_spec, max_days)
 }
+\arguments{
+\item{dist_spec}{A distribution specification list with type and params fields.}
+
+\item{max_days}{Integer. Maximum number of days for the PMF.}
+}
+\value{
+A numeric vector of length \code{max_days} summing to 1.
+}
 \description{
 Discretize a continuous distribution to a PMF
 }

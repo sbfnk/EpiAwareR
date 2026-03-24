@@ -20,6 +20,9 @@
 
 \item{reference_line}{Optional horizontal reference line (e.g., 1 for Rt)}
 }
+\value{
+A \code{ggplot2} object.
+}
 \description{
 Create a trajectory plot from a matrix of posterior samples
 }

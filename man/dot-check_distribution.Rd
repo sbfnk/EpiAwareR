@@ -6,6 +6,16 @@
 \usage{
 .check_distribution(x, name = deparse(substitute(x)), null_ok = FALSE)
 }
+\arguments{
+\item{x}{Object to validate.}
+
+\item{name}{Character string. Name for error messages.}
+
+\item{null_ok}{Logical. If \code{TRUE}, \code{NULL} input is accepted.}
+}
+\value{
+Invisibly returns \code{TRUE} if valid.
+}
 \description{
 Validate distribution specification
 }

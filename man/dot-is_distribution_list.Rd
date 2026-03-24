@@ -6,6 +6,12 @@
 \usage{
 .is_distribution_list(x)
 }
+\arguments{
+\item{x}{A list to check.}
+}
+\value{
+Logical. \code{TRUE} if all elements have type and params fields.
+}
 \description{
 Check if a list contains only distribution specifications
 }

@@ -4,7 +4,18 @@
 \alias{.generate_quantities}
 \title{Generate quantities from fitted model}
 \usage{
-.generate_quantities(julia_model, julia_chains)
+.generate_quantities(julia_model, julia_chains, julia_data)
+}
+\arguments{
+\item{julia_model}{A Julia Turing model object.}
+
+\item{julia_chains}{A Julia MCMCChains.Chains object from NUTS sampling.}
+
+\item{julia_data}{A Julia NamedTuple containing the data used for fitting.}
+}
+\value{
+A named list with matrices for derived quantities (Rt, infections, expected_cases),
+each with rows as draws and columns as time points. Returns \code{NULL} on failure.
 }
 \description{
 Generate quantities from fitted model

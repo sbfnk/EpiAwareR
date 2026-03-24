@@ -6,6 +6,20 @@
 \usage{
 .simulate_renewal(rt, gen_pmf, init_infections, n_time, observed = NULL)
 }
+\arguments{
+\item{rt}{Numeric vector of time-varying reproduction numbers.}
+
+\item{gen_pmf}{Numeric vector. Discretized generation time PMF.}
+
+\item{init_infections}{Numeric. Initial infection count for seeding.}
+
+\item{n_time}{Integer. Number of time steps to simulate.}
+
+\item{observed}{Optional numeric vector of observed case counts. Defaults to \code{NULL}.}
+}
+\value{
+A numeric vector of simulated infection counts of length \code{n_time}.
+}
 \description{
 Simulate infections using renewal equation
 }

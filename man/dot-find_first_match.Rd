@@ -6,6 +6,14 @@
 \usage{
 .find_first_match(vars, patterns)
 }
+\arguments{
+\item{vars}{Character vector of variable names to search.}
+
+\item{patterns}{Character vector of regex patterns to try in order.}
+}
+\value{
+The first matching variable name, or \code{NA_character_} if no match is found.
+}
 \description{
 Find first matching variable
 }
