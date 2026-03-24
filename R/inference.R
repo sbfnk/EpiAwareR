@@ -164,7 +164,12 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
   diagnostics <- .compute_diagnostics(draws_obj)
 
   # Generate quantities (Rt, infections, etc.)
-  gen_quantities <- .generate_quantities(julia_model, samples)
+  # Retrieve julia_data from Julia scope (set during model generation above)
+  julia_data <- .eval_julia_code("data_tmp")
+  gen_quantities <- .generate_quantities(julia_model, samples, julia_data)
+
+  # Clean up Julia global state
+  .cleanup_julia_globals()
 
   # Return results object
   structure(
@@ -256,23 +261,23 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
 #'
 #' @param julia_model A Julia Turing model object.
 #' @param julia_chains A Julia MCMCChains.Chains object from NUTS sampling.
+#' @param julia_data A Julia NamedTuple containing the data used for fitting.
 #'
 #' @return A named list with matrices for derived quantities (e.g.,
 #'   \code{Rt}, \code{infections}, \code{expected_cases}), each with
 #'   rows as draws and columns as time points. Returns \code{NULL} on failure.
 #' @keywords internal
-.generate_quantities <- function(julia_model, julia_chains) {
+.generate_quantities <- function(julia_model, julia_chains, julia_data) {
   # Use EpiAware's generated_observables to compute derived quantities
 
   # This is the proper way to get Rt, infections, etc. from the posterior
   tryCatch(
     {
-      # Store the model in Julia scope
+      # Store the model and data in Julia scope
       JuliaCall::julia_assign("turing_model_gq", julia_model)
       JuliaCall::julia_assign("chains_gq", julia_chains)
+      JuliaCall::julia_assign("data_gq", julia_data)
 
-      # Try to generate observables using EpiAware's function
-      # Note: data_tmp should still be in scope from the fit() call
       .eval_julia_code("using EpiAware")
 
       # Call generated_observables and extract fields
@@ -280,7 +285,7 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
         {
           gq_cmd <- paste0(
             "global _gq_observables = generated_observables(",
-            "turing_model_gq, data_tmp, chains_gq)"
+            "turing_model_gq, data_gq, chains_gq)"
           )
           JuliaCall::julia_command(gq_cmd)
           JuliaCall::julia_command(
@@ -386,6 +391,28 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
       )
     }
   )
+}
+
+#' Clean up Julia global variables created during inference
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @keywords internal
+.cleanup_julia_globals <- function() {
+  globals <- c(
+    "epi_problem_tmp", "data_tmp", "y_t_data", "dates_data",
+    "_nuts_model", "_pathfinder_result", "_init_params", "_nuts_chains",
+    "chains_tmp", "turing_model_gq", "chains_gq", "data_gq",
+    "_gq_observables", "_gq_gen", "_gq_fields"
+  )
+  cleanup_code <- paste(
+    paste0(globals, " = nothing"),
+    collapse = "; "
+  )
+  tryCatch(
+    .eval_julia_code(cleanup_code),
+    error = function(e) NULL
+  )
+  invisible(NULL)
 }
 
 #' Print method for NUTS sampler configuration
