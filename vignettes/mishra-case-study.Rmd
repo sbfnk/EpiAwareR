@@ -218,7 +218,9 @@ draws <- as_draws_df(results)
 head(draws)
 
 # Summarise specific parameters
-subset_draws(draws, variable = c("ar_damp.1.", "ar_damp.2.")) |>
+subset_draws(draws,
+  variable = c("latent.damp_AR.1.", "latent.damp_AR.2.", "latent.std")
+) |>
   summarise_draws()
 ```
 
@@ -229,7 +231,7 @@ library(bayesplot)
 
 # Trace plots for AR damping coefficients
 mcmc_trace(as_draws_array(results),
-           pars = c("ar_damp.1.", "ar_damp.2."))
+           pars = c("latent.damp_AR.1.", "latent.damp_AR.2."))
 ```
 
 ### Visualization
