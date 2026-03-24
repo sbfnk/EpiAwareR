@@ -1,3 +1,22 @@
+# EpiAwareR (development version)
+
+## New Features
+
+* Added `posterior` S3 methods for `epiaware_fit` objects: `as_draws_array()`,
+  `as_draws_df()`, `as_draws_matrix()`, `as_draws_rvars()`, and
+  `as_draws_list()`. This enables direct integration with bayesplot and loo
+  packages (#20).
+
+## Improvements
+
+* Julia global state is now cleaned up after inference. `.generate_quantities()`
+  receives data explicitly rather than relying on implicit Julia globals (#27).
+
+## Documentation
+
+* Added `@param` and `@return` documentation to all internal helper functions
+  (#26).
+
 # EpiAwareR 0.1.1
 
 ## New Features
@@ -23,29 +42,6 @@
 * Enhanced Mishra et al. case study vignette with comparison plots and parameters
   matching the original preprint exactly.
 
-## New Features
-
-* Added Pathfinder initialisation for NUTS sampling, improving convergence for
-  complex models.
-
-* Increased default `target_acceptance` to 0.9 for more robust sampling.
-
-## Improvements
-
-* Plotting methods (`plot.epiaware_fit()`) now fully functional with Rt trajectories,
-  case predictions, and posterior distributions - no longer placeholders.
-
-* Uses EpiAware's `generated_observables()` for Rt and infections extraction,
-  providing more reliable posterior summaries.
-
-* MCMC internal parameters (e.g., `lp__`, `n_steps__`) now filtered from
-  diagnostics output for cleaner summaries.
-
-## Documentation
-
-* Enhanced Mishra et al. case study vignette with comparison plots and parameters
-  matching the original preprint exactly.
-
 ## Bug Fixes
 
 * Fixed fallback path in `.julia_chains_to_draws()` when DataFrames.jl is not available.
@@ -54,7 +50,7 @@
   a 2D array. This resolves the "incorrect number of dimensions" error reported in #5.
   Thanks to @owenjonesuob for the diagnosis and suggested fix.
 
-## EpiAwareR 0.1.0 (MVP Release)
+# EpiAwareR 0.1.0 (MVP Release)
 
 Initial MVP release of EpiAwareR providing R interface to Julia-based EpiAware framework.
 
