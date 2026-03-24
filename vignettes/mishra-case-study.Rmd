@@ -204,6 +204,34 @@ Key parameters to examine:
 - **Cluster factor**: Degree of case count overdispersion
 - **Initial infections**: Epidemic seeding
 
+### Working with posterior draws
+
+`epiaware_fit` objects integrate directly with the
+[posterior](https://mc-stan.org/posterior/) package. You can convert the
+samples to any draws format for use with bayesplot, loo, or other packages:
+
+```{r posterior_draws}
+library(posterior)
+
+# Convert to draws_df for tidy workflows
+draws <- as_draws_df(results)
+head(draws)
+
+# Summarise specific parameters
+subset_draws(draws, variable = c("ar_damp.1.", "ar_damp.2.")) |>
+  summarise_draws()
+```
+
+This also enables [bayesplot](https://mc-stan.org/bayesplot/) diagnostics:
+
+```{r bayesplot_trace, message = FALSE}
+library(bayesplot)
+
+# Trace plots for AR damping coefficients
+mcmc_trace(as_draws_array(results),
+           pars = c("ar_damp.1.", "ar_damp.2."))
+```
+
 ### Visualization
 
 ```{r plots}
