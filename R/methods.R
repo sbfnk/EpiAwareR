@@ -129,6 +129,76 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
   )
 }
 
+#' Convert epiaware_fit to draws_array
+#'
+#' @param x An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments passed to
+#'   \code{\link[posterior]{as_draws_array}}.
+#'
+#' @return A \code{posterior::draws_array} object.
+#'
+#' @importFrom posterior as_draws_array
+#' @export
+as_draws_array.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_array(x$samples, ...)
+}
+
+#' Convert epiaware_fit to draws_df
+#'
+#' @param x An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments passed to
+#'   \code{\link[posterior]{as_draws_df}}.
+#'
+#' @return A \code{posterior::draws_df} object.
+#'
+#' @importFrom posterior as_draws_df
+#' @export
+as_draws_df.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_df(x$samples, ...)
+}
+
+#' Convert epiaware_fit to draws_matrix
+#'
+#' @param x An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments passed to
+#'   \code{\link[posterior]{as_draws_matrix}}.
+#'
+#' @return A \code{posterior::draws_matrix} object.
+#'
+#' @importFrom posterior as_draws_matrix
+#' @export
+as_draws_matrix.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_matrix(x$samples, ...)
+}
+
+#' Convert epiaware_fit to draws_rvars
+#'
+#' @param x An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments passed to
+#'   \code{\link[posterior]{as_draws_rvars}}.
+#'
+#' @return A \code{posterior::draws_rvars} object.
+#'
+#' @importFrom posterior as_draws_rvars
+#' @export
+as_draws_rvars.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_rvars(x$samples, ...)
+}
+
+#' Convert epiaware_fit to draws_list
+#'
+#' @param x An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments passed to
+#'   \code{\link[posterior]{as_draws_list}}.
+#'
+#' @return A \code{posterior::draws_list} object.
+#'
+#' @importFrom posterior as_draws_list
+#' @export
+as_draws_list.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_list(x$samples, ...)
+}
+
 #' Get plot settings based on infection model type
 #'
 #' @param fit An \code{epiaware_fit} object from \code{fit()}.
