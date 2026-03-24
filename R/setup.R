@@ -257,6 +257,8 @@ epiaware_available <- function() {
 .epiaware_env$julia_initialized <- FALSE
 
 #' Initialize Julia lazily (on first use)
+#'
+#' @return Invisibly returns \code{TRUE} on success.
 #' @keywords internal
 .ensure_julia_initialized <- function() {
   if (!.epiaware_env$julia_initialized) {
@@ -288,6 +290,13 @@ epiaware_available <- function() {
   invisible(TRUE)
 }
 
+#' Package load hook
+#'
+#' @param libname Character string. Library directory where the package is
+#'   installed.
+#' @param pkgname Character string. The package name.
+#'
+#' @return \code{NULL} (called for side effects).
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
   # Don't initialize Julia on package load - use lazy initialization instead

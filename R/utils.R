@@ -108,6 +108,12 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
   )
 }
 
+#' Call a Julia function with error handling
+#'
+#' @param fn_name Character string. Name of the Julia function to call.
+#' @param ... Arguments passed to the Julia function.
+#'
+#' @return The result of the Julia function call.
 #' @keywords internal
 .call_julia_function <- function(fn_name, ...) {
   tryCatch(
@@ -125,6 +131,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
   )
 }
 
+#' Evaluate Julia code with error handling
+#'
+#' @param code Character string. Julia code to evaluate.
+#'
+#' @return The result of the Julia evaluation.
 #' @keywords internal
 .eval_julia_code <- function(code) {
   tryCatch(
@@ -196,6 +207,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Check if a list contains only distribution specifications
+#'
+#' @param x A list to check.
+#'
+#' @return Logical. \code{TRUE} if all elements have \code{type} and
+#'   \code{params} fields.
 #' @keywords internal
 .is_distribution_list <- function(x) {
   if (!is.list(x) || length(x) == 0) {
@@ -210,6 +226,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert R distribution specification to Julia Distribution object
+#'
+#' @param dist_spec A distribution specification list with \code{type} and
+#'   \code{params} fields, or \code{NULL}.
+#'
+#' @return A Julia Distribution object, or \code{NULL} if input is \code{NULL}.
 #' @keywords internal
 .to_julia_dist <- function(dist_spec) {
   if (is.null(dist_spec)) {
@@ -245,6 +266,10 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert R list of Julia distributions to Julia vector
+#'
+#' @param dist_list A list of distribution specification lists.
+#'
+#' @return A Julia vector of Distribution objects, or \code{NULL} if empty.
 #' @keywords internal
 .to_julia_dist_vector <- function(dist_list) {
   if (length(dist_list) == 0) {
@@ -275,6 +300,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert R vector to Julia vector
+#'
+#' @param x An R vector.
+#'
+#' @return A Julia-compatible vector (passthrough; JuliaCall handles
+#'   conversion).
 #' @keywords internal
 .to_julia_vector <- function(x) {
   # JuliaCall handles this automatically for most types
@@ -282,6 +312,10 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert R vector to Julia tuple
+#'
+#' @param x An R vector.
+#'
+#' @return A Julia tuple object.
 #' @keywords internal
 .to_julia_tuple <- function(x) {
   # Convert R vector to Julia tuple
@@ -289,6 +323,10 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert Julia array to R vector
+#'
+#' @param julia_obj A Julia array object.
+#'
+#' @return An R vector (passthrough; JuliaCall handles conversion).
 #' @keywords internal
 .from_julia_array <- function(julia_obj) {
   # JuliaCall handles this automatically
@@ -296,6 +334,10 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Convert Turing.jl chains to posterior::draws_df
+#'
+#' @param chains A Julia MCMCChains.Chains object.
+#'
+#' @return A \code{posterior::draws_df} object.
 #' @keywords internal
 .julia_chains_to_draws <- function(chains) {
   # Convert MCMCChains.Chains object to R data frame
@@ -351,6 +393,14 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Prepare R data frame for Julia
+#'
+#' @param data A data frame containing case counts in a column named
+#'   \code{cases}, \code{confirm}, \code{y_t}, or \code{counts}.
+#' @param tspan Numeric vector of length 2 specifying the time window
+#'   (start and end row indices).
+#'
+#' @return A named list with \code{y_t} (numeric vector of case counts)
+#'   and \code{dates} (date vector or \code{NULL}).
 #' @keywords internal
 .prepare_data_for_julia <- function(data, tspan) {
   # Detect case column (try multiple names)
@@ -408,6 +458,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 }
 
 #' Compute MCMC diagnostics
+#'
+#' @param draws_obj A \code{posterior::draws} object.
+#'
+#' @return A tibble with columns \code{parameter}, \code{rhat},
+#'   \code{ess_bulk}, and \code{ess_tail}, excluding NUTS sampler internals.
 #' @keywords internal
 .compute_diagnostics <- function(draws_obj) {
 

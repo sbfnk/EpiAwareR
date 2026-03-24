@@ -1,6 +1,8 @@
 # Internal validation helper functions
 
 #' Check Julia/EpiAware availability (with lazy initialization)
+#'
+#' @return Invisibly returns \code{TRUE} on success.
 #' @keywords internal
 .check_julia <- function() {
   # Try lazy initialization first
@@ -9,6 +11,12 @@
 }
 
 #' Validate distribution specification
+#'
+#' @param x Object to validate.
+#' @param name Character string. Name for error messages.
+#' @param null_ok Logical. If \code{TRUE}, \code{NULL} input is accepted.
+#'
+#' @return Invisibly returns \code{TRUE} if valid.
 #' @keywords internal
 .check_distribution <- function(x, name = deparse(substitute(x)),
                                 null_ok = FALSE) {
@@ -30,6 +38,12 @@
 }
 
 #' Validate list of distribution specifications
+#'
+#' @param x A list to validate.
+#' @param name Character string. Name for error messages.
+#' @param len Optional integer. Expected length of the list.
+#'
+#' @return Invisibly returns \code{TRUE} if valid.
 #' @keywords internal
 .check_distribution_list <- function(x, name = deparse(substitute(x)),
                                      len = NULL) {
@@ -51,6 +65,13 @@
 }
 
 #' Validate model component class
+#'
+#' @param x Object to validate.
+#' @param type Character string. One of \code{"latent"}, \code{"epi"},
+#'   \code{"observation"}, or \code{"problem"}.
+#' @param name Character string. Name for error messages.
+#'
+#' @return Invisibly returns \code{TRUE} if valid.
 #' @keywords internal
 .check_model_component <- function(x, type, name = deparse(substitute(x))) {
   required_class <- switch(type,
@@ -84,6 +105,11 @@
 }
 
 #' Validate tspan
+#'
+#' @param tspan Numeric vector to validate.
+#' @param name Character string. Name for error messages.
+#'
+#' @return Invisibly returns \code{TRUE} if valid.
 #' @keywords internal
 .check_tspan <- function(tspan, name = "tspan") {
   checkmate::assert_numeric(

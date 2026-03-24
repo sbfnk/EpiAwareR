@@ -1,6 +1,10 @@
 # S3 methods for EpiAware objects
 
 #' Format model name for display
+#'
+#' @param model An EpiAware model object.
+#'
+#' @return A character string with the formatted model name.
 #' @keywords internal
 .format_model_name <- function(model) {
   class_name <- class(model)[1]
@@ -126,6 +130,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Get plot settings based on infection model type
+#'
+#' @param fit An \code{epiaware_fit} object from \code{fit()}.
+#'
+#' @return A named list with \code{title}, \code{y_label}, \code{transform}
+#'   (function), and \code{reference_line} (numeric or \code{NULL}).
 #' @keywords internal
 .get_latent_plot_settings <- function(fit) {
 
@@ -163,6 +172,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Plot latent process trajectory
+#'
+#' @param fit An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A \code{ggplot2} object.
 #' @keywords internal
 .plot_latent_trajectory <- function(fit, ...) {
   # Get model-specific plot settings
@@ -275,6 +289,12 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Find time-indexed variables matching patterns
+#'
+#' @param vars Character vector of variable names to search.
+#' @param patterns Character vector of regex patterns to match against.
+#'
+#' @return A character vector of matching variable names sorted by time index,
+#'   or an empty character vector if no matches are found.
 #' @keywords internal
 .find_time_indexed_vars <- function(vars, patterns) {
   for (pattern in patterns) {
@@ -293,6 +313,12 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Find first matching variable
+#'
+#' @param vars Character vector of variable names to search.
+#' @param patterns Character vector of regex patterns to try in order.
+#'
+#' @return The first matching variable name, or \code{NA_character_} if
+#'   no match is found.
 #' @keywords internal
 .find_first_match <- function(vars, patterns) {
   for (pattern in patterns) {
@@ -303,10 +329,14 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Create a trajectory plot from a matrix of posterior samples
-#' @param matrix Matrix of samples (rows) x time (columns)
-#' @param title Plot title
-#' @param y_label Y-axis label (can be an expression)
-#' @param reference_line Optional horizontal reference line (e.g., 1 for Rt)
+#'
+#' @param matrix Matrix of samples (rows) x time (columns).
+#' @param title Character string. Plot title.
+#' @param y_label Y-axis label (can be a character string or expression).
+#' @param reference_line Optional numeric value for a horizontal reference
+#'   line (e.g., 1 for Rt). \code{NULL} for no line.
+#'
+#' @return A \code{ggplot2} object.
 #' @keywords internal
 .make_trajectory_plot <- function(matrix, title = "Latent Process",
                                   y_label = "Value",
@@ -339,6 +369,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Plot posterior predictive for cases
+#'
+#' @param fit An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A \code{ggplot2} object.
 #' @keywords internal
 .plot_posterior_predictive <- function(fit, ...) {
 
@@ -562,6 +597,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Plot posterior distributions for parameters
+#'
+#' @param fit An \code{epiaware_fit} object from \code{fit()}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A \code{ggplot2} object.
 #' @keywords internal
 .plot_posterior_distributions <- function(fit, ...) {
 
@@ -611,6 +651,11 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Reconstruct Rt from AR parameters
+#'
+#' @param fit An \code{epiaware_fit} object from \code{fit()}.
+#'
+#' @return A matrix of Rt values with rows as draws and columns as time
+#'   points, or \code{NULL} if AR parameters cannot be found.
 #' @keywords internal
 .reconstruct_rt_from_ar <- function(fit) {
   draws <- posterior::as_draws_matrix(fit$samples)
@@ -661,6 +706,12 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Discretize a continuous distribution to a PMF
+#'
+#' @param dist_spec A distribution specification list with \code{type}
+#'   (e.g., \code{"Gamma"}, \code{"LogNormal"}) and \code{params} fields.
+#' @param max_days Integer. Maximum number of days for the PMF.
+#'
+#' @return A numeric vector of length \code{max_days} summing to 1.
 #' @keywords internal
 .discretize_distribution <- function(dist_spec, max_days) {
   # Get CDF values at each day boundary
@@ -695,6 +746,16 @@ plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
 }
 
 #' Simulate infections using renewal equation
+#'
+#' @param rt Numeric vector of time-varying reproduction numbers.
+#' @param gen_pmf Numeric vector. Discretized generation time PMF.
+#' @param init_infections Numeric. Initial infection count for seeding.
+#' @param n_time Integer. Number of time steps to simulate.
+#' @param observed Optional numeric vector of observed case counts for
+#'   seeding the renewal equation. Defaults to \code{NULL}.
+#'
+#' @return A numeric vector of simulated infection counts of length
+#'   \code{n_time}.
 #' @keywords internal
 .simulate_renewal <- function(rt, gen_pmf, init_infections, n_time,
                               observed = NULL) {

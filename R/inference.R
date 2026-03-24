@@ -182,6 +182,12 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
 }
 
 #' Run NUTS sampling via Julia with Pathfinder initialization
+#'
+#' @param julia_model A Julia Turing model object.
+#' @param method An \code{epiaware_nuts} method specification containing
+#'   \code{chains}, \code{draws}, and \code{target_acceptance}.
+#'
+#' @return A Julia MCMCChains.Chains object with posterior samples.
 #' @keywords internal
 .run_nuts_sampling <- function(julia_model, method) {
   tryCatch(
@@ -247,6 +253,13 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
 }
 
 #' Generate quantities from fitted model
+#'
+#' @param julia_model A Julia Turing model object.
+#' @param julia_chains A Julia MCMCChains.Chains object from NUTS sampling.
+#'
+#' @return A named list with matrices for derived quantities (e.g.,
+#'   \code{Rt}, \code{infections}, \code{expected_cases}), each with
+#'   rows as draws and columns as time points. Returns \code{NULL} on failure.
 #' @keywords internal
 .generate_quantities <- function(julia_model, julia_chains) {
   # Use EpiAware's generated_observables to compute derived quantities
