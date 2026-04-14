@@ -1,7 +1,7 @@
 Package: EpiAwareR
 Type: Package
 Title: R Interface to the 'EpiAware' Infectious Disease Modelling Framework
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: person("Sebastian", "Funk", email = "sebastian.funk@lshtm.ac.uk", role = c("aut", "cre", "cph"))
 Description: Provides an R interface to the 'Julia'-based 'EpiAware'
     compositional infectious disease modelling framework. Enables users to

@@ -18,3 +18,5 @@
 ^\.claude$
 ^README\.html$
 ^Rplots\.pdf$
+^rcall-isframe-reprex\.md$
+^vignettes/\.build\.timestamp$

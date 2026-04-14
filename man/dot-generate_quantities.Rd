@@ -14,8 +14,9 @@
 \item{julia_data}{A Julia NamedTuple containing the data used for fitting.}
 }
 \value{
-A named list with matrices for derived quantities (Rt, infections, expected_cases),
-each with rows as draws and columns as time points. Returns \code{NULL} on failure.
+A named list with matrices for derived quantities (e.g.,
+  \code{Rt}, \code{infections}, \code{expected_cases}), each with
+  rows as draws and columns as time points. Returns \code{NULL} on failure.
 }
 \description{
 Generate quantities from fitted model

@@ -10,7 +10,8 @@
 \item{x}{A list to check.}
 }
 \value{
-Logical. \code{TRUE} if all elements have type and params fields.
+Logical. \code{TRUE} if all elements have \code{type} and
+  \code{params} fields.
 }
 \description{
 Check if a list contains only distribution specifications

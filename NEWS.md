@@ -1,4 +1,4 @@
-# EpiAwareR (development version)
+# EpiAwareR 0.2.0
 
 ## New Features
 

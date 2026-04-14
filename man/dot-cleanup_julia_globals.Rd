@@ -2,7 +2,7 @@
 % Please edit documentation in R/inference.R
 \name{.cleanup_julia_globals}
 \alias{.cleanup_julia_globals}
-\title{Clean up Julia global variables}
+\title{Clean up Julia global variables created during inference}
 \usage{
 .cleanup_julia_globals()
 }
@@ -10,6 +10,6 @@
 Invisibly returns \code{NULL}.
 }
 \description{
-Clean up Julia global variables
+Clean up Julia global variables created during inference
 }
 \keyword{internal}

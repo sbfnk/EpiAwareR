@@ -13,7 +13,7 @@
 }
 \value{
 A character vector of matching variable names sorted by time index,
-or an empty character vector if no matches are found.
+  or an empty character vector if no matches are found.
 }
 \description{
 Find time-indexed variables matching patterns

@@ -7,12 +7,15 @@
 .prepare_data_for_julia(data, tspan)
 }
 \arguments{
-\item{data}{A data frame containing case counts.}
+\item{data}{A data frame containing case counts in a column named
+\code{cases}, \code{confirm}, \code{y_t}, or \code{counts}.}
 
-\item{tspan}{Numeric vector of length 2 specifying the time window.}
+\item{tspan}{Numeric vector of length 2 specifying the time window
+(start and end row indices).}
 }
 \value{
-A named list with y_t (numeric vector) and dates (date vector or \code{NULL}).
+A named list with \code{y_t} (numeric vector of case counts)
+  and \code{dates} (date vector or \code{NULL}).
 }
 \description{
 Prepare R data frame for Julia

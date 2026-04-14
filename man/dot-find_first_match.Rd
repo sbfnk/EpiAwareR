@@ -12,7 +12,8 @@
 \item{patterns}{Character vector of regex patterns to try in order.}
 }
 \value{
-The first matching variable name, or \code{NA_character_} if no match is found.
+The first matching variable name, or \code{NA_character_} if
+  no match is found.
 }
 \description{
 Find first matching variable

@@ -7,7 +7,8 @@
 .onLoad(libname, pkgname)
 }
 \arguments{
-\item{libname}{Character string. Library directory.}
+\item{libname}{Character string. Library directory where the package is
+installed.}
 
 \item{pkgname}{Character string. The package name.}
 }

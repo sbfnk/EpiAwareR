@@ -15,10 +15,12 @@
 
 \item{n_time}{Integer. Number of time steps to simulate.}
 
-\item{observed}{Optional numeric vector of observed case counts. Defaults to \code{NULL}.}
+\item{observed}{Optional numeric vector of observed case counts for
+seeding the renewal equation. Defaults to \code{NULL}.}
 }
 \value{
-A numeric vector of simulated infection counts of length \code{n_time}.
+A numeric vector of simulated infection counts of length
+  \code{n_time}.
 }
 \description{
 Simulate infections using renewal equation

@@ -8,7 +8,8 @@ message: 'To cite package "EpiAwareR" in publications use:'
 type: software
 license: MIT
 title: 'EpiAwareR: R Interface to the ''EpiAware'' Infectious Disease Modelling Framework'
-version: 0.1.1
+version: 0.2.0
+date-released: '2026-04-14'
 abstract: Provides an R interface to the 'Julia'-based 'EpiAware' compositional infectious
   disease modelling framework. Enables users to build flexible epidemiological models
   by composing reusable components for latent processes, infection dynamics, and observation

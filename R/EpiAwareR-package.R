@@ -7,4 +7,4 @@
 NULL
 
 # Suppress R CMD check notes for NSE variables used in ggplot2 aes()
-utils::globalVariables(c("q5", "q95", "time_idx"))
+utils::globalVariables(c("q5", "q95", "time", "time_idx"))

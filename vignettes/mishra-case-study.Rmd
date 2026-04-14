@@ -217,10 +217,13 @@ library(posterior)
 draws <- as_draws_df(results)
 head(draws)
 
-# Summarise specific parameters
-subset_draws(draws,
-  variable = c("latent.damp_AR.1.", "latent.damp_AR.2.", "latent.std")
-) |>
+# Find AR damping and std parameters by pattern
+all_vars <- variables(draws)
+ar_vars <- grep("damp_AR|latent\\.std", all_vars, value = TRUE)
+ar_vars
+
+# Summarise the AR-related parameters
+subset_draws(draws, variable = ar_vars) |>
   summarise_draws()
 ```
 
@@ -230,8 +233,8 @@ This also enables [bayesplot](https://mc-stan.org/bayesplot/) diagnostics:
 library(bayesplot)
 
 # Trace plots for AR damping coefficients
-mcmc_trace(as_draws_array(results),
-           pars = c("latent.damp_AR.1.", "latent.damp_AR.2."))
+damp_vars <- grep("damp_AR", variables(as_draws_array(results)), value = TRUE)
+mcmc_trace(as_draws_array(results), pars = damp_vars)
 ```
 
 ### Visualization
