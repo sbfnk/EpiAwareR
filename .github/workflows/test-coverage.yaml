@@ -46,7 +46,7 @@ jobs:
           extra-packages: any::covr, local::.
           needs: coverage
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           miniconda-version: "latest"
           activate-environment: ""

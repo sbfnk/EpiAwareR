@@ -72,7 +72,7 @@ jobs:
           extra-packages: any::rcmdcheck, any::EpiNow2, local::.
           needs: check
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           miniconda-version: "latest"
           activate-environment: ""
