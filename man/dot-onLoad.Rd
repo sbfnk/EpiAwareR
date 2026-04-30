@@ -13,7 +13,7 @@ installed.}
 \item{pkgname}{Character string. The package name.}
 }
 \value{
-\code{NULL} (called for side effects).
+`NULL` (called for side effects).
 }
 \description{
 Package load hook

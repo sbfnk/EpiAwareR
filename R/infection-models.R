@@ -50,7 +50,7 @@ Renewal <- function(gen_distribution, initialisation_prior = NULL) {
   # EpiData(; gen_distribution, D_gen, Δd, transformation)
   julia_epi_data <- tryCatch(
     {
-      JuliaCall::julia_assign("gen_dist_tmp", julia_gen_dist)
+      juliaready::assign_julia("gen_dist_tmp", julia_gen_dist)
       .eval_julia_code(
         "EpiData(gen_distribution=gen_dist_tmp, transformation=exp)"
       )

@@ -10,7 +10,7 @@
 \item{x}{An R vector.}
 }
 \value{
-A Julia-compatible vector (passthrough; JuliaCall handles
+A Julia-compatible vector (passthrough; juliaready handles
   conversion).
 }
 \description{

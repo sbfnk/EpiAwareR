@@ -1,15 +1,17 @@
 #' Setup specific Julia version using juliaup
 #'
 #' Installs and configures a specific Julia version using juliaup if available.
+#' Returns the path to the Julia bin directory, suitable for use as
+#' `JULIACONNECTOR_JULIABIN` (set by the caller via [Sys.setenv()]).
 #'
 #' @param version Character string with the required Julia version (e.g., "1.11").
 #' @param verbose Logical. If TRUE, prints progress messages.
 #'
-#' @return Path to the Julia bin directory, or NULL if juliaup is not available.
+#' @return Path to the Julia executable (not the bin directory), or `NULL`
+#'   if juliaup is not available or installation failed.
 #'
 #' @keywords internal
 .setup_julia_version <- function(version, verbose = TRUE) {
-  # Check if juliaup is available
   juliaup_path <- Sys.which("juliaup")
   if (juliaup_path == "") {
     if (verbose) {
@@ -23,7 +25,6 @@
 
   if (verbose) message("Using juliaup to set up Julia ", version, "...")
 
-  # Install the required version
   install_result <- tryCatch(
     {
       system2(
@@ -41,10 +42,7 @@
     return(NULL)
   }
 
-  # Get the path to the installed Julia version
   julia_base <- path.expand("~/.julia/juliaup")
-
-  # Find the directory for this version
   julia_dirs <- list.dirs(julia_base, recursive = FALSE, full.names = TRUE)
   version_pattern <- paste0("julia-", version)
   matching_dirs <- julia_dirs[grepl(version_pattern, julia_dirs)]
@@ -54,14 +52,11 @@
     return(NULL)
   }
 
-  julia_dir <- matching_dirs[1]
-  julia_bin <- file.path(julia_dir, "bin")
-
-  if (dir.exists(julia_bin)) {
+  julia_bin <- file.path(matching_dirs[1], "bin", "julia")
+  if (file.exists(julia_bin)) {
     if (verbose) message("Found Julia ", version, " at: ", julia_bin)
     return(julia_bin)
   }
-
   NULL
 }
 
@@ -78,7 +73,6 @@
     "https://raw.githubusercontent.com/CDCgov/Rt-without-renewal/",
     "main/EpiAware/Project.toml"
   )
-
   tryCatch(
     {
       lines <- readLines(url, warn = FALSE)
@@ -98,136 +92,82 @@
   )
 }
 
+# Environment to track Julia initialisation state
+.epiaware_env <- new.env(parent = emptyenv())
+
 #' Setup Julia and EpiAware
 #'
 #' Configures Julia and installs required Julia packages for EpiAwareR.
-#' This function should be run on first use if automatic setup fails.
+#' If a `julia` version is pinned in upstream EpiAware's Project.toml, that
+#' version is installed via [juliaup](https://github.com/JuliaLang/juliaup)
+#' and used; otherwise the system Julia is used.
 #'
-#' @param verbose Logical. If TRUE, prints progress messages. Default is TRUE.
+#' Heavy lifting (subprocess install, lazy-init guard) is delegated to
+#' [juliaready::julia_ready()].
 #'
-#' @return Invisible TRUE if setup succeeds, otherwise throws an error.
+#' @param verbose Logical. If TRUE, prints progress messages.
+#' @return Invisible TRUE on success.
 #'
 #' @examples
 #' \dontrun{
-#' # Setup Julia and install EpiAware packages
 #' epiaware_setup_julia()
 #' }
 #'
 #' @export
 epiaware_setup_julia <- function(verbose = TRUE) {
-  if (verbose) message("[1/7] Setting up Julia...")
-
-  # Get required Julia version from EpiAware
+  # Pin the Julia binary if upstream specifies a version, then juliaready
+  # picks it up via the JULIACONNECTOR_JULIABIN env var.
   required_version <- .get_epiaware_julia_version()
-  if (verbose && !is.null(required_version)) {
-    message("EpiAware requires Julia ", required_version)
-  }
-
-  julia_home <- NULL
   if (!is.null(required_version)) {
-    julia_home <- .setup_julia_version(required_version, verbose)
+    if (verbose) message("EpiAware requires Julia ", required_version)
+    pinned_bin <- .setup_julia_version(required_version, verbose)
+    if (!is.null(pinned_bin)) {
+      Sys.setenv(JULIACONNECTOR_JULIABIN = pinned_bin)
+    }
   }
 
-  if (verbose) message("[2/7] Calling JuliaCall::julia_setup()...")
-  JuliaCall::julia_setup(
-    JULIA_HOME = julia_home,
-    installJulia = is.null(julia_home),
-    version = required_version,
-    verbose = verbose
-  )
-  if (verbose) message("[3/7] JuliaCall::julia_setup() completed")
+  bridge <- system.file("julia", package = "EpiAwareR")
+  if (!nzchar(bridge) || !file.exists(file.path(bridge, "Project.toml"))) {
+    # Development load (load_all): fall back to the source tree.
+    bridge <- file.path(getwd(), "inst", "julia")
+  }
 
-  if (verbose) message("[4/7] Installing Julia packages...")
-
-  if (verbose) message("[4.1/7] Loading Pkg...")
-  JuliaCall::julia_eval("using Pkg")
-  if (verbose) message("[4.2/7] Pkg loaded")
-
+  # If a sibling EpiAware/EpiAware/ checkout exists (development workflow),
+  # dev that source into the bundled project before instantiation.
   epiaware_r_path <- system.file(package = "EpiAwareR")
-  if (epiaware_r_path == "") {
-    epiaware_r_path <- getwd()
-  }
-
-  epiaware_julia_path <- file.path(
+  if (epiaware_r_path == "") epiaware_r_path <- getwd()
+  local_julia_path <- file.path(
     dirname(epiaware_r_path), "EpiAware", "EpiAware"
   )
-
-  if (dir.exists(epiaware_julia_path)) {
-    if (verbose) {
-      message(
-        "[4.3/7] Installing EpiAware from local path: ", epiaware_julia_path
-      )
-    }
-    julia_code <- sprintf(
-      'Pkg.develop(path="%s")', gsub("\\\\", "/", epiaware_julia_path)
+  if (dir.exists(local_julia_path)) {
+    if (verbose) message("Using local EpiAware checkout: ", local_julia_path)
+    bin <- juliaready::julia_bin()
+    juliaready:::julia_subprocess(
+      sprintf(
+        'import Pkg; Pkg.activate("%s"); Pkg.develop(path="%s")',
+        gsub("\\\\", "/", bridge),
+        gsub("\\\\", "/", local_julia_path)
+      ),
+      bin = bin
     )
-    JuliaCall::julia_eval(julia_code)
-    if (verbose) message("[4.4/7] EpiAware installed from local path")
-  } else {
-    if (verbose) message("[4.3/7] Installing EpiAware from GitHub...")
-    JuliaCall::julia_eval(
-      paste0(
-        'Pkg.add(PackageSpec(',
-        'url="https://github.com/CDCgov/Rt-without-renewal", ',
-        'subdir="EpiAware"))'
-      )
-    )
-    if (verbose) message("[4.4/7] EpiAware installed from GitHub")
   }
 
-  if (verbose) message("[4.5/7] Installing Turing...")
-  JuliaCall::julia_eval('Pkg.add("Turing")')
-  if (verbose) message("[4.6/7] Installing Distributions...")
-  JuliaCall::julia_eval('Pkg.add("Distributions")')
-  if (verbose) message("[4.7/7] Installing MCMCChains...")
-  # MCMCChains depends on DataFrames, so it will be installed automatically
-  JuliaCall::julia_eval('Pkg.add("MCMCChains")')
-  if (verbose) message("[4.8/7] Installing Pathfinder and ADTypes...")
-  # Pathfinder for initialization, ADTypes for AutoReverseDiff
-  JuliaCall::julia_eval('Pkg.add("Pathfinder")')
-  JuliaCall::julia_eval('Pkg.add("ADTypes")')
-  # Resolve to ensure consistent package versions
-  if (verbose) message("[4.9/7] Resolving package versions...")
-  JuliaCall::julia_eval('Pkg.resolve()')
+  juliaready::julia_ready(
+    packages  = c("EpiAware", "Turing", "Distributions",
+                  "MCMCChains", "Pathfinder", "ADTypes"),
+    state_env = .epiaware_env,
+    project   = bridge,
+    install   = FALSE,
+    verbose   = verbose
+  )
 
-  # Precompile packages to avoid runtime errors
-  if (verbose) message("[4.9/7] Precompiling packages (this may take a while)...")
-  tryCatch({
-    JuliaCall::julia_eval('Pkg.precompile()')
-    if (verbose) message("[4.10/7] Precompilation complete")
-  }, error = function(e) {
-    if (verbose) {
-      message("Warning: Precompilation failed: ", conditionMessage(e))
-      message("Continuing anyway - packages will compile on first use")
-    }
-  })
-
-  # Load packages to verify installation
-  if (verbose) message("[5/7] Loading Julia packages...")
-  if (verbose) message("[5.1/7] Loading EpiAware...")
-  JuliaCall::julia_eval("using EpiAware")
-  if (verbose) message("[5.2/7] Loading Turing...")
-  JuliaCall::julia_eval("using Turing")
-  if (verbose) message("[5.3/7] Loading Distributions...")
-  JuliaCall::julia_eval("using Distributions")
-
-  # Test
-  if (verbose) message("[6/7] Testing Julia connection...")
-  test_result <- JuliaCall::julia_eval("1 + 1")
-
-  if (test_result == 2) {
-    if (verbose) message("[7/7] Julia setup complete!")
-    invisible(TRUE)
-  } else {
-    stop("Julia setup failed validation test")
-  }
+  if (verbose) message("EpiAwareR Julia backend ready")
+  invisible(TRUE)
 }
 
 #' Check if Julia and EpiAware are available
 #'
-#' Tests whether Julia is configured and EpiAware packages are accessible.
-#'
-#' @return Logical. TRUE if Julia and EpiAware are available, FALSE otherwise.
+#' @return Logical. `TRUE` if Julia and EpiAware are available, `FALSE` otherwise.
 #'
 #' @examples
 #' \dontrun{
@@ -240,54 +180,21 @@ epiaware_setup_julia <- function(verbose = TRUE) {
 #'
 #' @export
 epiaware_available <- function() {
-  tryCatch(
-    {
-      # Check if Julia is available and EpiAware is loaded
-      JuliaCall::julia_eval("isdefined(Main, :EpiAware)")
-    },
-    error = function(e) {
-      # Julia not available at all
-      FALSE
-    }
-  )
+  isTRUE(.epiaware_env$ready) &&
+    tryCatch(
+      juliaready::eval_julia("isdefined(Main, :EpiAware)"),
+      error = function(e) FALSE
+    )
 }
 
-# Environment to track Julia initialization state
-.epiaware_env <- new.env(parent = emptyenv())
-.epiaware_env$julia_initialized <- FALSE
-
-#' Initialize Julia lazily (on first use)
+#' Initialise Julia lazily (on first use)
 #'
-#' @return Invisibly returns \code{TRUE} on success.
+#' @return Invisibly `TRUE` on success.
 #' @keywords internal
 .ensure_julia_initialized <- function() {
-  if (!.epiaware_env$julia_initialized) {
-    tryCatch(
-      {
-        required_version <- .get_epiaware_julia_version()
-        julia_home <- NULL
-        if (!is.null(required_version)) {
-          julia_home <- .setup_julia_version(required_version, verbose = FALSE)
-        }
-
-        JuliaCall::julia_setup(JULIA_HOME = julia_home)
-        JuliaCall::julia_eval("using EpiAware")
-        JuliaCall::julia_eval("using Turing")
-        JuliaCall::julia_eval("using Distributions")
-
-        .epiaware_env$julia_initialized <- TRUE
-        message("EpiAware Julia backend loaded successfully")
-      },
-      error = function(e) {
-        stop(
-          "Julia setup failed. Run epiaware_setup_julia() first.\n",
-          "Error: ", conditionMessage(e),
-          call. = FALSE
-        )
-      }
-    )
-  }
-  invisible(TRUE)
+  juliaready::ensure_julia(.epiaware_env, function() {
+    epiaware_setup_julia(verbose = FALSE)
+  })
 }
 
 #' Package load hook
@@ -296,12 +203,10 @@ epiaware_available <- function() {
 #'   installed.
 #' @param pkgname Character string. The package name.
 #'
-#' @return \code{NULL} (called for side effects).
+#' @return `NULL` (called for side effects).
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
-  # Don't initialize Julia on package load - use lazy initialization instead
-
-  # This avoids conflicts with Stan (used by EpiNow2) which crashes if Julia
-
-  # is initialized first
+  # Lazy: do not initialise Julia on package load. Eager init in .onLoad
+  # interacts badly with other compiled backends (notably Stan) and can
+  # crash R during attach.
 }

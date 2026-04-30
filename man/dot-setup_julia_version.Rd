@@ -12,9 +12,12 @@
 \item{verbose}{Logical. If TRUE, prints progress messages.}
 }
 \value{
-Path to the Julia bin directory, or NULL if juliaup is not available.
+Path to the Julia executable (not the bin directory), or `NULL`
+  if juliaup is not available or installation failed.
 }
 \description{
 Installs and configures a specific Julia version using juliaup if available.
+Returns the path to the Julia bin directory, suitable for use as
+`JULIACONNECTOR_JULIABIN` (set by the caller via [Sys.setenv()]).
 }
 \keyword{internal}

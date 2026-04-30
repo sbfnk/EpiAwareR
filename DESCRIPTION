@@ -14,7 +14,7 @@ LazyData: true
 Depends:
     R (>= 4.0.0)
 Imports:
-    JuliaCall (>= 0.17.0),
+    juliaready,
     tibble,
     posterior,
     ggplot2,
@@ -28,6 +28,8 @@ Suggests:
     bayesplot,
     patchwork,
     EpiNow2
+Remotes:
+    sbfnk/juliaready
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 SystemRequirements: Julia (>= 1.9.0), Julia packages: EpiAware, Turing, Distributions

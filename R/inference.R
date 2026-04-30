@@ -114,19 +114,19 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
     {
       # Convert prepared data to Julia NamedTuple
       # Julia expects data with .y_t field access, not Dict[:y_t]
-      JuliaCall::julia_assign("y_t_data", prepared_data$y_t)
+      juliaready::assign_julia("y_t_data", prepared_data$y_t)
 
       # Create NamedTuple in Julia
       julia_data <- if (!is.null(prepared_data$dates)) {
-        JuliaCall::julia_assign("dates_data", prepared_data$dates)
+        juliaready::assign_julia("dates_data", prepared_data$dates)
         .eval_julia_code("(y_t=y_t_data, dates=dates_data)")
       } else {
         .eval_julia_code("(y_t=y_t_data,)")
       }
 
       # Now call generate_epiaware with the NamedTuple
-      JuliaCall::julia_assign("epi_problem_tmp", model$julia_ref)
-      JuliaCall::julia_assign("data_tmp", julia_data)
+      juliaready::assign_julia("epi_problem_tmp", model$julia_ref)
+      juliaready::assign_julia("data_tmp", julia_data)
       .eval_julia_code("generate_epiaware(epi_problem_tmp, data_tmp)")
     },
     error = function(e) {
@@ -148,7 +148,7 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
     samples <- .run_nuts_sampling(julia_model, method)
 
     # Store chains in Julia for generated_observables
-    JuliaCall::julia_assign("chains_tmp", samples)
+    juliaready::assign_julia("chains_tmp", samples)
   } else {
     stop(
       "Unknown inference method: ", class(method)[1],
@@ -201,7 +201,7 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
       .eval_julia_code("using Turing, MCMCChains, Pathfinder, ADTypes")
 
       # Assign model to Julia scope for multi-line operations
-      JuliaCall::julia_assign("_nuts_model", julia_model)
+      juliaready::assign_julia("_nuts_model", julia_model)
 
       # Stage 1: Pathfinder initialization to find good starting points
       # This matches the preprint: ManyPathfinder(nruns=3, maxiters=100)
@@ -274,9 +274,9 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
   tryCatch(
     {
       # Store the model and data in Julia scope
-      JuliaCall::julia_assign("turing_model_gq", julia_model)
-      JuliaCall::julia_assign("chains_gq", julia_chains)
-      JuliaCall::julia_assign("data_gq", julia_data)
+      juliaready::assign_julia("turing_model_gq", julia_model)
+      juliaready::assign_julia("chains_gq", julia_chains)
+      juliaready::assign_julia("data_gq", julia_data)
 
       .eval_julia_code("using EpiAware")
 
@@ -287,21 +287,21 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
             "global _gq_observables = generated_observables(",
             "turing_model_gq, data_gq, chains_gq)"
           )
-          JuliaCall::julia_command(gq_cmd)
-          JuliaCall::julia_command(
+          juliaready::command_julia(gq_cmd)
+          juliaready::command_julia(
             "global _gq_gen = _gq_observables.generated"
           )
 
           # _gq_gen is a Matrix of NamedTuples, get fields from first
-          JuliaCall::julia_command(
+          juliaready::command_julia(
             "global _gq_fields = propertynames(_gq_gen[1])"
           )
-          fields <- unlist(JuliaCall::julia_eval("string.(_gq_fields)"))
+          fields <- unlist(juliaready::eval_julia("string.(_gq_fields)"))
 
           # Extract available quantities - iterate over matrix elements
           # nolint start: object_name_linter
           i_t <- if ("I_t" %in% fields) {
-            JuliaCall::julia_eval(
+            juliaready::eval_julia(
               "reduce(hcat, [g.I_t for g in _gq_gen])'"
             )
           } else {
@@ -309,7 +309,7 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
           }
 
           z_t <- if ("Z_t" %in% fields) {
-            JuliaCall::julia_eval(
+            juliaready::eval_julia(
               "reduce(hcat, [g.Z_t for g in _gq_gen])'"
             )
           } else {
@@ -318,7 +318,7 @@ fit <- function(model, data, method = nuts_sampler(), ...) {
           # nolint end: object_name_linter
 
           gen_y_t <- if ("generated_y_t" %in% fields) {
-            JuliaCall::julia_eval(
+            juliaready::eval_julia(
               "reduce(hcat, [g.generated_y_t for g in _gq_gen])'"
             )
           } else {
