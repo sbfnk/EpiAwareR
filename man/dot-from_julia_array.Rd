@@ -10,7 +10,7 @@
 \item{julia_obj}{A Julia array object.}
 }
 \value{
-An R vector (passthrough; JuliaCall handles conversion).
+An R vector (passthrough; juliaready handles conversion).
 }
 \description{
 Convert Julia array to R vector

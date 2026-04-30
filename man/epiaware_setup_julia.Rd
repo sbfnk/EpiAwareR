@@ -7,18 +7,23 @@
 epiaware_setup_julia(verbose = TRUE)
 }
 \arguments{
-\item{verbose}{Logical. If TRUE, prints progress messages. Default is TRUE.}
+\item{verbose}{Logical. If TRUE, prints progress messages.}
 }
 \value{
-Invisible TRUE if setup succeeds, otherwise throws an error.
+Invisible TRUE on success.
 }
 \description{
 Configures Julia and installs required Julia packages for EpiAwareR.
-This function should be run on first use if automatic setup fails.
+If a `julia` version is pinned in upstream EpiAware's Project.toml, that
+version is installed via [juliaup](https://github.com/JuliaLang/juliaup)
+and used; otherwise the system Julia is used.
+}
+\details{
+Heavy lifting (subprocess install, lazy-init guard) is delegated to
+[juliaready::julia_ready()].
 }
 \examples{
 \dontrun{
-# Setup Julia and install EpiAware packages
 epiaware_setup_julia()
 }
 

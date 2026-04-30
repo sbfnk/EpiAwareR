@@ -7,12 +7,13 @@
 .onLoad(libname, pkgname)
 }
 \arguments{
-\item{libname}{Character string. Library directory.}
+\item{libname}{Character string. Library directory where the package is
+installed.}
 
 \item{pkgname}{Character string. The package name.}
 }
 \value{
-\code{NULL} (called for side effects).
+`NULL` (called for side effects).
 }
 \description{
 Package load hook

@@ -2,14 +2,14 @@
 % Please edit documentation in R/setup.R
 \name{.ensure_julia_initialized}
 \alias{.ensure_julia_initialized}
-\title{Initialize Julia lazily (on first use)}
+\title{Initialise Julia lazily (on first use)}
 \usage{
 .ensure_julia_initialized()
 }
 \value{
-Invisibly returns \code{TRUE} on success.
+Invisibly `TRUE` on success.
 }
 \description{
-Initialize Julia lazily (on first use)
+Initialise Julia lazily (on first use)
 }
 \keyword{internal}

@@ -9,7 +9,8 @@
 \arguments{
 \item{julia_model}{A Julia Turing model object.}
 
-\item{method}{An epiaware_nuts method specification containing chains, draws, and target_acceptance.}
+\item{method}{An \code{epiaware_nuts} method specification containing
+\code{chains}, \code{draws}, and \code{target_acceptance}.}
 }
 \value{
 A Julia MCMCChains.Chains object with posterior samples.

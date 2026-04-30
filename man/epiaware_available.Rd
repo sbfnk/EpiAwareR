@@ -7,10 +7,10 @@
 epiaware_available()
 }
 \value{
-Logical. TRUE if Julia and EpiAware are available, FALSE otherwise.
+Logical. `TRUE` if Julia and EpiAware are available, `FALSE` otherwise.
 }
 \description{
-Tests whether Julia is configured and EpiAware packages are accessible.
+Check if Julia and EpiAware are available
 }
 \examples{
 \dontrun{

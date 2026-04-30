@@ -7,10 +7,11 @@
 .get_latent_plot_settings(fit)
 }
 \arguments{
-\item{fit}{An epiaware_fit object from \code{fit()}.}
+\item{fit}{An \code{epiaware_fit} object from \code{fit()}.}
 }
 \value{
-A named list with title, y_label, transform (function), and reference_line (numeric or \code{NULL}).
+A named list with \code{title}, \code{y_label}, \code{transform}
+  (function), and \code{reference_line} (numeric or \code{NULL}).
 }
 \description{
 Get plot settings based on infection model type

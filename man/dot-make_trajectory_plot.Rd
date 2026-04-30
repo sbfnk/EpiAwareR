@@ -12,13 +12,14 @@
 )
 }
 \arguments{
-\item{matrix}{Matrix of samples (rows) x time (columns)}
+\item{matrix}{Matrix of samples (rows) x time (columns).}
 
-\item{title}{Plot title}
+\item{title}{Character string. Plot title.}
 
-\item{y_label}{Y-axis label (can be an expression)}
+\item{y_label}{Y-axis label (can be a character string or expression).}
 
-\item{reference_line}{Optional horizontal reference line (e.g., 1 for Rt)}
+\item{reference_line}{Optional numeric value for a horizontal reference
+line (e.g., 1 for Rt). \code{NULL} for no line.}
 }
 \value{
 A \code{ggplot2} object.

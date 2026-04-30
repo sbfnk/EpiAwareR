@@ -7,7 +7,8 @@
 .discretize_distribution(dist_spec, max_days)
 }
 \arguments{
-\item{dist_spec}{A distribution specification list with type and params fields.}
+\item{dist_spec}{A distribution specification list with \code{type}
+(e.g., \code{"Gamma"}, \code{"LogNormal"}) and \code{params} fields.}
 
 \item{max_days}{Integer. Maximum number of days for the PMF.}
 }

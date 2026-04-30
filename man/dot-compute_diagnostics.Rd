@@ -10,7 +10,8 @@
 \item{draws_obj}{A \code{posterior::draws} object.}
 }
 \value{
-A tibble with columns parameter, rhat, ess_bulk, and ess_tail.
+A tibble with columns \code{parameter}, \code{rhat},
+  \code{ess_bulk}, and \code{ess_tail}, excluding NUTS sampler internals.
 }
 \description{
 Compute MCMC diagnostics

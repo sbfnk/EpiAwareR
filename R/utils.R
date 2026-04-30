@@ -118,7 +118,7 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 .call_julia_function <- function(fn_name, ...) {
   tryCatch(
     {
-      JuliaCall::julia_call(fn_name, ...)
+      juliaready::call_julia(fn_name, ...)
     },
     error = function(e) {
       stop(
@@ -140,7 +140,7 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 .eval_julia_code <- function(code) {
   tryCatch(
     {
-      JuliaCall::julia_eval(code)
+      juliaready::eval_julia(code)
     },
     error = function(e) {
       stop(
@@ -179,7 +179,7 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
       }
 
       for (i in seq_along(args)) {
-        JuliaCall::julia_assign(tmp_names[i], args[[i]])
+        juliaready::assign_julia(tmp_names[i], args[[i]])
       }
 
       # Build constructor call string
@@ -284,7 +284,7 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
   julia_var_names <- paste0("dist_", seq_along(julia_dists))
 
   for (i in seq_along(julia_dists)) {
-    JuliaCall::julia_assign(julia_var_names[i], julia_dists[[i]])
+    juliaready::assign_julia(julia_var_names[i], julia_dists[[i]])
   }
 
   # Create Julia array from variables
@@ -303,11 +303,11 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 #'
 #' @param x An R vector.
 #'
-#' @return A Julia-compatible vector (passthrough; JuliaCall handles
+#' @return A Julia-compatible vector (passthrough; juliaready handles
 #'   conversion).
 #' @keywords internal
 .to_julia_vector <- function(x) {
-  # JuliaCall handles this automatically for most types
+  # juliaready handles this automatically for most types
   x
 }
 
@@ -326,10 +326,10 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
 #'
 #' @param julia_obj A Julia array object.
 #'
-#' @return An R vector (passthrough; JuliaCall handles conversion).
+#' @return An R vector (passthrough; juliaready handles conversion).
 #' @keywords internal
 .from_julia_array <- function(julia_obj) {
-  # JuliaCall handles this automatically
+  # juliaready handles this automatically
   julia_obj
 }
 
@@ -344,7 +344,7 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
   # MCMCChains provides array access via indexing
 
   # Assign chains to Julia variable
-  JuliaCall::julia_assign("chains_tmp", chains)
+  juliaready::assign_julia("chains_tmp", chains)
 
   # Get the chain data as a 3D array (iterations, parameters, chains)
   # Convert to DataFrame in Julia for easier extraction

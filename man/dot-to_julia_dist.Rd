@@ -7,7 +7,8 @@
 .to_julia_dist(dist_spec)
 }
 \arguments{
-\item{dist_spec}{A distribution specification list with type and params fields, or \code{NULL}.}
+\item{dist_spec}{A distribution specification list with \code{type} and
+\code{params} fields, or \code{NULL}.}
 }
 \value{
 A Julia Distribution object, or \code{NULL} if input is \code{NULL}.

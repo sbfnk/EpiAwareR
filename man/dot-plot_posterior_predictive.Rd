@@ -7,7 +7,7 @@
 .plot_posterior_predictive(fit, ...)
 }
 \arguments{
-\item{fit}{An epiaware_fit object from \code{fit()}.}
+\item{fit}{An \code{epiaware_fit} object from \code{fit()}.}
 
 \item{...}{Additional arguments (currently unused).}
 }

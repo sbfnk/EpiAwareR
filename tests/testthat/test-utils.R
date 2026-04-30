@@ -84,15 +84,15 @@ test_that(".julia_chains_to_draws converts MCMCChains without DataFrames", {
   skip_if_no_julia()
 
   # Create a simple MCMCChains.Chains object in Julia
-  JuliaCall::julia_command("using MCMCChains")
+  juliaready::command_julia("using MCMCChains")
 
   # Create a chains object with 2 parameters, 10 iterations, 2 chains
-  JuliaCall::julia_command("test_array = randn(10, 2, 2)")
-  JuliaCall::julia_command(
+  juliaready::command_julia("test_array = randn(10, 2, 2)")
+  juliaready::command_julia(
     "test_chains = Chains(test_array, [:param1, :param2])"
   )
 
-  chains <- JuliaCall::julia_eval("test_chains")
+  chains <- juliaready::eval_julia("test_chains")
 
   # Test the fallback path by directly calling it
   # This should work even without DataFrames.jl

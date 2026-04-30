@@ -9,7 +9,8 @@
 \arguments{
 \item{x}{Object to validate.}
 
-\item{type}{Character string. One of "latent", "epi", "observation", or "problem".}
+\item{type}{Character string. One of \code{"latent"}, \code{"epi"},
+\code{"observation"}, or \code{"problem"}.}
 
 \item{name}{Character string. Name for error messages.}
 }
