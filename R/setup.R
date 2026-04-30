@@ -126,8 +126,14 @@ epiaware_setup_julia <- function(verbose = TRUE) {
     }
   }
 
+  bridge <- system.file("julia", package = "EpiAwareR")
+  if (!nzchar(bridge) || !file.exists(file.path(bridge, "Project.toml"))) {
+    # Development load (load_all): fall back to the source tree.
+    bridge <- file.path(getwd(), "inst", "julia")
+  }
+
   # If a sibling EpiAware/EpiAware/ checkout exists (development workflow),
-  # prefer it over the GitHub URL.
+  # dev that source into the bundled project before instantiation.
   epiaware_r_path <- system.file(package = "EpiAwareR")
   if (epiaware_r_path == "") epiaware_r_path <- getwd()
   local_julia_path <- file.path(
@@ -135,12 +141,11 @@ epiaware_setup_julia <- function(verbose = TRUE) {
   )
   if (dir.exists(local_julia_path)) {
     if (verbose) message("Using local EpiAware checkout: ", local_julia_path)
-    # Install via develop in a subprocess so the in-process server doesn't
-    # see a Pkg.activate(path).
     bin <- juliaready::julia_bin()
     juliaready:::julia_subprocess(
       sprintf(
-        'import Pkg; Pkg.develop(path="%s"); using EpiAware',
+        'import Pkg; Pkg.activate("%s"); Pkg.develop(path="%s")',
+        gsub("\\\\", "/", bridge),
         gsub("\\\\", "/", local_julia_path)
       ),
       bin = bin
@@ -150,9 +155,9 @@ epiaware_setup_julia <- function(verbose = TRUE) {
   juliaready::julia_ready(
     packages  = c("EpiAware", "Turing", "Distributions",
                   "MCMCChains", "Pathfinder", "ADTypes"),
-    github    = c(EpiAware = "CDCgov/Rt-without-renewal:EpiAware"),
     state_env = .epiaware_env,
-    install   = TRUE,
+    project   = bridge,
+    install   = FALSE,
     verbose   = verbose
   )
 
