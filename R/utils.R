@@ -170,13 +170,9 @@ epiaware_call <- function(fn_name, ..., .param_map = NULL,
                                     use_keywords = TRUE) {
   tryCatch(
     {
-      # Assign all arguments to Julia with temporary names
-      # For unnamed args, use indices; for named args, use the names
-      if (is.null(names(args)) || all(names(args) == "")) {
-        tmp_names <- paste0("arg", seq_along(args), "_tmp")
-      } else {
-        tmp_names <- paste0(names(args), "_tmp")
-      }
+      # Use ASCII-only temp names so Julia keywords with non-ASCII characters
+      # (e.g. ϵ_t) can still be passed via the keyword=tmp pattern.
+      tmp_names <- paste0("arg", seq_along(args), "_tmp")
 
       for (i in seq_along(args)) {
         juliaready::assign_julia(tmp_names[i], args[[i]])
