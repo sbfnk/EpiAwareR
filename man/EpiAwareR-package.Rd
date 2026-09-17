@@ -4,9 +4,9 @@
 \name{EpiAwareR-package}
 \alias{EpiAwareR}
 \alias{EpiAwareR-package}
-\title{EpiAwareR: R Interface to the 'EpiAware' Infectious Disease Modelling Framework}
+\title{EpiAwareR: Composable Infectious Disease Models via 'ComposableTuringIDModels.jl'}
 \description{
-Provides an R interface to the 'Julia'-based 'EpiAware' compositional infectious disease modelling framework. Enables users to build flexible epidemiological models by composing reusable components for latent processes, infection dynamics, and observation models without requiring 'Julia' expertise.
+Provides an R interface to 'ComposableTuringIDModels.jl', the composable probabilistic infectious disease modelling package of the 'EpiAware' ecosystem. Models are assembled in R from reusable latent process, infection and observation components, then simulated from and fitted to data in 'Julia' using 'Turing.jl', without requiring 'Julia' expertise.
 }
 \seealso{
 Useful links:

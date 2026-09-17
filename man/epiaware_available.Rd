@@ -2,23 +2,16 @@
 % Please edit documentation in R/setup.R
 \name{epiaware_available}
 \alias{epiaware_available}
-\title{Check if Julia and EpiAware are available}
+\title{Check whether the Julia backend is running}
 \usage{
 epiaware_available()
 }
 \value{
-Logical. `TRUE` if Julia and EpiAware are available, `FALSE` otherwise.
+Logical. `TRUE` if Julia has been set up in this R session.
 }
 \description{
-Check if Julia and EpiAware are available
+Check whether the Julia backend is running
 }
 \examples{
-\dontrun{
-if (epiaware_available()) {
-  # Run EpiAware analysis
-} else {
-  epiaware_setup_julia()
-}
-}
-
+epiaware_available()
 }

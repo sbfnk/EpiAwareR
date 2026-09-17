@@ -1,145 +1,99 @@
-# Distribution constructor functions for EpiAwareR
-# These create specification lists that are converted to Julia
-# Distributions.jl objects
+# Distributions come from distspec, which EpiAwareR converts to Julia code.
+# Only the two distributions with no distspec equivalent are defined here.
 
-#' Normal distribution
+#' Probability distributions
 #'
-#' Specifies a normal (Gaussian) distribution.
+#' Distributions are specified with
+#' [distspec](https://epiforecasts.io/distspec/), whose constructors
+#' `Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
+#' `Beta()`, `Fixed()` and `NonParametric()` EpiAwareR re-exports. Parameters
+#' can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a mean and
+#' standard deviation (`Gamma(mean = 4, sd = 2)`).
 #'
-#' @param mean Numeric. Mean of the distribution.
-#' @param sd Numeric. Standard deviation of the distribution.
+#' EpiAwareR adds two constructors of its own:
 #'
-#' @return A list specification for a normal distribution.
+#' - `HalfNormal()`, the prior from ComposableTuringIDModels.jl, parameterised
+#'   by its mean.
+#' - `truncated()`, which bounds a distribution below as well as above. The
+#'   `max` argument of a distspec distribution bounds it above only.
 #'
+#' Where a distribution is used decides what it may contain. A prior, such as
+#' the damping of an [AR()] process, needs fixed parameters. A delay or
+#' generation time may have uncertain parameters (for example
+#' `LogNormal(meanlog = Normal(1.6, 0.2), sdlog = 0.4, max = 15)`), and is
+#' then inferred along with the rest of the model; such a distribution needs a
+#' finite `max` to bound its support.
+#'
+#' @param mean Numeric. Mean of the half-normal distribution.
+#' @param dist A distribution to truncate.
+#' @param lower,upper Numeric truncation bounds. Use `-Inf` or `Inf` to leave
+#'   a side unbounded.
+#'
+#' @return A component of class `epiaware_distribution`.
+#'
+#' @family components
+#' @name distributions
 #' @examples
-#' \dontrun{
-#' # Standard normal
-#' prior1 <- norm(0, 1)
+#' # A prior bounded to [0, 1]
+#' truncated(Normal(0.8, 0.05), 0, 1)
 #'
-#' # Prior for log Rt
-#' prior2 <- norm(log(1.5), 0.2)
-#' }
+#' # A generation time, discretised in Julia
+#' Gamma(shape = 6.5, scale = 0.62)
 #'
+#' # A delay whose parameters are inferred
+#' LogNormal(meanlog = Normal(1.6, 0.2), sdlog = 0.4, max = 15)
+NULL
+
+#' @rdname distributions
 #' @export
-norm <- function(mean, sd) {
-  checkmate::assert_number(mean, finite = TRUE)
-  checkmate::assert_number(sd, lower = 0, finite = TRUE)
-  list(type = "Normal", params = c(mean, sd))
+# nolint start: object_name_linter.
+HalfNormal <- function(mean = 1) {
+  checkmate::assert_number(mean, lower = 0, finite = TRUE)
+  component("HalfNormal", as.numeric(mean), role = "distribution")
+}
+# nolint end
+
+#' @rdname distributions
+#' @export
+truncated <- function(dist, lower = -Inf, upper = Inf) {
+  dist <- .as_prior(dist)
+  checkmate::assert_number(lower)
+  checkmate::assert_number(upper)
+  if (lower >= upper) {
+    stop("`lower` must be less than `upper`.", call. = FALSE)
+  }
+  component("truncated", dist, as.numeric(lower), as.numeric(upper),
+            role = "distribution")
 }
 
-#' Truncated normal distribution
-#'
-#' Specifies a normal distribution truncated to a specified range.
-#'
-#' @param mean Numeric. Mean of the underlying normal distribution.
-#' @param sd Numeric. Standard deviation of the underlying normal distribution.
-#' @param lower Numeric. Lower truncation bound.
-#' @param upper Numeric. Upper truncation bound.
-#'
-#' @return A list specification for a truncated normal distribution.
-#'
-#' @examples
-#' \dontrun{
-#' # AR damping coefficient bounded to [0, 1]
-#' damp_prior <- truncnorm(0.8, 0.2, 0, 1)
-#' }
-#'
+#' @importFrom distspec Normal
 #' @export
-truncnorm <- function(mean, sd, lower, upper) {
-  checkmate::assert_number(mean, finite = TRUE)
-  checkmate::assert_number(sd, lower = 0, finite = TRUE)
-  checkmate::assert_number(lower, finite = TRUE)
-  checkmate::assert_number(upper, finite = TRUE)
-  checkmate::assert_true(lower < upper)
+distspec::Normal
 
-  list(
-    type = "truncated(Normal(mean, sd), lower, upper)",
-    params = c(mean = mean, sd = sd, lower = lower, upper = upper)
-  )
-}
-
-#' Half-normal distribution
-#'
-#' Specifies a half-normal distribution (normal distribution truncated to
-#' positive values).
-#'
-#' @param sd Numeric. Scale parameter (standard deviation of underlying normal).
-#'
-#' @return A list specification for a half-normal distribution.
-#'
-#' @examples
-#' \dontrun{
-#' # Prior for standard deviation parameters
-#' sigma_prior <- halfnorm(0.1)
-#' }
-#'
+#' @importFrom distspec Gamma
 #' @export
-halfnorm <- function(sd) {
-  checkmate::assert_number(sd, lower = 0, finite = TRUE)
-  list(type = "truncated(Normal(0, sd), 0, Inf)", params = c(sd = sd))
-}
+distspec::Gamma
 
-#' Gamma distribution
-#'
-#' Specifies a gamma distribution using shape and scale parameterization.
-#'
-#' @param shape Numeric. Shape parameter (alpha).
-#' @param scale Numeric. Scale parameter (theta). Note: this is scale, not rate.
-#'
-#' @return A list specification for a gamma distribution.
-#'
-#' @examples
-#' \dontrun{
-#' # Generation time distribution with mean 6.5 and scale 0.62
-#' gen_time <- gamma_dist(6.5, 0.62)
-#' }
-#'
+#' @importFrom distspec LogNormal
 #' @export
-gamma_dist <- function(shape, scale) {
-  checkmate::assert_number(shape, lower = 0, finite = TRUE)
-  checkmate::assert_number(scale, lower = 0, finite = TRUE)
-  list(type = "Gamma", params = c(shape, scale))
-}
+distspec::LogNormal
 
-#' Log-normal distribution
-#'
-#' Specifies a log-normal distribution.
-#'
-#' @param meanlog Numeric. Mean of the distribution on the log scale.
-#' @param sdlog Numeric. Standard deviation of the distribution on the log
-#'   scale.
-#'
-#' @return A list specification for a log-normal distribution.
-#'
-#' @examples
-#' \dontrun{
-#' # Delay distribution
-#' delay <- lognorm(1.6, 0.42)
-#' }
-#'
+#' @importFrom distspec Exponential
 #' @export
-lognorm <- function(meanlog, sdlog) {
-  checkmate::assert_number(meanlog, finite = TRUE)
-  checkmate::assert_number(sdlog, lower = 0, finite = TRUE)
-  list(type = "LogNormal", params = c(meanlog, sdlog))
-}
+distspec::Exponential
 
-#' Exponential distribution
-#'
-#' Specifies an exponential distribution.
-#'
-#' @param rate Numeric. Rate parameter (inverse of mean).
-#'
-#' @return A list specification for an exponential distribution.
-#'
-#' @examples
-#' \dontrun{
-#' # Exponential prior with mean 10
-#' prior <- exponential(1 / 10)
-#' }
-#'
+#' @importFrom distspec Weibull
 #' @export
-exponential <- function(rate) {
-  checkmate::assert_number(rate, lower = 0, finite = TRUE)
-  list(type = "Exponential", params = c(rate))
-}
+distspec::Weibull
+
+#' @importFrom distspec Beta
+#' @export
+distspec::Beta
+
+#' @importFrom distspec Fixed
+#' @export
+distspec::Fixed
+
+#' @importFrom distspec NonParametric
+#' @export
+distspec::NonParametric

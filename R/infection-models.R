@@ -1,108 +1,89 @@
-# Infection generation process models
+# Infection models, each owning the latent process that drives it.
 
-#' Renewal Process Infection Model
+#' Infection models
 #'
-#' Constructs a renewal process model for infections, where new infections
-#' arise from previous infections weighted by a generation time distribution.
-#' This implements the renewal equation I_t = R_t * sum(g_s * I_\{t-s\}).
+#' Models for the unobserved infection process. Each carries its own latent
+#' process: the log reproduction number for `Renewal()`, the log growth rate
+#' for `ExpGrowthRate()`, and log infections for `DirectInfections()`. Each
+#' wraps the constructor of the same name in ComposableTuringIDModels.jl.
+#' `NULL` arguments use the Julia default.
 #'
-#' @param gen_distribution Distribution specification for the generation time
-#'   (or serial interval). Can be any continuous distribution that will be
-#'   discretized using double interval censoring.
-#' @param initialisation_prior Optional distribution specification for the
-#'   initial infection level (on log scale). If NULL, uses a default prior.
+#' @param generation_time The generation interval: a continuous distribution
+#'   (discretised in Julia with double interval censoring), or a numeric
+#'   probability vector whose first entry is a delay of one day. A
+#'   `NonParametric()` or `Fixed()` distribution is discretised in R, and its
+#'   zero-day mass is dropped and the rest renormalised, as Julia does when it
+#'   discretises a continuous distribution. Uncertain parameters give an
+#'   inferred generation interval.
+#' @param rt Latent model for the log reproduction number (`Renewal()`) or the
+#'   growth rate (`ExpGrowthRate()`). A distribution gives a constant value.
+#' @param Z Latent model for log infections.
+#' @param initialisation Prior for initial infections on the log scale.
+#' @param transformation A [julia()] function mapping the latent scale to
+#'   infections.
+#' @param D_gen Numeric. Maximum generation interval used when discretising a
+#'   distribution, taken from the distribution's `max` when it has one.
+#' @param delta_d Numeric. Discretisation interval width.
 #'
-#' @return An S3 object of class \code{c("epiaware_renewal", "epiaware_epi",
-#'   "epiaware_model")} containing:
-#' \describe{
-#'   \item{julia_ref}{Reference to the Julia Renewal object}
-#'   \item{spec}{List of model specifications}
-#' }
+#' @return An object of class `epiaware_infection`.
 #'
+#' @family components
+#' @name infection-models
 #' @examples
-#' \dontrun{
-#' # Renewal model with Gamma generation time (Mishra et al. 2020)
-#' renewal <- Renewal(
-#'   gen_distribution = gamma_dist(6.5, 0.62),
-#'   initialisation_prior = norm(log(1.0), 0.1)
+#' Renewal(
+#'   generation_time = Gamma(shape = 6.5, scale = 0.62),
+#'   rt = AR(),
+#'   initialisation = Normal(log(1), 0.1)
 #' )
-#' print(renewal)
 #'
-#' # For advanced features, use the generic wrapper
-#' # to access newer EpiAware infection models
-#' custom_model <- epiaware_call("NewInfectionModel", param1 = ...)
-#' }
-#'
-#' @seealso \code{\link{epiaware_call}} for accessing other infection models
-#' @export
+#' DirectInfections(Z = RandomWalk(), initialisation = Normal(log(100), 1))
+NULL
+
 # nolint start: object_name_linter.
-Renewal <- function(gen_distribution, initialisation_prior = NULL) {
-  # nolint end: object_name_linter.
-  # Validate inputs
-  .check_distribution(gen_distribution)
-  .check_distribution(initialisation_prior, null_ok = TRUE)
-  .check_julia()
 
-  # Convert generation distribution to Julia
-  julia_gen_dist <- .to_julia_dist(gen_distribution)
-
-  # Create EpiData with generation distribution Use keyword constructor:
-  # EpiData(; gen_distribution, D_gen, Δd, transformation)
-  julia_epi_data <- tryCatch(
-    {
-      juliaready::assign_julia("gen_dist_tmp", julia_gen_dist)
-      .eval_julia_code(
-        "EpiData(gen_distribution=gen_dist_tmp, transformation=exp)"
-      )
-    },
-    error = function(e) {
-      stop("Failed to create EpiData:\n", conditionMessage(e), call. = FALSE)
-    }
-  )
-
-  # Convert initialisation prior if provided
-  julia_init <- if (!is.null(initialisation_prior)) {
-    .to_julia_dist(initialisation_prior)
-  } else {
-    # Default to Normal(0, 1) if not provided
-    .eval_julia_code("Normal(0, 1)")
-  }
-
-  # Create Renewal model using keyword constructor
-  # Renewal(; data, initialisation_prior)
-  julia_obj <- .call_julia_constructor(
-    "Renewal",
-    list(data = julia_epi_data, initialisation_prior = julia_init)
-  )
-
-  # Return S3 object
-  structure(
-    list(
-      julia_ref = julia_obj,
-      spec = list(
-        gen_distribution = gen_distribution,
-        initialisation_prior = initialisation_prior
-      )
-    ),
-    class = c("epiaware_renewal", "epiaware_epi", "epiaware_model")
-  )
-}
-
-#' Print method for renewal infection models
-#'
-#' @param x An \code{epiaware_renewal} object.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object \code{x}.
-#'
+#' @rdname infection-models
 #' @export
-print.epiaware_renewal <- function(x, ...) {
-  cat("<EpiAware Renewal Infection Model>\n")
-  cat("  Generation distribution:", x$spec$gen_distribution$type, "\n")
-  if (!is.null(x$spec$initialisation_prior)) {
-    cat("  Initialisation prior: specified\n")
-  } else {
-    cat("  Initialisation prior: default\n")
-  }
-  invisible(x)
+Renewal <- function(generation_time, rt = NULL, initialisation = NULL,
+                    transformation = NULL, D_gen = NULL, delta_d = NULL) {
+  checkmate::assert_number(D_gen, lower = 0, null.ok = TRUE)
+  checkmate::assert_number(delta_d, lower = 0, null.ok = TRUE)
+  gen <- .as_delay(generation_time, D_gen, delta_d, drop_zero = TRUE)
+  rt <- .as_prior_slot(rt)
+  initialisation <- .as_prior_slot(initialisation)
+  .assert_role(transformation, "julia", null_ok = TRUE)
+  args <- list(
+    generation_time = gen$dist, rt = rt,
+    initialisation = initialisation, transformation = transformation,
+    D_gen = if (!is.null(gen$max_delay)) as.numeric(gen$max_delay)
+  )
+  args[["\u0394d"]] <- if (!is.null(gen$delta_d)) as.numeric(gen$delta_d)
+  do.call(component, c("Renewal", args, role = "infection"))
 }
+
+#' @rdname infection-models
+#' @export
+DirectInfections <- function(Z = NULL, initialisation = NULL,
+                             transformation = NULL) {
+  Z <- .as_prior_slot(Z)
+  initialisation <- .as_prior_slot(initialisation)
+  .assert_role(transformation, "julia", null_ok = TRUE)
+  component(
+    "DirectInfections", Z = Z, initialisation = initialisation,
+    transformation = transformation, role = "infection"
+  )
+}
+
+#' @rdname infection-models
+#' @export
+ExpGrowthRate <- function(rt = NULL, initialisation = NULL,
+                          transformation = NULL) {
+  rt <- .as_prior_slot(rt)
+  initialisation <- .as_prior_slot(initialisation)
+  .assert_role(transformation, "julia", null_ok = TRUE)
+  component(
+    "ExpGrowthRate", rt = rt, initialisation = initialisation,
+    transformation = transformation, role = "infection"
+  )
+}
+
+# nolint end

@@ -2,41 +2,42 @@
 % Please edit documentation in R/methods.R
 \name{plot.epiaware_fit}
 \alias{plot.epiaware_fit}
-\title{Plot Method for Fitted EpiAware Models}
+\title{Plot a fitted model}
 \usage{
-\method{plot}{epiaware_fit}(x, type = c("Rt", "cases", "posterior"), ...)
+\method{plot}{epiaware_fit}(x, type = c("cases", "Rt", "infections", "latent"), horizon = 0, ...)
 }
 \arguments{
-\item{x}{An \code{epiaware_fit} object from \code{fit()}.}
+\item{x}{An `epiaware_fit` object from [fit()].}
 
-\item{type}{Character string specifying plot type. Options:
-\itemize{
-  \item \code{"Rt"}: Time-varying reproduction number with credible
-    intervals
-  \item \code{"cases"}: Observed vs predicted cases with credible intervals
-  \item \code{"posterior"}: Posterior distributions for key parameters
-}}
+\item{type}{Character string. What to plot: `"cases"` (posterior
+predictive observations with the data), `"Rt"` (reproduction number,
+renewal models only), `"infections"`, or `"latent"` (the latent process
+on its own scale).}
 
-\item{...}{Additional arguments passed to plotting functions.}
+\item{horizon}{Integer. For `type = "cases"`, number of time points to
+forecast.}
+
+\item{...}{Unused.}
 }
 \value{
 A ggplot2 object.
 }
 \description{
-Creates visualizations of fitted model results, including reproduction
-number trajectories, infection curves, and posterior predictive
-distributions.
+Shows the posterior median and 50% and 90% credible intervals of a
+generated quantity over time.
 }
 \examples{
 \dontrun{
-# Plot Rt trajectory
-plot(results, type = "Rt")
-
-# Plot posterior predictive for cases
-plot(results, type = "cases")
-
-# Plot parameter posteriors
-plot(results, type = "posterior")
+plot(fitted, type = "Rt")
+plot(fitted, type = "cases", horizon = 14)
 }
-
 }
+\seealso{
+Other inference: 
+\code{\link{fit}()},
+\code{\link{nuts}()},
+\code{\link{predict.epiaware_fit}()},
+\code{\link{simulate.epiaware_model}()},
+\code{\link{summary.epiaware_fit}()}
+}
+\concept{inference}

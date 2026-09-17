@@ -2,18 +2,27 @@
 % Please edit documentation in R/methods.R
 \name{summary.epiaware_fit}
 \alias{summary.epiaware_fit}
-\title{Summary Method for Fitted EpiAware Models}
+\title{Summarise the posterior of a fitted model}
 \usage{
 \method{summary}{epiaware_fit}(object, ...)
 }
 \arguments{
-\item{object}{An \code{epiaware_fit} object from \code{fit()}.}
+\item{object}{An `epiaware_fit` object from [fit()].}
 
-\item{...}{Additional arguments (currently unused).}
+\item{...}{Passed to [posterior::summarise_draws()].}
 }
 \value{
-A tibble with parameter summaries.
+A `draws_summary` tibble with one row per parameter.
 }
 \description{
-Summary Method for Fitted EpiAware Models
+Summarise the posterior of a fitted model
 }
+\seealso{
+Other inference: 
+\code{\link{fit}()},
+\code{\link{nuts}()},
+\code{\link{plot.epiaware_fit}()},
+\code{\link{predict.epiaware_fit}()},
+\code{\link{simulate.epiaware_model}()}
+}
+\concept{inference}

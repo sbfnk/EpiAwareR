@@ -1,871 +1,223 @@
-# S3 methods for EpiAware objects
-
-#' Format model name for display
-#'
-#' @param model An EpiAware model object.
-#'
-#' @return A character string with the formatted model name.
-#' @keywords internal
-.format_model_name <- function(model) {
-  class_name <- class(model)[1]
-  if (class_name == "epiaware_generic" && !is.null(model$fn_name)) {
-    paste0(class_name, " (", model$fn_name, ")")
-  } else {
-    class_name
-  }
-}
-
-#' Print Method for Fitted EpiAware Models
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object \code{x}.
-#'
 #' @export
 print.epiaware_fit <- function(x, ...) {
-  cat("<EpiAware Model Fit>\n\n")
-
-  # Model info
+  cat("<EpiAwareR fit>\n")
   cat("Model:\n")
-  cat("  Time span:", x$model$tspan[1], "to", x$model$tspan[2], "\n")
-  cat("  Infection model:",
-      .format_model_name(x$model$components$epi_model), "\n")
-  cat("  Latent model:",
-      .format_model_name(x$model$components$latent_model), "\n")
-  cat("  Observation model:",
-      .format_model_name(x$model$components$observation_model), "\n\n")
+  cat(paste0("  ", .format_code(x$model, width = 76L)), sep = "\n")
+  cat("\nData:", length(x$y), "time points\n")
+  cat("Sampling:", x$method$chains, "chains of", x$method$draws,
+      "draws after", x$method$warmup, "warmup\n")
 
-  # Sampling info
-  cat("Sampling:\n")
-  if (inherits(x$method, "epiaware_nuts")) {
-    cat("  Method: NUTS\n")
-    cat("  Chains:", x$method$chains, "\n")
-    cat("  Draws:", x$method$draws, "(per chain)\n\n")
-  }
-
-  # Convergence diagnostics
-  cat("Convergence:\n")
-  if (!is.null(x$diagnostics)) {
-    max_rhat <- max(x$diagnostics$rhat, na.rm = TRUE)
-    min_ess_bulk <- min(x$diagnostics$ess_bulk, na.rm = TRUE)
-
-    cat("  Max Rhat:", round(max_rhat, 3), "\n")
-    cat("  Min ESS (bulk):", round(min_ess_bulk, 0), "\n")
-
-    if (max_rhat > 1.1) {
-      cat("  Warning: Some parameters have Rhat > 1.1\n")
-    }
-    if (min_ess_bulk < 100) {
-      cat("  Warning: Some parameters have ESS < 100\n")
-    }
-  }
-
-  cat("\n")
-  cat("Use summary() for parameter estimates\n")
-  cat("Use plot() to visualize results\n")
-
+  diagnostics <- posterior::summarise_draws(
+    x$draws, "rhat", "ess_bulk"
+  )
+  divergent <- posterior::extract_variable(x$sampler, "numerical_error")
+  cat("\nConvergence:\n")
+  cat("  Max Rhat:", format(max(diagnostics$rhat, na.rm = TRUE), digits = 3),
+      "\n")
+  cat("  Min bulk ESS:", round(min(diagnostics$ess_bulk, na.rm = TRUE)), "\n")
+  cat("  Divergent transitions:", sum(divergent), "\n")
+  cat("\nUse summary() for parameter estimates and plot() to visualise.\n")
   invisible(x)
 }
 
-#' Summary Method for Fitted EpiAware Models
+#' Summarise the posterior of a fitted model
 #'
-#' @param object An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments (currently unused).
+#' @param object An `epiaware_fit` object from [fit()].
+#' @param ... Passed to [posterior::summarise_draws()].
 #'
-#' @return A tibble with parameter summaries.
+#' @return A `draws_summary` tibble with one row per parameter.
 #'
+#' @family inference
 #' @export
 summary.epiaware_fit <- function(object, ...) {
-  object$summary
+  posterior::summarise_draws(object$draws, ...)
 }
 
-#' Plot Method for Fitted EpiAware Models
+#' Posterior predictions and forecasts
 #'
-#' Creates visualizations of fitted model results, including reproduction
-#' number trajectories, infection curves, and posterior predictive
-#' distributions.
+#' Draws observations from the posterior predictive distribution over the
+#' fitted period and, if `horizon` is positive, forecasts beyond it. The
+#' forecast extends the latent process with fresh innovations for each
+#' posterior draw.
 #'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param type Character string specifying plot type. Options:
-#'   \itemize{
-#'     \item \code{"Rt"}: Time-varying reproduction number with credible
-#'       intervals
-#'     \item \code{"cases"}: Observed vs predicted cases with credible intervals
-#'     \item \code{"posterior"}: Posterior distributions for key parameters
-#'   }
-#' @param ... Additional arguments passed to plotting functions.
+#' Forecasting uses the Julia session in which the model was fitted.
 #'
-#' @return A ggplot2 object.
+#' @param object An `epiaware_fit` object from [fit()].
+#' @param horizon Integer. Number of time points to forecast.
+#' @param seed Optional integer seed for the Julia random number generator,
+#'   used for the forecast. In-sample predictions are drawn when fitting.
+#' @param ... Unused.
 #'
+#' @return A matrix with one row per posterior draw and one column per time
+#'   point, covering the fitted period followed by the forecast horizon.
+#'
+#' @family inference
 #' @examples
 #' \dontrun{
-#' # Plot Rt trajectory
-#' plot(results, type = "Rt")
-#'
-#' # Plot posterior predictive for cases
-#' plot(results, type = "cases")
-#'
-#' # Plot parameter posteriors
-#' plot(results, type = "posterior")
+#' forecasts <- predict(fitted, horizon = 14)
 #' }
-#'
+#' @importFrom stats predict
 #' @export
-plot.epiaware_fit <- function(x, type = c("Rt", "cases", "posterior"), ...) {
-  type <- match.arg(type)
-
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(
-      "Package 'ggplot2' is required for plotting.\n",
-      "Install it with: install.packages('ggplot2')",
-      call. = FALSE
-    )
+predict.epiaware_fit <- function(object, horizon = 0, seed = NULL, ...) {
+  checkmate::assert_count(horizon)
+  checkmate::assert_int(seed, null.ok = TRUE)
+  in_sample <- object$generated$predicted_y_t
+  if (horizon == 0) {
+    return(in_sample)
   }
-
-  switch(type,
-    "Rt" = .plot_latent_trajectory(x, ...),
-    "cases" = .plot_posterior_predictive(x, ...),
-    "posterior" = .plot_posterior_distributions(x, ...)
+  forecasts <- tryCatch(
+    .bridge(
+      "forecast_observations", object$julia$handle, as.integer(horizon),
+      if (!is.null(seed)) as.integer(seed)
+    ),
+    error = function(e) {
+      stop(
+        "Forecasting failed. If Julia has been restarted since fitting, ",
+        "refit the model.\n", conditionMessage(e),
+        call. = FALSE
+      )
+    }
   )
+  cbind(in_sample, matrix(forecasts, nrow = nrow(in_sample)))
 }
 
-#' Convert epiaware_fit to draws_array
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments passed to
-#'   \code{\link[posterior]{as_draws_array}}.
-#'
-#' @return A \code{posterior::draws_array} object.
-#'
-#' @importFrom posterior as_draws_array
-#' @export
-as_draws_array.epiaware_fit <- function(x, ...) {
-  posterior::as_draws_array(x$samples, ...)
-}
-
-#' Convert epiaware_fit to draws_df
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments passed to
-#'   \code{\link[posterior]{as_draws_df}}.
-#'
-#' @return A \code{posterior::draws_df} object.
-#'
 #' @importFrom posterior as_draws_df
 #' @export
 as_draws_df.epiaware_fit <- function(x, ...) {
-  posterior::as_draws_df(x$samples, ...)
+  posterior::as_draws_df(x$draws, ...)
 }
 
-#' Convert epiaware_fit to draws_matrix
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments passed to
-#'   \code{\link[posterior]{as_draws_matrix}}.
-#'
-#' @return A \code{posterior::draws_matrix} object.
-#'
+#' @importFrom posterior as_draws_array
+#' @export
+as_draws_array.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_array(x$draws, ...)
+}
+
 #' @importFrom posterior as_draws_matrix
 #' @export
 as_draws_matrix.epiaware_fit <- function(x, ...) {
-  posterior::as_draws_matrix(x$samples, ...)
+  posterior::as_draws_matrix(x$draws, ...)
 }
 
-#' Convert epiaware_fit to draws_rvars
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments passed to
-#'   \code{\link[posterior]{as_draws_rvars}}.
-#'
-#' @return A \code{posterior::draws_rvars} object.
-#'
-#' @importFrom posterior as_draws_rvars
-#' @export
-as_draws_rvars.epiaware_fit <- function(x, ...) {
-  posterior::as_draws_rvars(x$samples, ...)
-}
-
-#' Convert epiaware_fit to draws_list
-#'
-#' @param x An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments passed to
-#'   \code{\link[posterior]{as_draws_list}}.
-#'
-#' @return A \code{posterior::draws_list} object.
-#'
 #' @importFrom posterior as_draws_list
 #' @export
 as_draws_list.epiaware_fit <- function(x, ...) {
-  posterior::as_draws_list(x$samples, ...)
+  posterior::as_draws_list(x$draws, ...)
 }
 
-#' Get plot settings based on infection model type
-#'
-#' @param fit An \code{epiaware_fit} object from \code{fit()}.
-#'
-#' @return A named list with \code{title}, \code{y_label}, \code{transform}
-#'   (function), and \code{reference_line} (numeric or \code{NULL}).
-#' @keywords internal
-.get_latent_plot_settings <- function(fit) {
-
-  epi_model <- fit$model$components$epi_model
-
-  # Determine settings based on infection model type
-
-  if (inherits(epi_model, "epiaware_renewal")) {
-    # Renewal models: latent is log(Rt), transform with exp, reference at 1
-    list(
-      title = "Reproduction Number",
-      y_label = expression(R[t]),
-      transform = exp,
-      reference_line = 1
-    )
-  } else if (inherits(epi_model, "epiaware_generic") &&
-               !is.null(epi_model$fn_name) &&
-               grepl("Renewal", epi_model$fn_name, ignore.case = TRUE)) {
-    # Generic model wrapping a Renewal-type function
-    list(
-      title = "Reproduction Number",
-      y_label = expression(R[t]),
-      transform = exp,
-      reference_line = 1
-    )
-  } else {
-    # Default: show raw latent process
-    list(
-      title = "Latent Process",
-      y_label = "Value",
-      transform = identity,
-      reference_line = NULL
-    )
-  }
+#' @importFrom posterior as_draws_rvars
+#' @export
+as_draws_rvars.epiaware_fit <- function(x, ...) {
+  posterior::as_draws_rvars(x$draws, ...)
 }
 
-#' Plot latent process trajectory
+#' Plot a fitted model
 #'
-#' @param fit An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments (currently unused).
+#' Shows the posterior median and 50% and 90% credible intervals of a
+#' generated quantity over time.
 #'
-#' @return A \code{ggplot2} object.
-#' @keywords internal
-.plot_latent_trajectory <- function(fit, ...) {
-  # Get model-specific plot settings
-  settings <- .get_latent_plot_settings(fit)
-
-  # Priority 1: Use generated_quantities from EpiAware if available
-  if (!is.null(fit$generated_quantities$Rt)) {
-    # Rt is already transformed (exp applied in .generate_quantities)
-    return(.make_trajectory_plot(
-      fit$generated_quantities$Rt,
-      title = settings$title,
-      y_label = settings$y_label,
-      reference_line = settings$reference_line
-    ))
-  }
-
-  draws <- posterior::as_draws_matrix(fit$samples)
-  vars <- colnames(draws)
-
-  # Priority 2: Direct Rt output (e.g., Rt[1], Rt[2], etc.)
-  rt_direct <- .find_time_indexed_vars(vars, c("^Rt\\[", "^R_t\\[", "^rt\\["))
-
-  if (length(rt_direct) > 0) {
-    # Rt is directly available (already transformed)
-    latent_matrix <- as.matrix(draws[, rt_direct])
-    return(.make_trajectory_plot(
-      latent_matrix,
-      title = settings$title,
-      y_label = settings$y_label,
-      reference_line = settings$reference_line
-    ))
-  }
-
-  # Priority 3: Latent process output (e.g., latent.Z_t[1])
-  latent_patterns <- c(
-    "latent\\.Z_t\\[",      # EpiAware latent output
-    "latent\\..*_t\\[",     # General latent time series
-    "latent\\..*_t\\.",     # Alternative separator
-    "^Z_t\\[",              # Direct Z_t
-    "^log_Rt\\["            # Log Rt
+#' @param x An `epiaware_fit` object from [fit()].
+#' @param type Character string. What to plot: `"cases"` (posterior
+#'   predictive observations with the data), `"Rt"` (reproduction number,
+#'   renewal models only), `"infections"`, or `"latent"` (the latent process
+#'   on its own scale).
+#' @param horizon Integer. For `type = "cases"`, number of time points to
+#'   forecast.
+#' @param ... Unused.
+#'
+#' @return A ggplot2 object.
+#'
+#' @family inference
+#' @examples
+#' \dontrun{
+#' plot(fitted, type = "Rt")
+#' plot(fitted, type = "cases", horizon = 14)
+#' }
+#' @export
+plot.epiaware_fit <- function(x, type = c("cases", "Rt", "infections",
+                                          "latent"),
+                              horizon = 0, ...) {
+  type <- match.arg(type)
+  quantity <- switch(type,
+    cases = predict(x, horizon = horizon),
+    Rt = x$generated$Rt,
+    infections = x$generated$I_t,
+    latent = x$generated$Z_t
   )
-  latent_vars <- .find_time_indexed_vars(vars, latent_patterns)
-
-  if (length(latent_vars) > 0) {
-    latent_matrix <- as.matrix(draws[, latent_vars])
-    transformed_matrix <- settings$transform(latent_matrix)
-    return(.make_trajectory_plot(
-      transformed_matrix,
-      title = settings$title,
-      y_label = settings$y_label,
-      reference_line = settings$reference_line
-    ))
-  }
-
-  # Priority 4: Try to reconstruct from AR parameters
-  # Note: EpiAware uses Greek epsilon in variable names
-  eps_patterns <- c(
-    "latent\\.\\u03F5_t\\[", "latent\\.eps", "epsilon", "innovations"
-  )
-  eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
-
-  if (length(eps_vars) > 0) {
-    # Get AR parameters
-    damp_var <- .find_first_match(
-      vars, c("latent\\.damp", "damp_AR", "phi", "rho")
-    )
-    std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
-    init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
-
-    if (!is.na(damp_var) && !is.na(std_var)) {
-      # Reconstruct AR process
-      n_draws <- nrow(draws)
-      n_time <- length(eps_vars)
-      latent_matrix <- matrix(NA, n_draws, n_time)
-
-      for (i in seq_len(n_draws)) {
-        damp <- draws[i, damp_var]
-        std <- draws[i, std_var]
-        init <- if (!is.na(init_var)) draws[i, init_var] else 0
-        eps <- as.numeric(draws[i, eps_vars])
-
-        latent <- numeric(n_time)
-        latent[1] <- init + std * eps[1]
-        for (t in 2:n_time) {
-          latent[t] <- damp * latent[t - 1] + std * eps[t]
-        }
-        latent_matrix[i, ] <- latent
-      }
-
-      transformed_matrix <- settings$transform(latent_matrix)
-      return(.make_trajectory_plot(
-        transformed_matrix,
-        title = settings$title,
-        y_label = settings$y_label,
-        reference_line = settings$reference_line
-      ))
-    }
-  }
-
-  # No latent parameters found - show diagnostic info
-  message("Could not find latent process parameters.")
-  message("Available parameters: ", paste(head(vars, 10), collapse = ", "),
-          if (length(vars) > 10) ", ..." else "")
-
-  ggplot2::ggplot() +
-    ggplot2::annotate("text", x = 0.5, y = 0.5,
-                      label = "Latent trajectory not available",
-                      size = 5) +
-    ggplot2::theme_void()
-}
-
-#' Find time-indexed variables matching patterns
-#'
-#' @param vars Character vector of variable names to search.
-#' @param patterns Character vector of regex patterns to match against.
-#'
-#' @return A character vector of matching variable names sorted by time index,
-#'   or an empty character vector if no matches are found.
-#' @keywords internal
-.find_time_indexed_vars <- function(vars, patterns) {
-  for (pattern in patterns) {
-    matches <- grep(pattern, vars, value = TRUE)
-    if (length(matches) > 0) {
-      # Sort by time index
-      idx_pattern <- ".*\\[(\\d+)\\].*|.*\\.(\\d+)\\.$"
-      idx <- as.integer(gsub(idx_pattern, "\\1\\2", matches))
-      if (all(!is.na(idx))) {
-        return(matches[order(idx)])
-      }
-      return(matches)
-    }
-  }
-  character(0)
-}
-
-#' Find first matching variable
-#'
-#' @param vars Character vector of variable names to search.
-#' @param patterns Character vector of regex patterns to try in order.
-#'
-#' @return The first matching variable name, or \code{NA_character_} if
-#'   no match is found.
-#' @keywords internal
-.find_first_match <- function(vars, patterns) {
-  for (pattern in patterns) {
-    matches <- grep(pattern, vars, value = TRUE)
-    if (length(matches) > 0) return(matches[1])
-  }
-  NA_character_
-}
-
-#' Create a trajectory plot from a matrix of posterior samples
-#'
-#' @param matrix Matrix of samples (rows) x time (columns).
-#' @param title Character string. Plot title.
-#' @param y_label Y-axis label (can be a character string or expression).
-#' @param reference_line Optional numeric value for a horizontal reference
-#'   line (e.g., 1 for Rt). \code{NULL} for no line.
-#'
-#' @return A \code{ggplot2} object.
-#' @keywords internal
-.make_trajectory_plot <- function(matrix, title = "Latent Process",
-                                  y_label = "Value",
-                                  reference_line = NULL) {
-  n_time <- ncol(matrix)
-
-  df <- data.frame(
-    time = seq_len(n_time),
-    median = apply(matrix, 2, median),
-    q5 = apply(matrix, 2, quantile, 0.05),
-    q95 = apply(matrix, 2, quantile, 0.95)
-  )
-
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = time)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = q5, ymax = q95),
-                         fill = "steelblue", alpha = 0.3) +
-    ggplot2::geom_line(ggplot2::aes(y = median), color = "steelblue") +
-    ggplot2::labs(title = title, x = "Time", y = y_label) +
-    ggplot2::theme_minimal()
-
-  if (!is.null(reference_line)) {
-    p <- p + ggplot2::geom_hline(
-      yintercept = reference_line,
-      linetype = "dashed",
-      color = "red"
+  if (is.null(quantity)) {
+    stop(
+      "No ", type, " trajectories are available for this model.",
+      if (type == "Rt") " `Rt` requires a `Renewal()` infection model.",
+      call. = FALSE
     )
   }
-
-  p
-}
-
-#' Plot posterior predictive for cases
-#'
-#' @param fit An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return A \code{ggplot2} object.
-#' @keywords internal
-.plot_posterior_predictive <- function(fit, ...) {
-
-  # Get observed data
-  if (is.null(fit$data)) {
-    message("No data available for cases plot.")
-    return(ggplot2::ggplot() + ggplot2::theme_minimal())
-  }
-
-  obs_data <- fit$data
-
-  # Get tspan from model to extract correct data window
-  tspan <- fit$model$tspan
-  start_idx <- as.integer(tspan[1])
-  end_idx <- as.integer(tspan[2])
-
-  # Determine the case column name
-  case_col <- intersect(c("confirm", "y_t", "cases", "count"), names(obs_data))
-  if (length(case_col) == 0) {
-    case_col <- names(obs_data)[2]  # Assume second column if no match
-  } else {
-    case_col <- case_col[1]
-  }
-
-  # Extract the correct data window based on tspan
-  obs_data <- obs_data[start_idx:end_idx, , drop = FALSE]
-
-  # Add time index for plotting
-  obs_data$time_idx <- seq_len(nrow(obs_data))
-
-  # Priority 1: Use generated_quantities from EpiAware if available
-  if (!is.null(fit$generated_quantities$infections)) {
-    inf_matrix <- fit$generated_quantities$infections
-    n_time <- min(ncol(inf_matrix), nrow(obs_data))
-    inf_subset <- inf_matrix[, seq_len(n_time), drop = FALSE]
-
-    pred_df <- data.frame(
-      time_idx = seq_len(n_time),
-      median = apply(inf_subset, 2, median),
-      q5 = apply(inf_subset, 2, quantile, 0.05),
-      q95 = apply(inf_subset, 2, quantile, 0.95)
-    )
-
-    p <- ggplot2::ggplot() +
-      ggplot2::geom_ribbon(
-        data = pred_df,
-        ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
-        fill = "steelblue", alpha = 0.3
-      ) +
-      ggplot2::geom_line(
-        data = pred_df,
-        ggplot2::aes(x = time_idx, y = median),
-        color = "steelblue"
-      ) +
-      ggplot2::geom_point(
-        data = obs_data,
-        ggplot2::aes(x = time_idx, y = .data[[case_col]]),
-        color = "black", size = 2
-      ) +
-      ggplot2::labs(
-        title = "Observed vs Fitted Cases",
-        subtitle = "Points: observed, Line: posterior median, Ribbon: 90% CI",
-        x = "Time",
-        y = "Infections"
-      ) +
-      ggplot2::theme_minimal()
-
-    return(p)
-  }
-
-  # Priority 2: Try to find infections from MCMC samples directly
-  draws <- posterior::as_draws_matrix(fit$samples)
-  vars <- colnames(draws)
-
-  # Look for infection-related parameters with multiple patterns
-  inf_patterns <- c(
-    "epi\\.I_t\\[",
-    "epi\\.I_t\\.",
-    "^I_t\\[",
-    "^infections\\[",
-    "^expected_cases\\[",
-    "obs\\.y_t\\["
+  labels <- c(
+    cases = "Observations", Rt = "Reproduction number",
+    infections = "Infections", latent = "Latent process"
   )
-  inf_vars <- .find_time_indexed_vars(vars, inf_patterns)
-
-  if (length(inf_vars) > 0) {
-    # Variables are already sorted by find_time_indexed_vars
-    n_time <- min(length(inf_vars), nrow(obs_data))
-    inf_vars_use <- inf_vars[seq_len(n_time)]
-
-    inf_matrix <- as.matrix(draws[, inf_vars_use])
-
-    pred_df <- data.frame(
-      time_idx = seq_len(n_time),
-      median = apply(inf_matrix, 2, median),
-      q5 = apply(inf_matrix, 2, quantile, 0.05),
-      q95 = apply(inf_matrix, 2, quantile, 0.95)
-    )
-
-    p <- ggplot2::ggplot() +
-      ggplot2::geom_ribbon(
-        data = pred_df,
-        ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
-        fill = "steelblue", alpha = 0.3
-      ) +
-      ggplot2::geom_line(
-        data = pred_df,
-        ggplot2::aes(x = time_idx, y = median),
-        color = "steelblue"
-      ) +
-      ggplot2::geom_point(
-        data = obs_data,
-        ggplot2::aes(x = time_idx, y = .data[[case_col]]),
-        color = "black", size = 2
-      ) +
-      ggplot2::labs(
-        title = "Observed vs Fitted Cases",
-        subtitle = "Points: observed, Line: posterior median, Ribbon: 90% CI",
-        x = "Time",
-        y = "Cases"
-      ) +
-      ggplot2::theme_minimal()
-
-    return(p)
-  }
-
-  # Try to simulate infections from Rt using renewal equation
-  rt_matrix <- .reconstruct_rt_from_ar(fit)
-
-  if (!is.null(rt_matrix) && !is.null(fit$model$components$epi_model$spec)) {
-    # Get generation time distribution
-    gen_spec <- fit$model$components$epi_model$spec$gen_distribution
-    init_spec <- fit$model$components$epi_model$spec$initialisation_prior
-
-    if (!is.null(gen_spec)) {
-      # Discretize generation time (PMF for days 1 to max_gen)
-      max_gen <- 14  # Maximum generation time to consider
-      gen_pmf <- .discretize_distribution(gen_spec, max_gen)
-
-      # Get initial infections from prior median
-      init_infections <- if (!is.null(init_spec)) {
-        exp(init_spec$params[1])  # First param is mean of log-normal
-      } else {
-        obs_data[[case_col]][1]  # Fallback to first observation
-      }
-
-      # Simulate infections for each posterior draw
-      n_draws <- nrow(rt_matrix)
-      n_time <- ncol(rt_matrix)
-      inf_matrix <- matrix(NA, n_draws, n_time)
-
-      # Use observed data for seeding the renewal equation
-      observed_cases <- obs_data[[case_col]]
-
-      for (i in seq_len(n_draws)) {
-        inf_matrix[i, ] <- .simulate_renewal(
-          rt_matrix[i, ], gen_pmf, init_infections, n_time,
-          observed = observed_cases
-        )
-      }
-
-      # Create prediction data frame
-      pred_df <- data.frame(
-        time_idx = seq_len(n_time),
-        median = apply(inf_matrix, 2, median),
-        q5 = apply(inf_matrix, 2, quantile, 0.05),
-        q95 = apply(inf_matrix, 2, quantile, 0.95)
-      )
-
-      p <- ggplot2::ggplot() +
-        ggplot2::geom_ribbon(
-          data = pred_df,
-          ggplot2::aes(x = time_idx, ymin = q5, ymax = q95),
-          fill = "steelblue", alpha = 0.3
-        ) +
-        ggplot2::geom_line(
-          data = pred_df,
-          ggplot2::aes(x = time_idx, y = median),
-          color = "steelblue"
-        ) +
-        ggplot2::geom_point(
-          data = obs_data,
-          ggplot2::aes(x = time_idx, y = .data[[case_col]]),
-          color = "black", size = 2
-        ) +
-        ggplot2::labs(
-          title = "Observed vs Simulated Cases",
-          subtitle = "Points: observed, Line: simulated median, Ribbon: 90% CI",
-          x = "Time",
-          y = "Cases"
-        ) +
-        ggplot2::theme_minimal()
-
-      return(p)
-    }
-  }
-
-  # Final fallback: just plot observed data
-  message("Could not simulate cases from model parameters.")
-  message(
-    "Available parameters: ",
-    paste(head(vars, 15), collapse = ", "),
-    if (length(vars) > 15) ", ..." else ""
-  )
-
-  p <- ggplot2::ggplot(
-    obs_data,
-    ggplot2::aes(x = time_idx, y = .data[[case_col]])
-  ) +
-    ggplot2::geom_point(size = 2) +
-    ggplot2::geom_line() +
-    ggplot2::labs(
-      title = "Observed Cases",
-      subtitle = "Simulated cases not available",
-      x = "Time",
-      y = "Cases"
+  bands <- .trajectory_bands(quantity, .time_axis(x, ncol(quantity)))
+  p <- ggplot2::ggplot(bands, ggplot2::aes(x = .data$time)) +
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = .data$q5, ymax = .data$q95),
+      fill = "steelblue", alpha = 0.25
     ) +
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = .data$q25, ymax = .data$q75),
+      fill = "steelblue", alpha = 0.4
+    ) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$median), colour = "steelblue4") +
+    ggplot2::labs(x = if (is.null(x$dates)) "Time" else "Date",
+                  y = labels[[type]]) +
     ggplot2::theme_minimal()
-
+  if (type == "Rt") {
+    p <- p + ggplot2::geom_hline(yintercept = 1, linetype = "dashed")
+  }
+  if (type == "cases") {
+    observed <- data.frame(
+      time = .time_axis(x, length(x$y)), y = x$y
+    )
+    p <- p + ggplot2::geom_point(
+      data = observed[!is.na(observed$y), ],
+      ggplot2::aes(x = .data$time, y = .data$y),
+      inherit.aes = FALSE, size = 1
+    )
+    if (horizon > 0) {
+      p <- p + ggplot2::geom_vline(
+        xintercept = observed$time[nrow(observed)], linetype = "dotted"
+      )
+    }
+  }
   p
 }
 
-#' Plot posterior distributions for parameters
+#' Time axis for plotting
 #'
-#' @param fit An \code{epiaware_fit} object from \code{fit()}.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return A \code{ggplot2} object.
+#' @param fit An `epiaware_fit` object.
+#' @param n Number of time points, which may extend beyond the data.
+#' @return Dates if the fit has them, otherwise integers.
 #' @keywords internal
-.plot_posterior_distributions <- function(fit, ...) {
-
-  if (!requireNamespace("bayesplot", quietly = TRUE)) {
-    message("Package 'bayesplot' recommended for posterior plots.")
-    message("Install it with: install.packages('bayesplot')")
-
-    return(
-      ggplot2::ggplot() +
-        ggplot2::labs(title = "Posterior Distributions") +
-        ggplot2::theme_minimal()
-    )
+.time_axis <- function(fit, n) {
+  if (is.null(fit$dates)) {
+    return(seq_len(n))
   }
-
-  draws <- posterior::as_draws_matrix(fit$samples)
-  vars <- setdiff(colnames(draws), c(".chain", ".iteration", ".draw"))
-
-
-  # Filter to key parameters (exclude time-indexed like _t.1., _t.2.)
-  # Keep scalar parameters: damp_AR, std, ar_init, cluster_factor, init
-  key_patterns <- c("damp_AR", "^latent\\.std$", "ar_init", "cluster_factor",
-                    "^epi\\.init$", "initialisation")
-  key_vars <- vars[grepl(paste(key_patterns, collapse = "|"), vars)]
-
-  # If no key vars found, fall back to non-time-indexed parameters
-
-  if (length(key_vars) == 0) {
-    key_vars <- vars[!grepl("_t\\.\\d+\\.", vars)]
-  }
-
-  # Filter to finite values only
-  finite_vars <- key_vars[vapply(key_vars, function(v) {
-    all(is.finite(draws[, v]))
-  }, logical(1))]
-
-
-  if (length(finite_vars) == 0) {
-    message("No finite parameters found for posterior plot.")
-    return(
-      ggplot2::ggplot() +
-        ggplot2::labs(title = "Posterior Distributions") +
-        ggplot2::theme_minimal()
-    )
-  }
-
-  bayesplot::mcmc_areas(draws[, finite_vars, drop = FALSE])
+  dates <- as.Date(fit$dates)
+  step <- if (length(dates) > 1) dates[2] - dates[1] else 1
+  dates[1] + step * (seq_len(n) - 1)
 }
 
-#' Reconstruct Rt from AR parameters
+#' Summarise trajectories by time point
 #'
-#' @param fit An \code{epiaware_fit} object from \code{fit()}.
-#'
-#' @return A matrix of Rt values with rows as draws and columns as time
-#'   points, or \code{NULL} if AR parameters cannot be found.
+#' @param trajectories Matrix of draws (rows) by time points (columns).
+#' @param time Vector of time values, one per column.
+#' @return A data frame with columns `time`, `median`, `q5`, `q25`, `q75`
+#'   and `q95`, omitting time points without values.
 #' @keywords internal
-.reconstruct_rt_from_ar <- function(fit) {
-  draws <- posterior::as_draws_matrix(fit$samples)
-  vars <- colnames(draws)
-
-  # Look for AR innovation parameters (Greek epsilon)
-  eps_patterns <- c(
-    "latent\\.\\u03F5_t\\.", "latent\\.eps", "epsilon", "innovations"
-  )
-  eps_vars <- .find_time_indexed_vars(vars, eps_patterns)
-
-  if (length(eps_vars) == 0) {
-    return(NULL)
-  }
-
-  # Get AR parameters
-  damp_var <- .find_first_match(
-    vars, c("latent\\.damp", "damp_AR", "phi", "rho")
-  )
-  std_var <- .find_first_match(vars, c("latent\\.std", "sigma", "sd"))
-  init_var <- .find_first_match(vars, c("latent\\.ar_init", "init", "x0"))
-
-  if (is.na(damp_var) || is.na(std_var)) {
-    return(NULL)
-  }
-
-  # Reconstruct AR process for each draw
-
-  n_draws <- nrow(draws)
-  n_time <- length(eps_vars)
-  rt_matrix <- matrix(NA, n_draws, n_time)
-
-  for (i in seq_len(n_draws)) {
-    damp <- as.numeric(draws[i, damp_var])
-    std <- as.numeric(draws[i, std_var])
-    init <- if (!is.na(init_var)) as.numeric(draws[i, init_var]) else 0
-    eps <- as.numeric(draws[i, eps_vars])
-
-    latent <- numeric(n_time)
-    latent[1] <- init + std * eps[1]
-    for (t in 2:n_time) {
-      latent[t] <- damp * latent[t - 1] + std * eps[t]
-    }
-    rt_matrix[i, ] <- exp(latent)
-  }
-
-  rt_matrix
-}
-
-#' Discretize a continuous distribution to a PMF
-#'
-#' @param dist_spec A distribution specification list with \code{type}
-#'   (e.g., \code{"Gamma"}, \code{"LogNormal"}) and \code{params} fields.
-#' @param max_days Integer. Maximum number of days for the PMF.
-#'
-#' @return A numeric vector of length \code{max_days} summing to 1.
-#' @keywords internal
-.discretize_distribution <- function(dist_spec, max_days) {
-  # Get CDF values at each day boundary
-  type <- dist_spec$type
-  params <- dist_spec$params
-
-  # Calculate PMF by differencing CDF
-  pmf <- numeric(max_days)
-
-  if (type == "Gamma") {
-    shape <- params[1]
-    scale <- params[2]
-    for (d in seq_len(max_days)) {
-      pmf[d] <- stats::pgamma(d, shape = shape, scale = scale) -
-        stats::pgamma(d - 1, shape = shape, scale = scale)
-    }
-  } else if (type == "LogNormal") {
-    meanlog <- params[1]
-    sdlog <- params[2]
-    for (d in seq_len(max_days)) {
-      pmf[d] <- stats::plnorm(d, meanlog = meanlog, sdlog = sdlog) -
-        stats::plnorm(d - 1, meanlog = meanlog, sdlog = sdlog)
-    }
-  } else {
-    # Default: uniform
-    pmf <- rep(1 / max_days, max_days)
-  }
-
-  # Normalize to sum to 1
-
-  pmf / sum(pmf)
-}
-
-#' Simulate infections using renewal equation
-#'
-#' @param rt Numeric vector of time-varying reproduction numbers.
-#' @param gen_pmf Numeric vector. Discretized generation time PMF.
-#' @param init_infections Numeric. Initial infection count for seeding.
-#' @param n_time Integer. Number of time steps to simulate.
-#' @param observed Optional numeric vector of observed case counts for
-#'   seeding the renewal equation. Defaults to \code{NULL}.
-#'
-#' @return A numeric vector of simulated infection counts of length
-#'   \code{n_time}.
-#' @keywords internal
-.simulate_renewal <- function(rt, gen_pmf, init_infections, n_time,
-                              observed = NULL) {
-  max_gen <- length(gen_pmf)
-  infections <- numeric(n_time)
-
-  # Use observed data for seeding if available, otherwise use constant
-  # This provides the "past infections" needed for the renewal equation
-  if (!is.null(observed) && length(observed) > 0) {
-    seed_length <- min(max_gen, n_time, length(observed))
-    seed_vals <- observed[seq_len(seed_length)]
-    # Validate seed values: replace NA/NaN/Inf/negative with small positive
-    seed_vals[!is.finite(seed_vals) | seed_vals < 0] <- 0.1
-    infections[seq_len(seed_length)] <- seed_vals
-  } else {
-    seed_length <- min(max_gen, n_time)
-    infections[seq_len(seed_length)] <- init_infections
-  }
-
-  # Early return if seed covers entire time series
-  if (seed_length >= n_time) {
-    return(infections)
-  }
-
-  # Simulate forward using renewal equation
-  for (t in seq(seed_length + 1, n_time)) {
-    # Convolution: sum over generation time
-    infectivity <- 0
-    for (s in seq_len(max_gen)) {
-      if (t - s >= 1) {
-        infectivity <- infectivity + gen_pmf[s] * infections[t - s]
-      }
-    }
-    infections[t] <- rt[t] * infectivity
-
-    # Ensure positive and finite
-    if (infections[t] < 0.1 || !is.finite(infections[t])) {
-      infections[t] <- 0.1
-    }
-  }
-
-  infections
+.trajectory_bands <- function(trajectories, time) {
+  probs <- c(q5 = 0.05, q25 = 0.25, median = 0.5, q75 = 0.75, q95 = 0.95)
+  trajectories[is.nan(trajectories)] <- NA
+  quantiles <- t(apply(trajectories, 2, stats::quantile, probs = probs,
+                       na.rm = TRUE, names = FALSE))
+  colnames(quantiles) <- names(probs)
+  bands <- data.frame(time = time, quantiles)
+  bands[stats::complete.cases(bands), ]
 }

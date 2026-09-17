@@ -1,37 +1,36 @@
 Package: EpiAwareR
 Type: Package
-Title: R Interface to the 'EpiAware' Infectious Disease Modelling Framework
+Title: Composable Infectious Disease Models via 'ComposableTuringIDModels.jl'
 Version: 0.2.0.9000
 Authors@R: person("Sebastian", "Funk", email = "sebastian.funk@lshtm.ac.uk", role = c("aut", "cre", "cph"))
-Description: Provides an R interface to the 'Julia'-based 'EpiAware'
-    compositional infectious disease modelling framework. Enables users to
-    build flexible epidemiological models by composing reusable components for
-    latent processes, infection dynamics, and observation models without
-    requiring 'Julia' expertise.
+Description: Provides an R interface to 'ComposableTuringIDModels.jl', the
+    composable probabilistic infectious disease modelling package of the
+    'EpiAware' ecosystem. Models are assembled in R from reusable latent
+    process, infection and observation components, then simulated from and
+    fitted to data in 'Julia' using 'Turing.jl', without requiring 'Julia'
+    expertise.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.0.0)
 Imports:
-    juliaready,
-    tibble,
-    posterior,
-    ggplot2,
     checkmate,
-    rlang
+    distspec (>= 0.2.0),
+    ggplot2,
+    juliaready,
+    posterior,
+    rlang,
+    stats
 Suggests:
-    testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    readr,
-    bayesplot,
-    patchwork,
-    EpiNow2
+    testthat (>= 3.0.0)
 Remotes:
     sbfnk/juliaready
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
-SystemRequirements: Julia (>= 1.9.0), Julia packages: EpiAware, Turing, Distributions
+SystemRequirements: Julia (>= 1.11), Julia packages: ComposableTuringIDModels,
+    Turing, Distributions (installed automatically)
 URL: https://github.com/sbfnk/EpiAwareR
 BugReports: https://github.com/sbfnk/EpiAwareR/issues

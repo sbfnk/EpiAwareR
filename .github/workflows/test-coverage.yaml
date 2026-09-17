@@ -27,7 +27,7 @@ jobs:
 
       - uses: julia-actions/setup-julia@v3
         with:
-          version: '1.11'  # Match the Julia version EpiAware requires
+          version: '1.12'  # Match inst/julia/Manifest.toml
 
       - name: Cache Julia packages
         uses: julia-actions/cache@v3
@@ -45,28 +45,6 @@ jobs:
         with:
           extra-packages: any::covr, local::.
           needs: coverage
-
-      - uses: conda-incubator/setup-miniconda@v4
-        with:
-          miniconda-version: "latest"
-          activate-environment: ""
-
-      - name: Link conda for Julia
-        run: |
-          mkdir -p "$HOME/.julia/conda/3"
-          ARCH=$(uname -m)
-          ln -sf "$CONDA" "$HOME/.julia/conda/3/$ARCH"
-          # macOS reports arm64, but Julia uses aarch64
-          if [ "$ARCH" = "arm64" ]; then
-            ln -sf "$CONDA" "$HOME/.julia/conda/3/aarch64"
-          fi
-        shell: bash
-
-      - name: Install JuliaCall dependencies
-        run: |
-          export R_HOME=$(R RHOME)
-          julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
-        shell: bash
 
       - name: Setup Julia dependencies
         run: |

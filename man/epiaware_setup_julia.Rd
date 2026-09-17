@@ -2,29 +2,34 @@
 % Please edit documentation in R/setup.R
 \name{epiaware_setup_julia}
 \alias{epiaware_setup_julia}
-\title{Setup Julia and EpiAware}
+\title{Set up Julia for EpiAwareR}
 \usage{
 epiaware_setup_julia(verbose = TRUE)
 }
 \arguments{
-\item{verbose}{Logical. If TRUE, prints progress messages.}
+\item{verbose}{Logical. If `TRUE`, prints progress messages.}
 }
 \value{
-Invisible TRUE on success.
+Invisibly `TRUE` on success.
 }
 \description{
-Configures Julia and installs required Julia packages for EpiAwareR.
-If a `julia` version is pinned in upstream EpiAware's Project.toml, that
-version is installed via [juliaup](https://github.com/JuliaLang/juliaup)
-and used; otherwise the system Julia is used.
+Installs the pinned Julia dependencies of EpiAwareR
+(ComposableTuringIDModels.jl, Turing.jl and their dependencies) and starts
+a Julia session with them loaded. This happens automatically on first use,
+so it only needs calling directly to see progress or to troubleshoot.
 }
 \details{
-Heavy lifting (subprocess install, lazy-init guard) is delegated to
-[juliaready::julia_ready()].
+If [juliaup](https://github.com/JuliaLang/juliaup) is available, the Julia
+version the dependencies were resolved with is installed and used.
+Otherwise the Julia on the `PATH` (or in `JULIA_BINDIR`) is used. Set the
+environment variable `JULIA_NUM_THREADS` before Julia starts to sample MCMC
+chains in parallel.
+
+The first call can take several minutes while Julia packages are installed
+and precompiled.
 }
 \examples{
 \dontrun{
 epiaware_setup_julia()
 }
-
 }
