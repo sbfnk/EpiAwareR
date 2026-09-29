@@ -12,7 +12,7 @@ the composable probabilistic infectious disease modelling package of the
 interchangeable latent process, infection and observation components,
 and Julia simulates from it and fits it with
 [Turing.jl](https://turinglang.org). You do not need to write any Julia,
-and `as_julia()` shows the Julia code a model runs.
+and `as_julia()` shows the Julia code that builds a model.
 
 ## Installation
 
