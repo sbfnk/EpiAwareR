@@ -321,7 +321,9 @@
 #' @return Invisibly `TRUE`.
 #' @keywords internal
 .assert_positive <- function(x, arg_name) {
-  checkmate::assert_number(x, null.ok = TRUE, .var.name = arg_name)
+  checkmate::assert_number(
+    x, finite = TRUE, null.ok = TRUE, .var.name = arg_name
+  )
   if (!is.null(x) && x <= 0) {
     stop("`", arg_name, "` must be greater than zero.", call. = FALSE)
   }
