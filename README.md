@@ -79,8 +79,8 @@ delayed <- IDModel(
 )
 ```
 
-`component()` and `julia()` reach ComposableTuringIDModels.jl
-constructors that have no R wrapper.
+`component()` calls any Julia constructor that has no R wrapper, and
+`julia()` inserts other Julia code, such as a function, verbatim.
 
 ## Contributing
 
