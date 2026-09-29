@@ -1,0 +1,32 @@
+#' Compose an infection and an observation model
+#'
+#' Joins an infection model, which carries its own latent process, to an
+#' observation model. The result can be simulated from with [simulate()] and
+#' fitted to data with [fit()].
+#'
+#' @param infection An infection model, e.g. from [Renewal()].
+#' @param observation An observation model, e.g. from
+#'   [NegativeBinomialError()].
+#'
+#' @return An object of class `cidm_model`.
+#'
+#' @family components
+#' @examples
+#' model <- IDModel(
+#'   infection = Renewal(
+#'     generation_time = Gamma(shape = 6.5, scale = 0.62),
+#'     rt = AR(),
+#'     initialisation = Normal(log(1), 0.1)
+#'   ),
+#'   observation = NegativeBinomialError(cluster_factor = HalfNormal(0.1))
+#' )
+#' model
+#'
+#' # The Julia code this model runs
+#' cat(as_julia(model))
+#' @export
+IDModel <- function(infection, observation) { # nolint: object_name_linter.
+  .assert_role(infection, "infection")
+  .assert_role(observation, "observation")
+  component("IDModel", infection, observation, role = "model")
+}

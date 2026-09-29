@@ -2,6 +2,6 @@
 # It is run by R CMD check.
 
 library(testthat)
-library(EpiAwareR)
+library(composableIDModelR)
 
-test_check("EpiAwareR")
+test_check("composableIDModelR")

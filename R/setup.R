@@ -1,212 +1,202 @@
-#' Setup specific Julia version using juliaup
+# Environment tracking Julia initialisation and fitted-model handles.
+.cidm_env <- new.env(parent = emptyenv())
+
+#' Locate the bundled Julia project
 #'
-#' Installs and configures a specific Julia version using juliaup if available.
-#' Returns the path to the Julia bin directory, suitable for use as
-#' `JULIACONNECTOR_JULIABIN` (set by the caller via [Sys.setenv()]).
-#'
-#' @param version Character string with the required Julia version (e.g., "1.11").
-#' @param verbose Logical. If TRUE, prints progress messages.
-#'
-#' @return Path to the Julia executable (not the bin directory), or `NULL`
-#'   if juliaup is not available or installation failed.
-#'
+#' @return Path to the directory holding `Project.toml`, `Manifest.toml` and
+#'   the `composableIDModelR` Julia package.
 #' @keywords internal
-.setup_julia_version <- function(version, verbose = TRUE) {
-  juliaup_path <- Sys.which("juliaup")
-  if (juliaup_path == "") {
+.julia_project <- function() {
+  project <- system.file("julia", package = "composableIDModelR")
+  if (!nzchar(project) || !file.exists(file.path(project, "Project.toml"))) {
+    # Development load (pkgload::load_all) from the source tree.
+    project <- file.path(getwd(), "inst", "julia")
+  }
+  project
+}
+
+#' Julia version the bundled Manifest was resolved with
+#'
+#' @param project Path to the bundled Julia project.
+#' @return Character string with the major and minor version (e.g. `"1.12"`),
+#'   or `NULL` if it cannot be read.
+#' @keywords internal
+.manifest_julia_version <- function(project = .julia_project()) {
+  manifest <- file.path(project, "Manifest.toml")
+  if (!file.exists(manifest)) {
+    return(NULL)
+  }
+  line <- grep("^julia_version", readLines(manifest, warn = FALSE),
+               value = TRUE)
+  version <- regmatches(line, regexpr("[0-9]+\\.[0-9]+", line))
+  if (length(version) == 0) NULL else version
+}
+
+#' Install a Julia version with juliaup
+#'
+#' @param version Character string with the Julia version (e.g. `"1.12"`).
+#' @param verbose Logical. If `TRUE`, prints progress messages.
+#' @return Path to the Julia executable, or `NULL` if juliaup is unavailable
+#'   or the installation failed.
+#' @keywords internal
+.juliaup_julia <- function(version, verbose = TRUE) {
+  if (!nzchar(Sys.which("juliaup"))) {
     if (verbose) {
       message(
-        "juliaup not found. Install it from https://github.com/JuliaLang/juliaup"
+        "juliaup not found, using the Julia on the PATH. Install juliaup ",
+        "from https://github.com/JuliaLang/juliaup to match Julia ", version,
+        "."
       )
-      message("Falling back to default Julia installation...")
     }
     return(NULL)
   }
-
-  if (verbose) message("Using juliaup to set up Julia ", version, "...")
-
-  install_result <- tryCatch(
-    {
-      system2(
-        "juliaup", c("add", version),
-        stdout = if (verbose) "" else FALSE,
-        stderr = if (verbose) "" else FALSE
-      )
-      TRUE
-    },
-    error = function(e) FALSE
+  status <- tryCatch(
+    system2("juliaup", c("add", version), stdout = FALSE, stderr = FALSE),
+    error = function(e) 1L
   )
-
-  if (!install_result) {
-    if (verbose) message("Failed to install Julia ", version, " via juliaup")
+  if (!identical(as.integer(status), 0L)) {
     return(NULL)
   }
-
-  julia_base <- path.expand("~/.julia/juliaup")
-  julia_dirs <- list.dirs(julia_base, recursive = FALSE, full.names = TRUE)
-  version_pattern <- paste0("julia-", version)
-  matching_dirs <- julia_dirs[grepl(version_pattern, julia_dirs)]
-
-  if (length(matching_dirs) == 0) {
-    if (verbose) message("Could not find Julia ", version, " installation path")
-    return(NULL)
-  }
-
-  julia_bin <- file.path(matching_dirs[1], "bin", "julia")
-  if (file.exists(julia_bin)) {
-    if (verbose) message("Found Julia ", version, " at: ", julia_bin)
-    return(julia_bin)
-  }
-  NULL
+  julia_dirs <- list.dirs(
+    file.path(path.expand("~"), ".julia", "juliaup"), recursive = FALSE
+  )
+  matching <- julia_dirs[startsWith(basename(julia_dirs),
+                                    paste0("julia-", version, "."))]
+  exe <- if (.Platform$OS.type == "windows") "julia.exe" else "julia"
+  bins <- file.path(sort(matching, decreasing = TRUE), "bin", exe)
+  bins <- bins[file.exists(bins)]
+  if (length(bins) == 0) NULL else bins[1]
 }
 
-#' Get required Julia version from EpiAware Project.toml
+#' Set up Julia for composableIDModelR
 #'
-#' Fetches the Julia version compatibility from the upstream EpiAware package.
+#' Installs the pinned Julia dependencies of composableIDModelR
+#' (ComposableTuringIDModels.jl, Turing.jl and their dependencies) and starts
+#' a Julia session with them loaded. This happens automatically on first use,
+#' so it only needs calling directly to see progress or to troubleshoot.
 #'
-#' @return Character string with the required Julia version (e.g., "1.11"),
-#'   or NULL if it cannot be determined.
+#' If [juliaup](https://github.com/JuliaLang/juliaup) is available, the Julia
+#' version the dependencies were resolved with is installed and used.
+#' Otherwise the Julia on the `PATH` (or in `JULIA_BINDIR`) is used, which
+#' must be new enough for the bundled `Manifest.toml`. Set the
+#' environment variable `JULIA_NUM_THREADS` before Julia starts to sample MCMC
+#' chains in parallel.
 #'
-#' @keywords internal
-.get_epiaware_julia_version <- function() {
-  url <- paste0(
-    "https://raw.githubusercontent.com/CDCgov/Rt-without-renewal/",
-    "main/EpiAware/Project.toml"
-  )
-  tryCatch(
-    {
-      lines <- readLines(url, warn = FALSE)
-      julia_line <- grep("^julia[[:space:]]*=", lines, value = TRUE)
-      if (length(julia_line) > 0) {
-        match <- regmatches(
-          julia_line,
-          regexpr('"[0-9]+\\.[0-9]+(\\.[0-9]+)?"', julia_line)
-        )
-        if (length(match) > 0) {
-          return(gsub('"', "", match))
-        }
-      }
-      NULL
-    },
-    error = function(e) NULL
-  )
-}
-
-# Environment to track Julia initialisation state
-.epiaware_env <- new.env(parent = emptyenv())
-
-#' Setup Julia and EpiAware
+#' The first call can take several minutes while Julia packages are installed
+#' and precompiled.
 #'
-#' Configures Julia and installs required Julia packages for EpiAwareR.
-#' If a `julia` version is pinned in upstream EpiAware's Project.toml, that
-#' version is installed via [juliaup](https://github.com/JuliaLang/juliaup)
-#' and used; otherwise the system Julia is used.
-#'
-#' Heavy lifting (subprocess install, lazy-init guard) is delegated to
-#' [juliaready::julia_ready()].
-#'
-#' @param verbose Logical. If TRUE, prints progress messages.
-#' @return Invisible TRUE on success.
+#' @param verbose Logical. If `TRUE`, prints progress messages.
+#' @return Invisibly `TRUE` on success.
 #'
 #' @examples
 #' \dontrun{
-#' epiaware_setup_julia()
+#' cidm_setup_julia()
 #' }
-#'
 #' @export
-epiaware_setup_julia <- function(verbose = TRUE) {
-  # Pin the Julia binary if upstream specifies a version, then juliaready
-  # picks it up via the JULIACONNECTOR_JULIABIN env var.
-  required_version <- .get_epiaware_julia_version()
-  if (!is.null(required_version)) {
-    if (verbose) message("EpiAware requires Julia ", required_version)
-    pinned_bin <- .setup_julia_version(required_version, verbose)
-    if (!is.null(pinned_bin)) {
-      Sys.setenv(JULIACONNECTOR_JULIABIN = pinned_bin)
-    }
+cidm_setup_julia <- function(verbose = TRUE) {
+  if (cidm_available()) {
+    return(invisible(TRUE))
   }
-
-  bridge <- system.file("julia", package = "EpiAwareR")
-  if (!nzchar(bridge) || !file.exists(file.path(bridge, "Project.toml"))) {
-    # Development load (load_all): fall back to the source tree.
-    bridge <- file.path(getwd(), "inst", "julia")
-  }
-
-  # If a sibling EpiAware/EpiAware/ checkout exists (development workflow),
-  # dev that source into the bundled project before instantiation.
-  epiaware_r_path <- system.file(package = "EpiAwareR")
-  if (epiaware_r_path == "") epiaware_r_path <- getwd()
-  local_julia_path <- file.path(
-    dirname(epiaware_r_path), "EpiAware", "EpiAware"
-  )
-  if (dir.exists(local_julia_path)) {
-    if (verbose) message("Using local EpiAware checkout: ", local_julia_path)
-    bin <- juliaready::julia_bin()
-    juliaready:::julia_subprocess(
-      sprintf(
-        'import Pkg; Pkg.activate("%s"); Pkg.develop(path="%s")',
-        gsub("\\\\", "/", bridge),
-        gsub("\\\\", "/", local_julia_path)
-      ),
-      bin = bin
-    )
+  project <- .julia_project()
+  version <- .manifest_julia_version(project)
+  if (!is.null(version) && !nzchar(Sys.getenv("JULIACONNECTOR_JULIABIN"))) {
+    bin <- .juliaup_julia(version, verbose)
+    if (!is.null(bin)) Sys.setenv(JULIACONNECTOR_JULIABIN = bin)
   }
 
   juliaready::julia_ready(
-    packages  = c("EpiAware", "Turing", "Distributions",
-                  "MCMCChains", "Pathfinder", "ADTypes"),
-    state_env = .epiaware_env,
-    project   = bridge,
-    install   = FALSE,
-    verbose   = verbose
+    packages = c("ComposableTuringIDModels", "Distributions",
+                 "composableIDModelR"),
+    state_env = .cidm_env,
+    project = project,
+    verbose = verbose
   )
 
-  if (verbose) message("EpiAwareR Julia backend ready")
+  if (verbose) message("composableIDModelR Julia backend ready")
   invisible(TRUE)
 }
 
-#' Check if Julia and EpiAware are available
+#' Check whether the Julia backend is running
 #'
-#' @return Logical. `TRUE` if Julia and EpiAware are available, `FALSE` otherwise.
+#' A Julia process that has gone away leaves the setup flag behind, so
+#' clearing it here lets the next call set Julia up again rather than fail on
+#' a session that no longer holds the bridge. Recovery works where
+#' JuliaConnectoR has dropped the connection itself, after
+#' [JuliaConnectoR::stopJulia()] or an interrupt; a process killed from
+#' outside leaves a stale connection that `stopJulia()` clears.
+#'
+#' @return Logical. `TRUE` if Julia has been set up in this R session.
 #'
 #' @examples
-#' \dontrun{
-#' if (epiaware_available()) {
-#'   # Run EpiAware analysis
-#' } else {
-#'   epiaware_setup_julia()
-#' }
-#' }
-#'
+#' cidm_available()
 #' @export
-epiaware_available <- function() {
-  isTRUE(.epiaware_env$ready) &&
-    tryCatch(
-      juliaready::eval_julia("isdefined(Main, :EpiAware)"),
-      error = function(e) FALSE
+cidm_available <- function() {
+  if (!isTRUE(.cidm_env$ready)) {
+    return(FALSE)
+  }
+  running <- tryCatch(
+    isTRUE(juliaready::eval_julia("isdefined(Main, :composableIDModelR)")),
+    error = function(e) FALSE
+  )
+  if (!running) {
+    # The same environment is kept, because handle ownership is its identity.
+    .cidm_env$ready <- FALSE
+  }
+  running
+}
+
+#' Call a bridge function, starting Julia if needed
+#'
+#' Releases the Julia objects of fits that R has garbage collected before
+#' making the call. Releasing waits until here because finalisers may run
+#' while another Julia call is in progress.
+#'
+#' @param fn Name of a function in the `composableIDModelR` Julia module.
+#' @param ... Arguments passed to the function.
+#' @return The translated result of the call.
+#' @keywords internal
+.bridge <- function(fn, ...) {
+  if (!cidm_available()) cidm_setup_julia(verbose = FALSE)
+  released <- .cidm_env$released
+  .cidm_env$released <- NULL
+  for (fit in released) {
+    try(
+      juliaready::call_julia(
+        "composableIDModelR.release!", fit$handle, fit$session
+      ),
+      silent = TRUE
     )
+  }
+  juliaready::call_julia(paste0("composableIDModelR.", fn), ...)
 }
 
-#' Initialise Julia lazily (on first use)
+#' Keep a Julia-side object alive while an R object refers to it
 #'
-#' @return Invisibly `TRUE` on success.
+#' The session token travels with the handle because handles are numbered
+#' from the same base in every Julia session, so one from an earlier session
+#' would otherwise name whichever fit now holds that number.
+#'
+#' Saving a fit copies the environment by value but not its finaliser, so a
+#' reloaded fit names a Julia object it does not own. Recording this session's
+#' state environment tells the two apart, because a copy of it is no longer
+#' the same object.
+#'
+#' @param handle Integer handle returned by the bridge.
+#' @param session Character token identifying the Julia session.
+#' @return An environment holding the handle, released when collected.
 #' @keywords internal
-.ensure_julia_initialized <- function() {
-  juliaready::ensure_julia(.epiaware_env, function() {
-    epiaware_setup_julia(verbose = FALSE)
+.julia_handle <- function(handle, session) {
+  env <- new.env(parent = emptyenv())
+  env$handle <- handle
+  env$session <- session
+  env$owner <- .cidm_env
+  reg.finalizer(env, function(e) {
+    if (!identical(e$owner, .cidm_env)) {
+      return(invisible(NULL))
+    }
+    .cidm_env$released <- c(
+      .cidm_env$released, list(list(handle = e$handle, session = e$session))
+    )
   })
-}
-
-#' Package load hook
-#'
-#' @param libname Character string. Library directory where the package is
-#'   installed.
-#' @param pkgname Character string. The package name.
-#'
-#' @return `NULL` (called for side effects).
-#' @keywords internal
-.onLoad <- function(libname, pkgname) {
-  # Lazy: do not initialise Julia on package load. Eager init in .onLoad
-  # interacts badly with other compiled backends (notably Stan) and can
-  # crash R during attach.
+  env
 }

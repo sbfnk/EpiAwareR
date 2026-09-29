@@ -1,153 +1,97 @@
-# Observation process models linking latent infections to observed data
+# Observation models linking infections to observed data.
 
-#' Negative Binomial Observation Error Model
+#' Observation models
 #'
-#' Links latent infections to observed case counts using a negative binomial
-#' distribution. The cluster_factor parameterizes the overdispersion as the
-#' coefficient of variation (sqrt(1/phi)), which is more intuitive for setting
-#' priors than the dispersion parameter phi directly.
+#' Models linking expected observations to data. Error models
+#' (`PoissonError()`, `NegativeBinomialError()`, `NormalError()`) define the
+#' likelihood; modifiers (`LatentDelay()`, `Ascertainment()`) wrap another
+#' observation model to transform the expected observations first. Each wraps
+#' the constructor of the same name in ComposableTuringIDModels.jl. `NULL`
+#' arguments use the Julia default, and `delta_d` is the discretisation width
+#' Julia spells with a Greek delta.
 #'
-#' @param cluster_factor_prior Distribution specification for the cluster factor
-#'   (sqrt(1/phi)), which represents the coefficient of variation of observation
-#'   noise.
+#' @param cluster_factor Prior for the negative binomial cluster factor,
+#'   \eqn{\sqrt{1/\phi}}, which is approximately the coefficient of variation
+#'   of the observation noise.
+#' @param std Prior for the standard deviation of normal observation error.
+#' @param model The observation model to wrap.
+#' @param delay The delay from infection to observation: a continuous
+#'   distribution (discretised in Julia with double interval censoring), a
+#'   numeric probability vector whose first entry is a delay of zero, or a
+#'   `NonParametric()` or `Fixed()` distribution, which is discretised in R.
+#'   Uncertain parameters give an inferred delay.
+#' @param D Numeric. Maximum delay used when discretising a distribution,
+#'   taken from the distribution's `max` when it has one.
+#' @param delta_d Numeric. Discretisation interval width.
+#' @param latent_model Ascertainment on the log scale: a distribution for a
+#'   constant ascertainment or a latent model for a time-varying one.
 #'
-#' @return An S3 object of class \code{c("epiaware_negbin",
-#'   "epiaware_observation", "epiaware_model")} containing:
-#' \describe{
-#'   \item{julia_ref}{Reference to the Julia NegativeBinomialError object}
-#'   \item{spec}{List of model specifications}
-#' }
+#' @return An object of class `cidm_observation`.
 #'
+#' @family components
+#' @name observation-models
 #' @examples
-#' \dontrun{
-#' # Negative binomial observation model
-#' negbin <- NegativeBinomialError(
-#'   cluster_factor_prior = halfnorm(0.1)
+#' # Negative binomial reporting of infections after an incubation period
+#' LatentDelay(
+#'   NegativeBinomialError(cluster_factor = HalfNormal(0.1)),
+#'   delay = LogNormal(1.6, 0.42)
 #' )
-#' print(negbin)
-#' }
 #'
-#' @export
+#' # Poisson reporting of 10% of infections
+#' Ascertainment(PoissonError(), latent_model = FixedIntercept(log(0.1)))
+NULL
+
 # nolint start: object_name_linter.
-NegativeBinomialError <- function(cluster_factor_prior) {
-  # nolint end: object_name_linter.
-  # Validate inputs
-  .check_distribution(cluster_factor_prior)
-  .check_julia()
 
-  # Convert prior to Julia
-  julia_prior <- .to_julia_dist(cluster_factor_prior)
-
-  # Create NegativeBinomialError model using positional constructor
-  julia_obj <- .call_julia_constructor(
-    "NegativeBinomialError",
-    list(cluster_factor_prior = julia_prior),
-    use_keywords = FALSE
-  )
-
-  # Return S3 object
-  structure(
-    list(
-      julia_ref = julia_obj,
-      spec = list(cluster_factor_prior = cluster_factor_prior)
-    ),
-    class = c("epiaware_negbin", "epiaware_observation", "epiaware_model")
-  )
-}
-
-#' Latent Delay Observation Model
-#'
-#' Wraps an observation model with a reporting delay, convolving the latent
-#' infections with a delay distribution. This is used to model delays between
-#' infection and observation (e.g., incubation period, reporting delays).
-#'
-#' @param model An observation model object (e.g., from
-#'   \code{NegativeBinomialError}).
-#' @param delay_distribution Distribution specification for the delay.
-#'   Can be any continuous distribution that will be discretized.
-#'
-#' @return An S3 object of class \code{c("epiaware_delay",
-#'   "epiaware_observation", "epiaware_model")} containing:
-#' \describe{
-#'   \item{julia_ref}{Reference to the Julia LatentDelay object}
-#'   \item{base_model}{The wrapped observation model}
-#'   \item{spec}{List of model specifications}
-#' }
-#'
-#' @examples
-#' \dontrun{
-#' # Add incubation and reporting delays to observation model
-#' negbin <- NegativeBinomialError(halfnorm(0.1))
-#'
-#' # Add incubation delay
-#' incubation_model <- LatentDelay(
-#'   negbin,
-#'   delay_distribution = lognorm(1.6, 0.42)
-#' )
-#'
-#' # Add reporting delay
-#' full_model <- LatentDelay(
-#'   incubation_model,
-#'   delay_distribution = lognorm(0.58, 0.47)
-#' )
-#' }
-#'
+#' @rdname observation-models
 #' @export
-# nolint start: object_name_linter.
-LatentDelay <- function(model, delay_distribution) {
-  # nolint end: object_name_linter.
-  # Validate inputs
-  .check_model_component(model, type = "observation")
-  .check_distribution(delay_distribution)
-  .check_julia()
+PoissonError <- function() {
+  component("PoissonError", role = "observation")
+}
 
-  # Convert delay distribution to Julia
-  julia_delay <- .to_julia_dist(delay_distribution)
-
-  # Create LatentDelay model wrapping the base model
-  # LatentDelay(model::M, distribution::C; D, Δd)
-  julia_obj <- .call_julia_constructor(
-    "LatentDelay",
-    list(model = model$julia_ref, distribution = julia_delay),
-    use_keywords = FALSE
-  )
-
-  # Return S3 object
-  structure(
-    list(
-      julia_ref = julia_obj,
-      base_model = model,
-      spec = list(delay_distribution = delay_distribution)
-    ),
-    class = c("epiaware_delay", "epiaware_observation", "epiaware_model")
+#' @rdname observation-models
+#' @export
+NegativeBinomialError <- function(cluster_factor = NULL) {
+  cluster_factor <- .as_prior_slot(cluster_factor)
+  component(
+    "NegativeBinomialError", cluster_factor = cluster_factor,
+    role = "observation"
   )
 }
 
-#' Print method for negative binomial observation models
-#'
-#' @param x An \code{epiaware_negbin} object.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object \code{x}.
-#'
+#' @rdname observation-models
 #' @export
-print.epiaware_negbin <- function(x, ...) {
-  cat("<EpiAware Negative Binomial Observation Model>\n")
-  cat("  Cluster factor prior:", x$spec$cluster_factor_prior$type, "\n")
-  invisible(x)
+NormalError <- function(std = NULL) {
+  std <- .as_prior_slot(std)
+  component("NormalError", std = std, role = "observation")
 }
 
-#' Print method for latent delay observation models
-#'
-#' @param x An \code{epiaware_delay} object.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object \code{x}.
-#'
+#' @rdname observation-models
 #' @export
-print.epiaware_delay <- function(x, ...) {
-  cat("<EpiAware Latent Delay Observation Model>\n")
-  cat("  Delay distribution:", x$spec$delay_distribution$type, "\n")
-  cat("  Base model:", class(x$base_model)[1], "\n")
-  invisible(x)
+LatentDelay <- function(model, delay, D = NULL, delta_d = NULL) {
+  .assert_role(model, "observation")
+  .assert_positive(D, "D")
+  .assert_positive(delta_d, "delta_d")
+  delay <- .as_delay(delay, D, delta_d)
+  max_delay <- delay$max_delay
+  args <- list(model, delay$dist,
+               D = if (!is.null(max_delay)) as.numeric(max_delay))
+  args[["\u0394d"]] <- if (!is.null(delay$delta_d)) as.numeric(delay$delta_d)
+  do.call(component, c("LatentDelay", args, role = "observation"))
 }
+
+#' @rdname observation-models
+#' @export
+Ascertainment <- function(model, latent_model) {
+  .assert_role(model, "observation")
+  if (is.null(latent_model) ||
+        (is.list(latent_model) &&
+           !inherits(latent_model, c("cidm_component", "dist_spec")))) {
+    stop("`latent_model` must be a distribution or a latent model.",
+         call. = FALSE)
+  }
+  latent_model <- .as_prior_slot(latent_model)
+  component("Ascertainment", model, latent_model, role = "observation")
+}
+
+# nolint end

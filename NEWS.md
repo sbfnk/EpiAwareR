@@ -1,4 +1,47 @@
-# EpiAwareR (development version)
+# composableIDModelR (development version)
+
+## Breaking changes
+
+* The package has been renamed from EpiAwareR to composableIDModelR, and
+  `epiaware_setup_julia()` and `epiaware_available()` are now
+  `cidm_setup_julia()` and `cidm_available()`.
+* The package now wraps
+  [ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl),
+  the successor to EpiAware.jl, and the interface has been rewritten around it.
+  Code written for earlier versions needs updating.
+* Components mirror their Julia constructors: argument names follow Julia
+  (e.g. `AR(damp, init, epsilon_t)`, `Renewal(generation_time, rt,
+  initialisation)`, `NegativeBinomialError(cluster_factor)`), and
+  distributions come from [distspec](https://epiforecasts.io/distspec/)
+  (`Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
+  `Beta()`, `Fixed()`, `NonParametric()`, re-exported), replacing `norm()`,
+  `gamma_dist()`, `lognorm()` and `exponential()`. `HalfNormal()` (parameterised
+  by its mean) and `truncated()` replace `halfnorm()` and `truncnorm()`.
+* The latent process now belongs to the infection model (e.g.
+  `Renewal(rt = AR())`), and `IDModel(infection, observation)` replaces
+  `EpiProblem()`. There is no `tspan`: pass the observations to fit directly.
+* `fit(model, y, method = nuts())` takes a numeric vector of observations and
+  replaces `nuts_sampler()` with `nuts()`. Pathfinder initialisation has been
+  removed.
+* `epiaware_call()` has been replaced by `component()` and `julia()`.
+* `plot(type = "posterior")` has been removed; use bayesplot on
+  `posterior::as_draws_array(fit)` instead.
+
+## New features
+
+* Components are lazy R objects rendered to Julia code, so models can be built
+  and printed without starting Julia. `as_julia()` shows the Julia code.
+* New components: `MA()`, `RandomWalk()`, `IID()`, `Intercept()`,
+  `FixedIntercept()`, `HierarchicalNormal()`, `DiffLatentModel()`,
+  `DirectInfections()`, `ExpGrowthRate()`, `PoissonError()`, `NormalError()`,
+  and `Ascertainment()`.
+* Delays and generation times with uncertain distspec parameters (e.g.
+  `LogNormal(meanlog = Normal(1.6, 0.2), sdlog = Normal(0.4, 0.05), max = 15)`)
+  are inferred.
+* `simulate()` draws from a model's prior.
+* `predict()` returns posterior predictive draws and forecasts.
+* `plot()` gains `type = "infections"`, `type = "latent"` and a `horizon`
+  argument for forecasts.
 
 # EpiAwareR 0.2.0
 

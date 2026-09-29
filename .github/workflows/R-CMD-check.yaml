@@ -51,7 +51,7 @@ jobs:
 
       - uses: julia-actions/setup-julia@v3
         with:
-          version: '1.11'  # Match the Julia version EpiAware requires
+          version: '1.12'  # Match inst/julia/Manifest.toml
 
       - name: Cache Julia packages
         uses: julia-actions/cache@v3
@@ -69,69 +69,12 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck, any::EpiNow2, local::.
+          extra-packages: any::rcmdcheck, local::.
           needs: check
-
-      - uses: conda-incubator/setup-miniconda@v4
-        with:
-          miniconda-version: "latest"
-          activate-environment: ""
-
-      - name: Link conda for Julia (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          mkdir -p "$HOME/.julia/conda/3"
-          ARCH=$(uname -m)
-          ln -sf "$CONDA" "$HOME/.julia/conda/3/$ARCH"
-          # macOS reports arm64, but Julia uses aarch64
-          if [ "$ARCH" = "arm64" ]; then
-            ln -sf "$CONDA" "$HOME/.julia/conda/3/aarch64"
-          fi
-        shell: bash
-
-      - name: Link conda for Julia (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.julia\conda\3"
-          New-Item -ItemType Junction -Path "$env:USERPROFILE\.julia\conda\3\x86_64" -Target $env:CONDA
-        shell: pwsh
-
-      - name: Install JuliaCall dependencies (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          export R_HOME=$(R RHOME)
-          julia -e 'ENV["R_HOME"] = raw"'"$R_HOME"'"; using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall")'
-        shell: bash
-
-      - name: Install JuliaCall dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          $env:R_HOME = (& R.exe RHOME | Out-String).Trim()
-          julia -e "ENV[`"R_HOME`"] = raw`"$env:R_HOME`"; using Pkg; Pkg.add(`"Suppressor`"); Pkg.add(`"RCall`"); Pkg.build(`"RCall`")"
-        shell: pwsh
-
-      - name: Preload Julia's libunwind (Linux workaround)
-        if: runner.os == 'Linux'
-        run: |
-          # Workaround for JuliaCall issue #238
-          # Ubuntu's libunwind 1.6.2 has bugs. Preload Julia's own libunwind instead.
-          JULIA_LIBUNWIND=$(find $(julia -e 'print(Sys.BINDIR)')/../lib/julia -name "libunwind.so.8*" 2>/dev/null | head -1)
-          if [ -n "$JULIA_LIBUNWIND" ]; then
-            echo "Preloading Julia's libunwind: $JULIA_LIBUNWIND"
-            echo "LD_PRELOAD=$JULIA_LIBUNWIND" >> $GITHUB_ENV
-          else
-            echo "Warning: Julia's libunwind not found, may segfault"
-          fi
-        shell: bash
-
-      # Workaround for LinearSolve v3 SparseArrays extension bug
-      # TODO: Remove when EpiAware adds LinearSolve compat bounds
-      - name: Pin LinearSolve
-        run: julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
 
       - name: Setup Julia dependencies
         run: |
-          EpiAwareR::epiaware_setup_julia(verbose = TRUE)
+          composableIDModelR::cidm_setup_julia(verbose = TRUE)
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2

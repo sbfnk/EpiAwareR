@@ -1,99 +1,82 @@
-# EpiAwareR
+# composableIDModelR
 
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-**EpiAwareR** is an R interface to the Julia-based [EpiAware](https://github.com/CDCgov/Rt-without-renewal) compositional infectious disease modelling framework. It enables R users to build flexible epidemiological models by composing reusable components without requiring Julia expertise.
+**composableIDModelR** is an R interface to
+[ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl),
+the composable probabilistic infectious disease modelling package of the
+[EpiAware](https://epiaware.org) ecosystem. Models are assembled in R from
+interchangeable latent process, infection and observation components, then
+simulated from and fitted in Julia with [Turing.jl](https://turinglang.org).
+No Julia code is needed, but every model can be shown as the Julia code it runs.
 
 ## Installation
 
-### Prerequisites
-
-EpiAwareR requires:
-
-- R >= 4.0.0
-- Julia >= 1.9.0 (automatically installed if not present)
-
-### Install from GitHub
+composableIDModelR needs [Julia](https://julialang.org) (>= 1.12), the version its
+pinned dependencies were resolved with. We recommend
+installing it with [juliaup](https://github.com/JuliaLang/juliaup), which lets
+composableIDModelR use the Julia version its dependencies were resolved with.
 
 ```r
-# Install devtools if needed
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")
-}
-
-# Install EpiAwareR
-remotes::install_github("sbfnk/EpiAwareR")
+# install.packages("remotes")
+remotes::install_github("sbfnk/composableIDModelR")
 ```
 
-### Setup
-
-On first use, EpiAwareR will attempt to automatically install Julia and required packages. If this fails, run:
+Julia packages are installed on first use. To watch progress, run:
 
 ```r
-library(EpiAwareR)
-epiaware_setup_julia()
+library(composableIDModelR)
+cidm_setup_julia()
 ```
 
-## Quick Start
+## Quick start
 
-Here's a basic example replicating Mishra et al. (2020) analysis of COVID-19 in South Korea:
+Estimate the reproduction number from COVID-19 cases in South Korea, following
+Mishra et al. (2020): an AR(2) process on log $R_t$ drives a renewal model,
+observed with negative binomial noise.
 
 ```r
-library(EpiAwareR)
+library(composableIDModelR)
 
-# Load data
-training_data <- read.csv("https://raw.githubusercontent.com/EpiAware/PrototypeCompositionalProbablisticInfectiousDiseaseModelling/refs/heads/main/data/south_korea_data.csv")
-colnames(training_data)[3] <- "cases"
+cases <- read.csv(system.file("extdata", "south_korea_data.csv",
+                              package = "composableIDModelR"))[45:80, ]
 
-# Define latent process: AR(2) for log Rt
-ar2 <- AR(
-  order = 2,
-  damp_priors = list(
-    truncnorm(0.2, 0.2, 0, 1),
-    truncnorm(0.1, 0.05, 0, 1)
-  ),
-  init_priors = list(norm(0, 0.2), norm(0, 0.2)),
-  std_prior = halfnorm(0.1)
-)
-
-# Define infection model: Renewal process
 renewal <- Renewal(
-  gen_distribution = gamma_dist(6.5, 0.62),
-  initialisation_prior = norm(log(1.0), 0.1)
+  generation_time = Gamma(shape = 6.5, scale = 0.62),
+  rt = AR(
+    damp = list(truncated(Normal(0.8, 0.05), 0, 1),
+                truncated(Normal(0.1, 0.05), 0, 1)),
+    init = list(Normal(0, 0.2), Normal(0, 0.2)),
+    epsilon_t = HierarchicalNormal(std = HalfNormal(0.1))
+  ),
+  initialisation = Normal(log(1), 0.1)
+)
+model <- IDModel(
+  renewal,
+  NegativeBinomialError(cluster_factor = HalfNormal(0.1))
 )
 
-# Define observation model: Negative binomial
-negbin <- NegativeBinomialError(
-  cluster_factor_prior = halfnorm(0.1)
-)
-
-# Compose into complete model
-model <- EpiProblem(
-  epi_model = renewal,
-  latent_model = ar2,
-  observation_model = negbin,
-  tspan = c(45, 80)
-)
-
-# Fit model
-results <- fit(
-  model,
-  data = training_data,
-  method = nuts_sampler(warmup = 1000, draws = 1000, chains = 4)
-)
-
-# Examine results
-print(results)
-summary(results)
-plot(results, type = "Rt")
-plot(results, type = "cases")
+fitted <- fit(model, cases$cases_new, dates = as.Date(cases$date))
+fitted
+summary(fitted)
+plot(fitted, type = "Rt")
+plot(fitted, type = "cases", horizon = 14)
 ```
 
-## Development Status
+Swapping an assumption means swapping a component, for example Poisson
+observations after a reporting delay:
 
-EpiAwareR is currently in MVP (Minimum Viable Product) phase, implementing core components needed for the Mishra et al. (2020) case study. 
+```r
+delayed <- IDModel(
+  renewal,
+  LatentDelay(PoissonError(), delay = LogNormal(1.6, 0.42))
+)
+```
+
+Constructors without an R wrapper are available through `component()` and
+`julia()`.
 
 ## Contributing
 
@@ -118,15 +101,15 @@ All contributions to this project are gratefully acknowledged using the [`allcon
 ### Code
 
 
-<a href="https://github.com/sbfnk/EpiAwareR/commits?author=sbfnk">sbfnk</a>
+<a href="https://github.com/sbfnk/composableIDModelR/commits?author=sbfnk">sbfnk</a>
 
 
 
 ### Issues
 
 
-<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>, 
-<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
+<a href="https://github.com/sbfnk/composableIDModelR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>, 
+<a href="https://github.com/sbfnk/composableIDModelR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
 
 
 <!-- markdownlint-enable -->

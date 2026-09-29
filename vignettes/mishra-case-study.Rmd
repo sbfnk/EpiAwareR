@@ -1,10 +1,8 @@
 ---
-title: "Case Study: Replicating Mishra et al. (2020)"
-author: "Sebastian Funk"
-date: "`r Sys.Date()`"
+title: "Case study: Mishra et al. (2020)"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Case Study: Replicating Mishra et al. (2020)}
+  %\VignetteIndexEntry{Case study: Mishra et al. (2020)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,360 +12,184 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.height = 5
+  fig.height = 4
 )
 ```
 
-## Introduction
+Mishra et al. (2020) derived the renewal equation from an age-dependent
+branching process and combined it with a negative binomial observation model to
+estimate the time-varying reproduction number $R_t$ from reported cases.
+This vignette fits their model to test-confirmed COVID-19 cases from South Korea
+in early 2020, following the
+[ComposableTuringIDModels.jl tutorial](https://composableturingidmodels.epiaware.org/stable/tutorials/renewal-negbin)
+of the same analysis.
 
-This vignette demonstrates how to replicate the analysis from Mishra et al. (2020) of COVID-19 transmission dynamics in South Korea using EpiAwareR. This case study showcases the compositional modelling approach by building a complete epidemiological model from three reusable components.
-
-The analysis estimates the time-varying reproduction number ($R_t$) using:
-
-- **AR(2) latent process** for smooth evolution of log $R_t$
-- **Renewal equation** for infection dynamics
-- **Negative binomial observation model** for overdispersed case counts
-
-```{r load_silent, echo = FALSE, message = FALSE}
-library(EpiAwareR)
+```{r load, message = FALSE}
+library(composableIDModelR)
 ```
 
-## Data Preparation
+## Data
 
-We use the actual South Korea COVID-19 data from the preprint, which is included in the package. The data comes from the `covidregionaldata` R package and contains daily confirmed cases from January to July 2020.
+The package includes daily confirmed cases in South Korea.
+We fit the first wave, from 13 February to 19 March 2020.
 
-```{r load_data}
-# Load South Korea COVID-19 data
-data_path <- system.file("extdata", "south_korea_data.csv", package = "EpiAwareR")
-south_korea <- read.csv(data_path)
+```{r data}
+south_korea <- read.csv(
+  system.file("extdata", "south_korea_data.csv", package = "composableIDModelR")
+)
 south_korea$date <- as.Date(south_korea$date)
+first_wave <- south_korea[45:80, ]
 
-# Prepare full dataset - tspan will select the window
-# Column must be named 'y_t' for EpiAware
-full_data <- data.frame(
-  date = south_korea$date,
-  y_t = south_korea$cases_new
-)
-
-# Preview the training window (days 45-80)
-# This corresponds to Feb 13 - Mar 19, 2020 (the main epidemic wave)
-cat("Training window (tspan 45-80):\n")
-print(full_data[45:80, ])
-
-# Plot the training data
-plot(full_data$date[45:80], full_data$y_t[45:80], type = "b",
-     xlab = "Date", ylab = "Daily Cases",
-     main = "South Korea COVID-19 Cases (Feb 13 - Mar 19, 2020)")
+plot(first_wave$date, first_wave$cases_new, type = "b",
+     xlab = "Date", ylab = "Confirmed cases")
 ```
 
-## Model Components
+## Model
 
-### 1. Latent Process: AR(2) Model
+The model is
 
-The AR(2) process models the evolution of log $R_t$ over time with temporal autocorrelation:
+$$
+\begin{aligned}
+Z_t &= \rho_1 Z_{t-1} + \rho_2 Z_{t-2} + \epsilon_t,
+  & \epsilon_t &\sim \mathrm{Normal}(0, \sigma), \\
+R_t &= \exp(Z_t), \\
+I_t &= R_t \sum_{s \ge 1} g_s I_{t-s}, \\
+y_t &\sim \mathrm{NegBinomial}(I_t, \phi),
+\end{aligned}
+$$
 
-$$\log R_t = \phi_1 \log R_{t-1} + \phi_2 \log R_{t-2} + \epsilon_t$$
+where $g_s$ is the discretised generation interval.
 
-where $\epsilon_t \sim \text{Normal}(0, \sigma^2)$.
+The latent log reproduction number follows an AR(2) process.
+A first damping coefficient concentrated near one encodes strong
+autocorrelation, and the innovation standard deviation $\sigma$ is estimated
+with a half-normal prior.
 
-```{r latent_model}
-ar2 <- AR(
-  order = 2,
-  damp_priors = list(
-    truncnorm(0.1, 0.05, 0, 1), # ρ₁: Second-order coefficient
-    truncnorm(0.8, 0.05, 0, 1)  # ρ₂: First-order (strong autocorrelation)
+```{r latent}
+latent <- AR(
+  damp = list(
+    truncated(Normal(0.8, 0.05), 0, 1),
+    truncated(Normal(0.1, 0.05), 0, 1)
   ),
-  init_priors = list(
-    norm(-1.0, 0.1), # Initial value for lag 1
-    norm(-1.0, 0.5)  # Initial value for lag 2
-  ),
-  std_prior = halfnorm(0.5) # σ: Innovation standard deviation
+  init = list(Normal(0, 0.2), Normal(0, 0.2)),
+  epsilon_t = HierarchicalNormal(std = HalfNormal(0.1))
 )
-
-print(ar2)
 ```
 
-**Prior choices (from Mishra et al. 2020):**
+The latent process belongs to the renewal model.
+Following Mishra et al. (2020), a gamma distribution with shape 6.5 and scale
+0.62 approximates the generation interval, and is discretised with double
+interval censoring.
 
-- First-order damping coefficient ρ₂ centered at 0.8 reflects strong autocorrelation in log Rt
-- Second-order damping coefficient ρ₁ centered at 0.1 for smooth dynamics
-- Initial values centered at -1 on log scale (Rt ≈ 0.37 initially)
-- Innovation std of 0.5 allows flexibility in Rt changes
-
-### 2. Infection Model: Renewal Equation
-
-The renewal equation models new infections based on past infections and generation time:
-
-$$I_t = R_t \sum_{s=1}^{t} I_{t-s} \cdot g_s$$
-
-where $g_s$ is the discretized generation time distribution.
-
-```{r infection_model}
+```{r renewal}
 renewal <- Renewal(
-  gen_distribution = gamma_dist(6.5, 0.62), # Shape and scale parameters
-  initialisation_prior = norm(log(1.0), 1.0) # Prior on initial log infections (wide)
-)
-
-print(renewal)
-```
-
-**Key parameters:**
-
-- Generation time: Mean ~6.5 days (typical for COVID-19 in early 2020)
-- Gamma distribution allows flexible shape
-- Initial infections seeded near 1 with wide prior (sd=1.0 on log scale)
-
-### 3. Observation Model: Negative Binomial
-
-Links latent infections to observed case counts with overdispersion:
-
-$$Y_t \sim \text{NegBinom}(\mu = I_t, \phi)$$
-
-where $\phi$ controls overdispersion (clustering).
-
-```{r observation_model}
-# The preprint fixes cluster_factor to 0.25
-# We approximate this with a tight truncated normal prior
-negbin <- NegativeBinomialError(
-  cluster_factor_prior = truncnorm(0.25, 0.01, 0, 1)
-)
-
-print(negbin)
-```
-
-**Parameterization:**
-
-- Cluster factor = $\sqrt{1/\phi}$ (coefficient of variation)
-- Fixed to 0.25 (via tight prior) as in the preprint
-- More interpretable than directly specifying $\phi$
-
-## Compose and Fit
-
-### Create Complete Model
-
-```{r compose_model}
-model <- EpiProblem(
-  epi_model = renewal,
-  latent_model = ar2,
-  observation_model = negbin,
-  tspan = c(45, 80) # Exact tspan from preprint (Feb 13 - Mar 19, 2020)
-)
-
-print(model)
-```
-
-The `EpiProblem` combines components into a joint Bayesian model with automatic validation. The `tspan = c(45, 80)` selects days 45-80 from the full dataset, matching the preprint exactly.
-
-### Bayesian Inference
-
-We use NUTS (No-U-Turn Sampler) with Pathfinder initialization for posterior inference:
-
-```{r fit_model}
-results <- fit(
-  model = model,
-  data = full_data, # Pass full dataset; tspan selects the window
-  method = nuts_sampler(
-    warmup = 1000, # Adaptation iterations
-    draws = 2000, # Posterior samples per chain (matches preprint)
-    chains = 4 # Independent chains for convergence assessment
-  )
+  generation_time = Gamma(shape = 6.5, scale = 0.62),
+  rt = latent,
+  initialisation = Normal(log(1), 0.1)
 )
 ```
 
-**Note**: Fitting typically takes 2-5 minutes on modern hardware.
+Reported cases are negative binomial.
+The prior is on the cluster factor $\sqrt{1/\phi}$, which is approximately the
+coefficient of variation of the observation noise.
+
+```{r observation}
+model <- IDModel(
+  renewal,
+  NegativeBinomialError(cluster_factor = HalfNormal(0.1))
+)
+model
+```
+
+## Fit
+
+We run four chains with a raised target acceptance rate, which keeps the
+sampler stable on the hierarchical innovation scale.
+The chains are kept short so the vignette builds quickly.
+
+```{r fit}
+fitted <- fit(
+  model,
+  first_wave$cases_new,
+  dates = first_wave$date,
+  method = nuts(draws = 500, warmup = 500, chains = 4,
+                target_acceptance = 0.95),
+  seed = 1234
+)
+fitted
+```
+
+The printout reports some divergent transitions, so for a real analysis the
+chains should be run for longer and the divergences investigated, for
+example with the sampler diagnostics in `fitted$sampler`.
+
+Parameters are named after the component that samples them: `damp_AR` are the
+damping coefficients $\rho$, `std` is $\sigma$, `cluster_factor` is the
+observation cluster factor, and `init_incidence` is the log initial incidence.
+The standardised innovations `ϵ_t` are omitted here.
+
+```{r summary}
+summary(fitted) |>
+  subset(!startsWith(variable, "ϵ_t"))
+```
+
+The draws are a `posterior::draws_df`, so all of the
+[posterior](https://mc-stan.org/posterior/) tooling applies.
+
+```{r posterior}
+posterior::subset_draws(
+  posterior::as_draws_df(fitted),
+  variable = c("damp_AR", "std", "cluster_factor")
+) |>
+  posterior::summarise_draws("mean", "sd", "rhat", "ess_bulk")
+```
 
 ## Results
 
-### Convergence Diagnostics
+The reproduction number rises well above one early in the wave, falls through
+one as cases peak, and stays below one as cases decline.
 
-```{r results}
-print(results)
+```{r rt}
+plot(fitted, type = "Rt")
 ```
 
-Check for:
+The posterior predictive distribution tracks the observed cases.
 
-- **Rhat < 1.1**: Chains have converged to the same distribution
-- **ESS > 100**: Sufficient effective sample size for inference
-- **No divergent transitions**: NUTS is exploring the posterior efficiently
-
-### Parameter Summaries
-
-```{r summaries}
-# Detailed posterior summaries
-summary(results)
+```{r cases}
+plot(fitted, type = "cases")
 ```
 
-Key parameters to examine:
+## Swapping the observation model
 
-- **AR damping coefficients** ($\phi_1$, $\phi_2$): Autocorrelation strength
-- **Innovation std** ($\sigma$): Variability in $R_t$ changes
-- **Cluster factor**: Degree of case count overdispersion
-- **Initial infections**: Epidemic seeding
+Reported cases lag infections by the incubation period.
+Adding a log-normal delay (mean of about 5 days) changes only the observation
+model:
 
-### Working with posterior draws
-
-`epiaware_fit` objects integrate directly with the
-[posterior](https://mc-stan.org/posterior/) package. You can convert the
-samples to any draws format for use with bayesplot, loo, or other packages:
-
-```{r posterior_draws}
-library(posterior)
-
-# Convert to draws_df for tidy workflows
-draws <- as_draws_df(results)
-head(draws)
-
-# Find AR damping and std parameters by pattern
-all_vars <- variables(draws)
-ar_vars <- grep("damp_AR|latent\\.std", all_vars, value = TRUE)
-ar_vars
-
-# Summarise the AR-related parameters
-subset_draws(draws, variable = ar_vars) |>
-  summarise_draws()
-```
-
-This also enables [bayesplot](https://mc-stan.org/bayesplot/) diagnostics:
-
-```{r bayesplot_trace, message = FALSE}
-library(bayesplot)
-
-# Trace plots for AR damping coefficients
-damp_vars <- grep("damp_AR", variables(as_draws_array(results)), value = TRUE)
-mcmc_trace(as_draws_array(results), pars = damp_vars)
-```
-
-### Visualization
-
-```{r plots}
-# Time-varying reproduction number with credible intervals
-plot(results, type = "Rt")
-
-# Observed vs predicted case counts
-plot(results, type = "cases")
-
-# Posterior distributions for key parameters
-plot(results, type = "posterior")
-```
-
-## Model Comparisons
-
-### Comparing Latent Processes
-
-Test sensitivity to AR order:
-
-```{r compare_ar}
-# AR(1) alternative - strong autocorrelation like AR(2)
-ar1 <- AR(
-  order = 1,
-  damp_priors = list(truncnorm(0.8, 0.05, 0, 1)),  # High autocorrelation
-  init_priors = list(norm(-1.0, 0.5)),
-  std_prior = halfnorm(0.5)
+```{r delay}
+delayed_model <- IDModel(
+  renewal,
+  LatentDelay(
+    NegativeBinomialError(cluster_factor = HalfNormal(0.1)),
+    delay = LogNormal(1.6, 0.42)
+  )
 )
 
-model_ar1 <- EpiProblem(
-  epi_model = renewal,
-  latent_model = ar1,
-  observation_model = negbin,
-  tspan = c(45, 80)
+delayed <- fit(
+  delayed_model,
+  first_wave$cases_new,
+  dates = first_wave$date,
+  method = nuts(draws = 500, warmup = 500, chains = 4,
+                target_acceptance = 0.95),
+  seed = 1234
 )
-
-results_ar1 <- fit(model_ar1, data = full_data)
+plot(delayed, type = "Rt")
 ```
 
-Compare the $R_t$ estimates from both models:
-
-```{r compare_ar_plot, fig.width=10, fig.height=4}
-library(ggplot2)
-library(patchwork)
-
-p_ar2 <- plot(results, type = "Rt") +
-  ggtitle("AR(2) Model") +
-  coord_cartesian(ylim = c(0, 6))
-
-p_ar1 <- plot(results_ar1, type = "Rt") +
-  ggtitle("AR(1) Model") +
-  coord_cartesian(ylim = c(0, 6))
-
-p_ar2 + p_ar1
-```
-
-The AR(2) model typically produces smoother $R_t$ trajectories due to the additional lag term, while AR(1) may show more rapid fluctuations.
-
-### Adding Observation Delays
-
-Account for incubation and reporting delays:
-
-```{r add_delays}
-# Incubation period (~5 days)
-obs_incubation <- LatentDelay(
-  model = negbin,
-  delay_distribution = lognorm(1.6, 0.42)
-)
-
-# Reporting delay (~2 days)
-obs_full <- LatentDelay(
-  model = obs_incubation,
-  delay_distribution = lognorm(0.58, 0.47)
-)
-
-model_delays <- EpiProblem(
-  epi_model = renewal,
-  latent_model = ar2,
-  observation_model = obs_full,
-  tspan = c(45, 80)
-)
-
-results_delays <- fit(model_delays, data = full_data)
-```
-
-Compare models with and without observation delays:
-
-```{r compare_delays_plot, fig.width=10, fig.height=4}
-p_no_delay <- plot(results, type = "Rt") +
-  ggtitle("Without Delays") +
-  coord_cartesian(ylim = c(0, 6))
-
-p_delay <- plot(results_delays, type = "Rt") +
-  ggtitle("With Incubation + Reporting Delays") +
-  coord_cartesian(ylim = c(0, 6))
-
-p_no_delay + p_delay
-```
-
-Accounting for delays shifts the $R_t$ trajectory earlier in time, as infections precede observed cases.
-
-## Interpretation
-
-The Mishra et al. (2020) analysis demonstrated:
-
-1. **Flexible $R_t$ estimation**: AR(2) captures both smooth trends and rapid changes
-2. **Uncertainty quantification**: Bayesian credible intervals reflect parameter uncertainty
-3. **Intervention detection**: Sharp decline in $R_t$ coincides with public health measures
-4. **Compositional flexibility**: Easy to test alternative assumptions (AR order, delays)
-
-### Key Findings
-
-- Initial $R_t \approx 2.5$: Rapid exponential growth phase
-- Post-intervention $R_t < 1$: Control achieved through distancing measures
-- Moderate overdispersion: Case counts show clustering but not extreme variance
-- Good model fit: Posterior predictive checks show data within credible intervals
-
-## Extensions
-
-Try modifying the analysis:
-
-1. **Different priors**: Test sensitivity to prior choices
-2. **Alternative latent models**: MA, random walk, spline models
-3. **Stratification**: Separate models by age group or region
-4. **Forecast evaluation**: Hold-out validation of predictive performance
+Accounting for the delay moves the decline in $R_t$ earlier, because infections
+precede the cases they cause.
 
 ## References
 
-Mishra, S., Berah, T., Mellan, T. A., et al. (2020). On the derivation of the renewal equation from an age-dependent branching process: an epidemic modelling perspective. *arXiv preprint arXiv:2006.16487*.
-
-## Session Info
-
-```{r session_info}
-sessionInfo()
-```
+Mishra, S., Berah, T., Mellan, T. A., et al. (2020). On the derivation of the
+renewal equation from an age-dependent branching process: an epidemic modelling
+perspective. *arXiv:2006.16487*.

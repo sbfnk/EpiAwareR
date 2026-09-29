@@ -1,102 +1,142 @@
-# Latent process models for time-varying parameters
+# Latent process models, generating time-varying parameters such as log Rt.
+#
+# Prior slots accept a distribution, a list of distributions (one per lag), or
+# a latent model (giving a time-varying parameter), mirroring the Julia
+# constructors. Innovation slots, written with a Greek epsilon in Julia, are
+# `epsilon_t` here.
 
-#' Autoregressive Process for Latent Dynamics
+.epsilon_t <- "\u03f5_t"
+
+#' Latent process models
 #'
-#' Constructs an autoregressive (AR) latent process of order p for modeling
-#' time-varying log reproduction numbers or other epidemiological parameters.
+#' Models for the latent paths that drive infection models, such as the log
+#' reproduction number in [Renewal()]. Each wraps the constructor of the same
+#' name in ComposableTuringIDModels.jl; see its
+#' [documentation](https://composableturingidmodels.epiaware.org/stable/) for
+#' the full model definitions. `NULL` arguments use the Julia default.
 #'
-#' @param order Integer. The order of the autoregressive process (p).
-#' @param damp_priors List of distribution specifications for damping
-#'   coefficients. Length must equal \code{order}.
-#' @param init_priors List of distribution specifications for initial
-#'   states. Length must equal \code{order}.
-#' @param std_prior Distribution specification for innovation standard
-#'   deviation.
+#' Arguments that Julia spells with a Greek letter are spelled out here:
+#' `epsilon_t` is its innovation slot and `theta` its moving-average
+#' coefficients.
 #'
-#' @return An S3 object of class \code{c("epiaware_ar", "epiaware_latent",
-#'   "epiaware_model")} containing:
-#' \describe{
-#'   \item{julia_ref}{Reference to the Julia AR object}
-#'   \item{spec}{List of model specifications}
-#' }
+#' - `AR()`: autoregressive process whose order is the number of damping
+#'   priors.
+#' - `MA()`: moving-average process whose order is the number of coefficient
+#'   priors.
+#' - `RandomWalk()`: random walk.
+#' - `IID()`: independent draws from a distribution.
+#' - `Intercept()`: a single draw repeated over time.
+#' - `FixedIntercept()`: a fixed value repeated over time.
+#' - `HierarchicalNormal()`: non-centred normal draws with an inferred standard
+#'   deviation, the default innovation model.
+#' - `DiffLatentModel()`: a process whose differences follow `model`, giving
+#'   e.g. ARIMA-style processes when `model` is an `AR()`.
 #'
+#' @param damp Prior for the damping coefficients: a distribution, a list of
+#'   distributions (one per lag) or, for order one, a latent model for a
+#'   time-varying coefficient. The two are on different scales: a distribution
+#'   is a prior on the coefficient itself, while a latent model is squashed
+#'   through `tanh` to keep the process stationary.
+#' @param init Prior for the initial values: a distribution or a list of
+#'   distributions (one per lag or difference).
+#' @param epsilon_t Model for the innovations, typically a
+#'   `HierarchicalNormal()`.
+#' @param theta Prior for the moving-average coefficients, as for `damp`.
+#' @param dist A distribution.
+#' @param value Numeric. The fixed value.
+#' @param mean Numeric. Mean of the process.
+#' @param std Prior for the standard deviation.
+#' @param model A latent model for the differenced process.
+#'
+#' @return An object of class `cidm_latent`.
+#'
+#' @family components
+#' @name latent-models
 #' @examples
-#' \dontrun{
-#' # AR(2) model with truncated normal priors (Mishra et al. 2020)
-#' ar2 <- AR(
-#'   order = 2,
-#'   damp_priors = list(
-#'     truncnorm(0.2, 0.2, 0, 1),
-#'     truncnorm(0.1, 0.05, 0, 1)
-#'   ),
-#'   init_priors = list(norm(0, 0.2), norm(0, 0.2)),
-#'   std_prior = halfnorm(0.1)
+#' # AR(2) on log Rt, as in Mishra et al. (2020)
+#' AR(
+#'   damp = list(truncated(Normal(0.8, 0.05), 0, 1),
+#'               truncated(Normal(0.1, 0.05), 0, 1)),
+#'   init = list(Normal(0, 0.2), Normal(0, 0.2)),
+#'   epsilon_t = HierarchicalNormal(std = HalfNormal(0.1))
 #' )
-#' print(ar2)
-#' }
 #'
-#' @seealso \code{\link{epiaware_call}} for accessing other latent models
-#' @export
+#' RandomWalk(init = Normal(0, 0.25))
+NULL
+
 # nolint start: object_name_linter.
-AR <- function(order = 1, damp_priors, init_priors, std_prior) {
-  # nolint end: object_name_linter.
-  # Validate inputs
-  checkmate::assert_int(order, lower = 1)
-  .check_distribution_list(damp_priors, len = order)
-  .check_distribution_list(init_priors, len = order)
-  .check_distribution(std_prior)
-  .check_julia()
 
-  # Convert distributions to Julia vectors
-  julia_damp <- .to_julia_dist_vector(damp_priors)
-  julia_init <- .to_julia_dist_vector(init_priors)
-  julia_std <- .to_julia_dist(std_prior)
-
-  # Create HierarchicalNormal for error term using simple constructor
-  julia_epsilon <- .call_julia_constructor(
-    "HierarchicalNormal",
-    list(std_prior = julia_std),
-    use_keywords = FALSE
-  )
-
-  # Create Julia AR object using keyword constructor
-  # AR(; damp_priors, init_priors, \u03f5_t)
-  julia_obj <- .call_julia_constructor(
-    "AR",
-    list(
-      damp_priors = julia_damp,
-      init_priors = julia_init,
-      "\u03f5_t" = julia_epsilon
-    )
-  )
-
-  # Return S3 object
-  structure(
-    list(
-      julia_ref = julia_obj,
-      spec = list(
-        order = order,
-        damp_priors = damp_priors,
-        init_priors = init_priors,
-        std_prior = std_prior
-      )
-    ),
-    class = c("epiaware_ar", "epiaware_latent", "epiaware_model")
-  )
-}
-
-#' Print method for AR latent models
-#'
-#' @param x An \code{epiaware_ar} object.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object \code{x}.
-#'
+#' @rdname latent-models
 #' @export
-print.epiaware_ar <- function(x, ...) {
-  cat("<EpiAware AR(", x$spec$order, ") Latent Model>\n", sep = "")
-  cat("  Damping priors:", length(x$spec$damp_priors), "\n")
-  cat("  Init priors:", length(x$spec$init_priors), "\n")
-  cat("  Innovation std prior: specified\n")
-  invisible(x)
+AR <- function(damp = NULL, init = NULL, epsilon_t = NULL) {
+  damp <- .as_prior_slot(damp)
+  init <- .as_prior_slot(init)
+  epsilon_t <- .as_prior_slot(epsilon_t)
+  args <- list(damp = damp, init = init)
+  args[[.epsilon_t]] <- epsilon_t
+  do.call(component, c("AR", args, role = "latent"))
 }
+
+#' @rdname latent-models
+#' @export
+MA <- function(theta = NULL, epsilon_t = NULL) {
+  theta <- .as_prior_slot(theta)
+  epsilon_t <- .as_prior_slot(epsilon_t)
+  args <- list()
+  args[["\u03b8"]] <- theta
+  args[[.epsilon_t]] <- epsilon_t
+  do.call(component, c("MA", args, role = "latent"))
+}
+
+#' @rdname latent-models
+#' @export
+RandomWalk <- function(init = NULL, epsilon_t = NULL) {
+  init <- .as_prior_slot(init)
+  epsilon_t <- .as_prior_slot(epsilon_t)
+  args <- list(init = init)
+  args[[.epsilon_t]] <- epsilon_t
+  do.call(component, c("RandomWalk", args, role = "latent"))
+}
+
+#' @rdname latent-models
+#' @export
+IID <- function(dist = Normal(0, 1)) {
+  dist <- .as_prior(dist)
+  component("IID", dist, role = "latent")
+}
+
+#' @rdname latent-models
+#' @export
+Intercept <- function(dist) {
+  dist <- .as_prior(dist)
+  component("Intercept", dist, role = "latent")
+}
+
+#' @rdname latent-models
+#' @export
+FixedIntercept <- function(value) {
+  checkmate::assert_number(value, finite = TRUE)
+  component("FixedIntercept", as.numeric(value), role = "latent")
+}
+
+#' @rdname latent-models
+#' @export
+HierarchicalNormal <- function(mean = NULL, std = NULL) {
+  if (!is.null(mean)) {
+    checkmate::assert_number(mean, finite = TRUE)
+    mean <- as.numeric(mean)
+  }
+  std <- .as_prior_slot(std)
+  component("HierarchicalNormal", mean = mean, std = std, role = "latent")
+}
+
+#' @rdname latent-models
+#' @export
+DiffLatentModel <- function(model, init = NULL) {
+  model <- .as_prior_slot(model)
+  init <- .as_prior_slot(init)
+  if (inherits(init, "cidm_distribution")) init <- list(init)
+  component("DiffLatentModel", model = model, init = init, role = "latent")
+}
+
+# nolint end

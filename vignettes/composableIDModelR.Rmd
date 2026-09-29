@@ -1,0 +1,192 @@
+---
+title: "Getting started with composableIDModelR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with composableIDModelR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+composableIDModelR builds infectious disease models from interchangeable parts and runs
+them with
+[ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl)
+in Julia.
+A model has two parts:
+
+- an **infection model**, which generates unobserved infections and owns the
+  **latent process** that drives them (for example the log reproduction number
+  of a renewal model), and
+- an **observation model**, which links infections to data, possibly through
+  delays or under-ascertainment.
+
+Every part has an R constructor with the same name and arguments as its Julia
+counterpart, so the
+[ComposableTuringIDModels.jl documentation](https://composableturingidmodels.epiaware.org/stable/)
+applies directly.
+
+```{r load}
+library(composableIDModelR)
+```
+
+## Setting up Julia
+
+composableIDModelR needs Julia (>= 1.12), the version its pinned dependencies were
+resolved with, ideally installed with
+[juliaup](https://github.com/JuliaLang/juliaup).
+The Julia packages are installed and loaded the first time a model is simulated
+or fitted, which can take several minutes.
+To follow progress, run the setup yourself:
+
+```{r julia_setup, eval = FALSE}
+cidm_setup_julia()
+```
+
+To run MCMC chains in parallel, set `JULIA_NUM_THREADS` before Julia starts:
+
+```{r threads, eval = FALSE}
+Sys.setenv(JULIA_NUM_THREADS = "4")
+```
+
+## Building a model
+
+Distributions come from [distspec](https://epiforecasts.io/distspec/), so
+they can be given by their natural parameters or by a mean and standard
+deviation.
+
+```{r components}
+latent <- RandomWalk(
+  init = Normal(0, 0.25),
+  epsilon_t = HierarchicalNormal(std = HalfNormal(0.05))
+)
+
+infection <- Renewal(
+  generation_time = Gamma(shape = 6.5, scale = 0.62),
+  rt = latent,
+  initialisation = Normal(log(10), 0.5)
+)
+
+observation <- NegativeBinomialError(cluster_factor = HalfNormal(0.1))
+
+model <- IDModel(infection, observation)
+model
+```
+
+Building a model does not start Julia.
+The printout is the Julia code the model runs, which you can also get as a
+string with `as_julia()`.
+Arguments left out use the Julia defaults.
+
+## Simulating from the prior
+
+`simulate()` draws parameters from their priors and simulates the latent
+process, infections and observations.
+Each quantity is returned as a matrix with one row per simulation.
+
+```{r simulate}
+sims <- simulate(model, nsim = 20, n = 50, seed = 1)
+names(sims)
+matplot(t(sims$Rt), type = "l", lty = 1, col = "grey50", log = "y",
+        xlab = "Day", ylab = "Rt")
+```
+
+Prior simulations are a quick check that the priors produce plausible
+epidemics before fitting.
+
+## Fitting to data
+
+We fit the model to one of the simulated series.
+`nuts()` sets up the sampler; short chains keep this example fast.
+
+```{r fit}
+y <- sims$generated_y_t[1, ]
+
+fitted <- fit(
+  model, y,
+  method = nuts(draws = 250, warmup = 250, chains = 2),
+  seed = 2
+)
+fitted
+```
+
+`summary()` gives posterior summaries of the parameters, and the draws work
+with the [posterior](https://mc-stan.org/posterior/) package and anything
+built on it, such as bayesplot.
+
+```{r summary}
+summary(fitted)
+```
+
+Generated quantities (the latent process `Z_t`, infections `I_t`, expected and
+predicted observations, and `Rt` for renewal models) are matrices with one row
+per posterior draw:
+
+```{r generated}
+str(fitted$generated)
+```
+
+## Plotting and forecasting
+
+```{r plot_rt}
+plot(fitted, type = "Rt")
+```
+
+`type = "cases"` compares posterior predictions with the data, and `horizon`
+adds a forecast, which continues the latent process beyond the data.
+
+```{r plot_cases}
+plot(fitted, type = "cases", horizon = 14)
+```
+
+The forecast draws themselves come from `predict()`:
+
+```{r predict}
+forecasts <- predict(fitted, horizon = 14)
+dim(forecasts)
+```
+
+## Swapping components
+
+Changing an assumption means replacing one part.
+Here observations follow a delay from infection and are Poisson distributed,
+and the reproduction number follows an AR(1) process:
+
+```{r swap}
+IDModel(
+  Renewal(
+    generation_time = Gamma(shape = 6.5, scale = 0.62),
+    rt = AR(damp = truncated(Normal(0.9, 0.05), 0, 1)),
+    initialisation = Normal(log(10), 0.5)
+  ),
+  LatentDelay(PoissonError(), delay = LogNormal(1.6, 0.42))
+)
+```
+
+## Components without an R wrapper
+
+`component()` constructs any Julia component by name, and `julia()` inserts
+Julia code verbatim, for example a function argument.
+Positional R arguments become positional Julia arguments and named ones become
+keyword arguments.
+
+```{r escape_hatch}
+IDModel(
+  DirectInfections(
+    Z = component("HilbertSpaceGP", role = "latent"),
+    initialisation = Normal(log(100), 1)
+  ),
+  LatentDelay(PoissonError(), delay = component("Frechet", 3, 2,
+                                                role = "distribution"))
+)
+```
+
+The [Mishra et al. (2020) case study](mishra-case-study.html) applies these
+steps to COVID-19 data from South Korea.

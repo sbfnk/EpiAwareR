@@ -26,7 +26,7 @@ jobs:
 
       - uses: julia-actions/setup-julia@v3
         with:
-          version: '1.11'  # Match the Julia version EpiAware requires
+          version: '1.12'  # Match inst/julia/Manifest.toml
 
       - name: Cache Julia packages
         uses: julia-actions/cache@v3
@@ -45,17 +45,9 @@ jobs:
           extra-packages: any::pkgdown, any::EpiNow2, local::.
           needs: website
 
-      - name: Setup JuliaCall
-        uses: epiforecasts/actions/setup-juliacall@v1
-
-      # Workaround for LinearSolve v3 SparseArrays extension bug
-      # TODO: Remove when EpiAware adds LinearSolve compat bounds
-      - name: Pin LinearSolve
-        run: julia -e 'using Pkg; Pkg.add(name="LinearSolve", version="2.38")'
-
       - name: Setup Julia dependencies
         run: |
-          EpiAwareR::epiaware_setup_julia(verbose = TRUE)
+          composableIDModelR::cidm_setup_julia(verbose = TRUE)
         shell: Rscript {0}
 
       - name: Build site

@@ -1,216 +1,90 @@
-# Tests for model component constructors
-
-# Skip all tests if Julia not available
-skip_if_no_julia <- function() {
-  testthat::skip_if_not(epiaware_available(), "Julia/EpiAware not available")
-}
-
-# Latent Models ---------------------------------------------------------
-
-test_that("AR creates valid model object", {
-  skip_if_no_julia()
-
-  ar1 <- AR(
-    order = 1,
-    damp_priors = list(truncnorm(0.5, 0.1, 0, 1)),
-    init_priors = list(norm(0, 0.1)),
-    std_prior = halfnorm(0.1)
+test_that("distributions validate their parameters", {
+  expect_s3_class(HalfNormal(0.1), "cidm_distribution")
+  expect_error(HalfNormal(-1))
+  expect_error(Gamma(shape = -1, rate = 1))
+  expect_error(truncated(Normal(0, 1), 1, 0), "less than")
+  expect_error(truncated(1, 0, 1), "distribution")
+  expect_identical(
+    as_julia(truncated(Normal(0.8, 0.05), 0, 1)),
+    "truncated(Normal(0.8, 0.05), 0.0, 1.0)"
   )
-
-  expect_s3_class(ar1, "epiaware_ar")
-  expect_s3_class(ar1, "epiaware_latent")
-  expect_s3_class(ar1, "epiaware_model")
-  expect_true(!is.null(ar1$julia_ref))
-  expect_type(ar1$spec, "list")
 })
 
-test_that("AR validates order and prior lengths", {
-  skip_if_no_julia()
+test_that("latent models accept distributions, lists and latent models", {
+  ar2 <- AR(
+    damp = list(Normal(0.8, 0.05), Normal(0.1, 0.05)),
+    init = Normal(0, 1)
+  )
+  expect_s3_class(ar2, "cidm_latent")
+  expect_match(as_julia(ar2), "damp = \\[Normal\\(0.8, 0.05\\), ")
+  expect_s3_class(AR(damp = RandomWalk()), "cidm_latent")
+  expect_error(AR(damp = 0.5), "distribution")
+  expect_error(AR(damp = list(Normal(0, 1), 1)), "damp\\[\\[2\\]\\]")
+  expect_match(as_julia(MA(theta = Normal(0, 1))), "\u03b8 = Normal")
+  expect_identical(
+    as_julia(DiffLatentModel(AR(), init = Normal(0, 1))),
+    "DiffLatentModel(; model = AR(), init = [Normal(0.0, 1.0)])"
+  )
+  expect_identical(as_julia(FixedIntercept(1)), "FixedIntercept(1.0)")
+})
 
+test_that("infection models check their arguments", {
+  renewal <- Renewal(generation_time = c(0.25, 0.75), rt = RandomWalk())
+  expect_s3_class(renewal, "cidm_infection")
+  expect_match(as_julia(renewal), "generation_time = \\[0.25, 0.75\\]")
+  expect_match(as_julia(Renewal(generation_time = 1)), "\\[1.0\\]")
+  expect_error(Renewal(generation_time = c(0.5, 0.2)), "sum to one")
+  expect_error(Renewal(generation_time = Gamma(2), rt = PoissonError()))
+  expect_match(
+    as_julia(Renewal(Gamma(shape = 2, rate = 1), delta_d = 0.5), ascii = TRUE),
+    "Symbol\\(\"\\\\u0394d\"\\) => 0.5"
+  )
+  expect_s3_class(DirectInfections(Z = RandomWalk()), "cidm_infection")
+  expect_s3_class(ExpGrowthRate(rt = AR()), "cidm_infection")
   expect_error(
-    AR(
-      order = 2,
-      damp_priors = list(truncnorm(0.5, 0.1, 0, 1)), # Only 1 prior for order 2
-      init_priors = list(norm(0, 0.1), norm(0, 0.1)),
-      std_prior = halfnorm(0.1)
-    ),
-    "length of damp_priors must equal 2"
+    DirectInfections(transformation = Normal(0, 1)),
+    "Julia code from `julia\\(\\)`"
   )
+})
 
+test_that("observation models wrap other observation models", {
+  delayed <- LatentDelay(PoissonError(), LogNormal(1.6, 0.42), D = 15)
+  expect_identical(
+    as_julia(delayed),
+    "LatentDelay(PoissonError(), LogNormal(1.6, 0.42); D = 15.0)"
+  )
+  expect_error(LatentDelay(Normal(0, 1), c(0.5, 0.5)), "observation model")
   expect_error(
-    AR(
-      order = 2,
-      damp_priors = list(truncnorm(0.5, 0.1, 0, 1), truncnorm(0.3, 0.1, 0, 1)),
-      init_priors = list(norm(0, 0.1)), # Only 1 prior for order 2
-      std_prior = halfnorm(0.1)
-    ),
-    "length of init_priors must equal 2"
+    LatentDelay(PoissonError(), c(0.5, 0.5), D = 3), "cannot be used with"
   )
-})
-
-test_that("AR validates distribution specs", {
-  skip_if_no_julia()
-
+  expect_match(
+    as_julia(Ascertainment(PoissonError(), Normal(-1, 0.1))),
+    "^Ascertainment\\(PoissonError\\(\\), Normal"
+  )
   expect_error(
-    AR(
-      order = 1,
-      damp_priors = list("not a distribution"),
-      init_priors = list(norm(0, 0.1)),
-      std_prior = halfnorm(0.1)
-    ),
-    "Must be of type 'list'"
+    Ascertainment(PoissonError(), list(Normal(-1, 0.1), Normal(0, 1))),
+    "distribution or a latent model"
   )
+  expect_s3_class(NormalError(std = HalfNormal()), "cidm_observation")
 })
 
-test_that("AR print method works", {
-  skip_if_no_julia()
-
-  ar1 <- AR(
-    order = 1,
-    damp_priors = list(truncnorm(0.5, 0.1, 0, 1)),
-    init_priors = list(norm(0, 0.1)),
-    std_prior = halfnorm(0.1)
+test_that("IDModel composes an infection and an observation model", {
+  model <- IDModel(DirectInfections(Z = RandomWalk()), PoissonError())
+  expect_s3_class(model, "cidm_model")
+  expect_identical(
+    as_julia(model),
+    "IDModel(DirectInfections(; Z = RandomWalk()), PoissonError())"
   )
-
-  expect_output(print(ar1), "EpiAware AR\\(1\\) Latent Model")
+  expect_error(IDModel(PoissonError(), PoissonError()), "infection model")
+  expect_error(IDModel(DirectInfections(), Normal(0, 1)), "observation model")
 })
 
-# Infection Models ------------------------------------------------------
-
-test_that("Renewal creates valid model object", {
-  skip_if_no_julia()
-
-  renewal <- Renewal(
-    gen_distribution = gamma_dist(6.5, 0.62),
-    initialisation_prior = norm(log(1.0), 0.1)
+test_that("component() is the escape hatch for unwrapped constructors", {
+  gp <- component("HilbertSpaceGP", role = "latent")
+  expect_s3_class(
+    Renewal(Gamma(shape = 2, rate = 1), rt = gp), "cidm_infection"
   )
-
-  expect_s3_class(renewal, "epiaware_renewal")
-  expect_s3_class(renewal, "epiaware_epi")
-  expect_s3_class(renewal, "epiaware_model")
-  expect_true(!is.null(renewal$julia_ref))
-  expect_type(renewal$spec, "list")
-})
-
-test_that("Renewal validates generation distribution", {
-  skip_if_no_julia()
-
-  expect_error(
-    Renewal(gen_distribution = "not a distribution"),
-    "Must be of type 'list'"
-  )
-})
-
-test_that("Renewal works without initialisation_prior", {
-  skip_if_no_julia()
-
-  renewal <- Renewal(gen_distribution = gamma_dist(6.5, 0.62))
-
-  expect_s3_class(renewal, "epiaware_renewal")
-  expect_null(renewal$spec$initialisation_prior)
-})
-
-test_that("Renewal print method works", {
-  skip_if_no_julia()
-
-  renewal <- Renewal(
-    gen_distribution = gamma_dist(6.5, 0.62),
-    initialisation_prior = norm(log(1.0), 0.1)
-  )
-
-  expect_output(print(renewal), "EpiAware Renewal Infection Model")
-  expect_output(print(renewal), "Generation distribution: Gamma")
-})
-
-# Observation Models ----------------------------------------------------
-
-test_that("NegativeBinomialError creates valid model object", {
-  skip_if_no_julia()
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-
-  expect_s3_class(negbin, "epiaware_negbin")
-  expect_s3_class(negbin, "epiaware_observation")
-  expect_s3_class(negbin, "epiaware_model")
-  expect_true(!is.null(negbin$julia_ref))
-  expect_type(negbin$spec, "list")
-})
-
-test_that("NegativeBinomialError validates prior", {
-  skip_if_no_julia()
-
-  expect_error(
-    NegativeBinomialError(cluster_factor_prior = "not a distribution"),
-    "Must be of type 'list'"
-  )
-})
-
-test_that("NegativeBinomialError print method works", {
-  skip_if_no_julia()
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-
-  expect_output(print(negbin), "EpiAware Negative Binomial Observation Model")
-})
-
-test_that("LatentDelay creates valid model object", {
-  skip_if_no_julia()
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-  delayed <- LatentDelay(
-    model = negbin,
-    delay_distribution = lognorm(1.6, 0.42)
-  )
-
-  expect_s3_class(delayed, "epiaware_delay")
-  expect_s3_class(delayed, "epiaware_observation")
-  expect_s3_class(delayed, "epiaware_model")
-  expect_true(!is.null(delayed$julia_ref))
-  expect_s3_class(delayed$base_model, "epiaware_negbin")
-})
-
-test_that("LatentDelay validates inputs", {
-  skip_if_no_julia()
-
-  expect_error(
-    LatentDelay(
-      model = "not an observation model",
-      delay_distribution = lognorm(1.6, 0.42)
-    ),
-    "model must be a observation model object"
-  )
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-  expect_error(
-    LatentDelay(
-      model = negbin,
-      delay_distribution = "not a distribution"
-    ),
-    "Must be of type 'list'"
-  )
-})
-
-test_that("LatentDelay can be composed hierarchically", {
-  skip_if_no_julia()
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-  incubation <- LatentDelay(negbin, delay_distribution = lognorm(1.6, 0.42))
-  reporting <- LatentDelay(incubation, delay_distribution = lognorm(0.58, 0.47))
-
-  expect_s3_class(reporting, "epiaware_delay")
-  expect_s3_class(reporting$base_model, "epiaware_delay")
-  expect_s3_class(reporting$base_model$base_model, "epiaware_negbin")
-})
-
-test_that("LatentDelay print method works", {
-  skip_if_no_julia()
-
-  negbin <- NegativeBinomialError(cluster_factor_prior = halfnorm(0.1))
-  delayed <- LatentDelay(
-    model = negbin,
-    delay_distribution = lognorm(1.6, 0.42)
-  )
-
-  expect_output(print(delayed), "EpiAware Latent Delay Observation Model")
-  expect_output(print(delayed), "Delay distribution: LogNormal")
+  expect_error(component("bad name", role = "latent"))
+  expect_error(component("F"), "role")
+  expect_error(component("F", role = "nonsense"))
 })
