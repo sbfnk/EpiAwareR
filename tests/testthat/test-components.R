@@ -61,6 +61,10 @@ test_that("observation models wrap other observation models", {
     as_julia(Ascertainment(PoissonError(), Normal(-1, 0.1))),
     "^Ascertainment\\(PoissonError\\(\\), Normal"
   )
+  expect_error(
+    Ascertainment(PoissonError(), list(Normal(-1, 0.1), Normal(0, 1))),
+    "distribution or a latent model"
+  )
   expect_s3_class(NormalError(std = HalfNormal()), "cidm_observation")
 })
 

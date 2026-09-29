@@ -84,11 +84,13 @@ LatentDelay <- function(model, delay, D = NULL, delta_d = NULL) {
 #' @export
 Ascertainment <- function(model, latent_model) {
   .assert_role(model, "observation")
-  latent_model <- .as_prior_slot(latent_model)
-  if (is.null(latent_model)) {
+  if (is.null(latent_model) ||
+        (is.list(latent_model) &&
+           !inherits(latent_model, c("cidm_component", "dist_spec")))) {
     stop("`latent_model` must be a distribution or a latent model.",
          call. = FALSE)
   }
+  latent_model <- .as_prior_slot(latent_model)
   component("Ascertainment", model, latent_model, role = "observation")
 }
 
