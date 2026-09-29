@@ -19,6 +19,14 @@ test_that("fit() validates inputs before starting Julia", {
   expect_error(fit(model, 1:10, dates = as.character(1:10)), "Date")
 })
 
+test_that("simulate() accepts a model given as Julia code", {
+  expect_false(is.null(getS3method("simulate", "epiaware_julia")))
+  expect_identical(
+    getS3method("simulate", "epiaware_julia"),
+    getS3method("simulate", "epiaware_model")
+  )
+})
+
 test_that(".trajectory_bands summarises draws and drops empty time points", {
   draws <- rbind(c(NaN, 1, 2), c(NaN, 3, 4), c(NaN, 5, 6))
   bands <- .trajectory_bands(draws, 1:3)

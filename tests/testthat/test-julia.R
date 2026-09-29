@@ -57,7 +57,9 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
     1:50
   )
   seeded <- posterior::extract_variable(fitted$draws, "init_incidence")
-  expect_equal(fitted$generated$I_t[, 1], exp(seeded + fitted$generated$Z_t[, 1]))
+  expect_equal(
+    fitted$generated$I_t[, 1], exp(seeded + fitted$generated$Z_t[, 1])
+  )
 
   expect_s3_class(suppressWarnings(summary(fitted)), "draws_summary")
   expect_output(suppressWarnings(print(fitted)), "Divergent transitions")

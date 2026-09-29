@@ -2,12 +2,16 @@
 % Please edit documentation in R/fit.R
 \name{simulate.epiaware_model}
 \alias{simulate.epiaware_model}
+\alias{simulate.epiaware_julia}
 \title{Simulate from a model's prior}
 \usage{
 \method{simulate}{epiaware_model}(object, nsim = 1, seed = NULL, n, ...)
+
+\method{simulate}{epiaware_julia}(object, nsim = 1, seed = NULL, n, ...)
 }
 \arguments{
-\item{object}{A composed model from [IDModel()].}
+\item{object}{A composed model from [IDModel()], or a [julia()] expression
+that builds one.}
 
 \item{nsim}{Integer. Number of simulations.}
 

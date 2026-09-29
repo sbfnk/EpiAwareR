@@ -158,7 +158,8 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
 #' Draws parameters from their priors and simulates the latent process,
 #' infections and observations.
 #'
-#' @param object A composed model from [IDModel()].
+#' @param object A composed model from [IDModel()], or a [julia()] expression
+#'   that builds one.
 #' @param nsim Integer. Number of simulations.
 #' @param seed Optional integer seed for the Julia random number generator.
 #' @param n Integer. Number of time points.
@@ -191,6 +192,10 @@ simulate.epiaware_model <- function(object, nsim = 1, seed = NULL, n, ...) {
   )
   .with_rt(.generated_list(result), object)
 }
+
+#' @rdname simulate.epiaware_model
+#' @export
+simulate.epiaware_julia <- simulate.epiaware_model
 
 #' Convert bridge output to a draws_df
 #'
