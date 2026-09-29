@@ -186,14 +186,15 @@ function _fit(
 end
 
 # Posterior predictive draws of `y_t[from:to]` from a chain returned by
-# `predict`, as a draws x time matrix. The chain may store `y_t` whole or per
-# element; time points a delay leaves unmodelled are absent and become NaN.
+# `predict`, as a draws x time matrix. Time points a delay leaves unmodelled
+# are absent from the chain and become NaN.
 function observation_draws(pred, from, to)
     ndraws = prod(size(pred))
     cols = map(from:to) do i
         values = try
             draw_order(pred[@varname(y_t[i])])
-        catch
+        catch e
+            e isa KeyError || rethrow()
             fill(missing, ndraws)
         end
         Float64[ismissing(v) ? NaN : Float64(v) for v in values]
