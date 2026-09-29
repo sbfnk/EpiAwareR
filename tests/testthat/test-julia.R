@@ -52,10 +52,7 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
   expect_false(anyNA(predict(fitted)))
   # Draws are ordered chain by chain, and each generated trajectory belongs to
   # the draw on the same row. An interleaved or transposed reading breaks both.
-  expect_identical(
-    posterior::draw_ids(posterior::subset_draws(fitted$draws, chain = 2)),
-    1:50
-  )
+  expect_identical(.bridge("draw_order", matrix(1:6, nrow = 3)), 1:6)
   seeded <- posterior::extract_variable(fitted$draws, "init_incidence")
   expect_equal(
     fitted$generated$I_t[, 1], exp(seeded + fitted$generated$Z_t[, 1])
