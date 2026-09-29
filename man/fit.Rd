@@ -30,7 +30,9 @@ An object of class `epiaware_fit` with elements
   \item{generated}{Named list of draws x time matrices of generated
     quantities: `Z_t` (the latent process), `I_t` (infections),
     `expected_y_t` (expected observations), `predicted_y_t` (posterior
-    predictive observations) and, for renewal models, `Rt`.}
+    predictive observations) and, for renewal models, `Rt`. It also holds
+    `generated_y_t`, which is the observed series repeated for every draw,
+    because the model was conditioned on it.}
   \item{model, y, dates, method}{The inputs.}
 }
 }
