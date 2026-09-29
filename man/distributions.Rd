@@ -25,9 +25,9 @@ A component of class \code{cidm_distribution}.
 Distributions are specified with
 \href{https://epiforecasts.io/distspec/}{distspec}, whose constructors
 \code{Normal()}, \code{Gamma()}, \code{LogNormal()}, \code{Exponential()}, \code{Weibull()},
-\code{Beta()}, \code{Fixed()} and \code{NonParametric()} composableIDModelR re-exports. Parameters
-can be given naturally (\code{Gamma(shape = 2, rate = 0.5)}) or as a mean and
-standard deviation (\code{Gamma(mean = 4, sd = 2)}).
+\code{Beta()}, \code{Fixed()} and \code{NonParametric()} composableIDModelR re-exports.
+Parameters can be given naturally (\code{Gamma(shape = 2, rate = 0.5)}) or as a
+mean and standard deviation (\code{Gamma(mean = 4, sd = 2)}).
 }
 \details{
 composableIDModelR adds two constructors of its own:

@@ -117,8 +117,8 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
   }
   if (anyNA(y)) {
     stop(
-      "`y` contains missing values, which composableIDModelR cannot pass to Julia: ",
-      "an `NA` becomes a number on the way, so it cannot be marked as ",
+      "`y` contains missing values, which composableIDModelR cannot pass to ",
+      "Julia: an `NA` becomes a number on the way, so it cannot be marked as ",
       "unobserved. Fit a window without gaps, and do not simply delete the ",
       "missing entries, which would move every later observation earlier in ",
       "time.",

@@ -142,9 +142,8 @@ as_draws_rvars.cidm_fit <- function(x, ...) {
 #' plot(fitted, type = "cases", horizon = 14)
 #' }
 #' @export
-plot.cidm_fit <- function(x, type = c("cases", "Rt", "infections",
-                                          "latent"),
-                              horizon = 0, ...) {
+plot.cidm_fit <- function(x, type = c("cases", "Rt", "infections", "latent"),
+                          horizon = 0, ...) {
   type <- match.arg(type)
   quantity <- switch(type,
     cases = predict(x, horizon = horizon),

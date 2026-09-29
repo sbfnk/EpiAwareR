@@ -1,4 +1,5 @@
-# Distributions come from distspec, which composableIDModelR converts to Julia code.
+# Distributions come from distspec, which composableIDModelR converts to Julia
+# code.
 # Only the two distributions with no distspec equivalent are defined here.
 
 #' Probability distributions
@@ -6,9 +7,9 @@
 #' Distributions are specified with
 #' [distspec](https://epiforecasts.io/distspec/), whose constructors
 #' `Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
-#' `Beta()`, `Fixed()` and `NonParametric()` composableIDModelR re-exports. Parameters
-#' can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a mean and
-#' standard deviation (`Gamma(mean = 4, sd = 2)`).
+#' `Beta()`, `Fixed()` and `NonParametric()` composableIDModelR re-exports.
+#' Parameters can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a
+#' mean and standard deviation (`Gamma(mean = 4, sd = 2)`).
 #'
 #' composableIDModelR adds two constructors of its own:
 #'

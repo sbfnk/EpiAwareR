@@ -34,7 +34,7 @@
 #'
 #' Priors are sampled by the model, so their parameters must be fixed.
 #'
-#' @param x A distspec distribution or an composableIDModelR component.
+#' @param x A distspec distribution or a composableIDModelR component.
 #' @param arg_name Name used in error messages.
 #' @return A component of class `cidm_distribution`.
 #' @keywords internal
@@ -79,8 +79,8 @@
 #' given as a probability vector, as a point mass, or with priors on its
 #' parameters.
 #'
-#' @param x A distspec distribution, an composableIDModelR component, or a numeric
-#'   probability vector.
+#' @param x A distspec distribution, a composableIDModelR component, or a
+#'   numeric probability vector.
 #' @param max_delay Numeric. Maximum value used when discretising, or `NULL`
 #'   to take it from the distribution's `max`.
 #' @param delta_d Numeric. Discretisation interval width.
@@ -159,8 +159,8 @@
   # constructor, which the model samples and rediscretises per draw.
   if (!distribution %in% .inferrable_distributions) {
     stop(
-      "`", arg_name, "` has uncertain parameters, which composableIDModelR supports ",
-      "for ", paste(.inferrable_distributions, collapse = ", "),
+      "`", arg_name, "` has uncertain parameters, which composableIDModelR ",
+      "supports for ", paste(.inferrable_distributions, collapse = ", "),
       " distributions only. A ", distribution, " distribution is parameterised",
       " differently in Julia, so a prior on its parameters cannot be carried ",
       "over.",

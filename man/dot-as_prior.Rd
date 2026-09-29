@@ -7,7 +7,7 @@
 .as_prior(x, arg_name = deparse(substitute(x)))
 }
 \arguments{
-\item{x}{A distspec distribution or an composableIDModelR component.}
+\item{x}{A distspec distribution or a composableIDModelR component.}
 
 \item{arg_name}{Name used in error messages.}
 }

@@ -14,8 +14,8 @@
 )
 }
 \arguments{
-\item{x}{A distspec distribution, an composableIDModelR component, or a numeric
-probability vector.}
+\item{x}{A distspec distribution, a composableIDModelR component, or a
+numeric probability vector.}
 
 \item{max_delay}{Numeric. Maximum value used when discretising, or \code{NULL}
 to take it from the distribution's \code{max}.}
