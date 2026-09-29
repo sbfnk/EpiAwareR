@@ -32,6 +32,9 @@ test_that("simulate() handles non-ASCII keywords and delays", {
   sims <- simulate(model, nsim = 2, n = 30, seed = 2)
   expect_identical(dim(sims$Rt), c(2L, 30L))
   expect_equal(sims$Rt, exp(sims$Z_t))
+  # The delay leaves the first two time points unobserved, at the front
+  expect_true(all(is.nan(sims$generated_y_t[, 1:2])))
+  expect_false(any(is.nan(sims$generated_y_t[, 3:30])))
 })
 
 test_that("fit() recovers draws, generated quantities and forecasts", {
@@ -47,6 +50,15 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
   expect_identical(dim(fitted$generated$I_t), c(100L, 25L))
   expect_identical(dim(predict(fitted)), c(100L, 25L))
   expect_false(anyNA(predict(fitted)))
+  # Draws are ordered chain by chain, and each generated trajectory belongs to
+  # the draw on the same row. An interleaved or transposed reading breaks both.
+  expect_identical(
+    posterior::draw_ids(posterior::subset_draws(fitted$draws, chain = 2)),
+    1:50
+  )
+  seeded <- posterior::extract_variable(fitted$draws, "init_incidence")
+  expect_equal(fitted$generated$I_t[, 1], exp(seeded + fitted$generated$Z_t[, 1]))
+
   expect_s3_class(suppressWarnings(summary(fitted)), "draws_summary")
   expect_output(suppressWarnings(print(fitted)), "Divergent transitions")
 
