@@ -8,25 +8,27 @@
 **composableIDModelR** is an R interface to
 [ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl),
 the composable probabilistic infectious disease modelling package of the
-[EpiAware](https://epiaware.org) ecosystem. Models are assembled in R
-from interchangeable latent process, infection and observation
-components, then simulated from and fitted in Julia with
-[Turing.jl](https://turinglang.org). No Julia code is needed, but every
-model can be shown as the Julia code it runs.
+[EpiAware](https://epiaware.org) ecosystem. You build a model in R from
+interchangeable latent process, infection and observation components,
+and Julia simulates from it and fits it with
+[Turing.jl](https://turinglang.org). You do not need to write any Julia,
+and `as_julia()` shows the Julia code a model runs.
 
 ## Installation
 
-composableIDModelR needs [Julia](https://julialang.org) (\>= 1.12), the version
-its pinned dependencies were resolved with. We recommend installing it
-with [juliaup](https://github.com/JuliaLang/juliaup), which lets
-composableIDModelR use the Julia version its dependencies were resolved with.
+composableIDModelR needs [Julia](https://julialang.org) 1.12 or later.
+We recommend installing Julia with
+[juliaup](https://github.com/JuliaLang/juliaup), which lets
+composableIDModelR use the Julia version its pinned dependencies were
+resolved with.
 
 ``` r
 # install.packages("remotes")
 remotes::install_github("sbfnk/composableIDModelR")
 ```
 
-Julia packages are installed on first use. To watch progress, run:
+The Julia packages install on first use. To install them up front and
+watch the progress, run:
 
 ``` r
 library(composableIDModelR)
@@ -67,8 +69,8 @@ plot(fitted, type = "Rt")
 plot(fitted, type = "cases", horizon = 14)
 ```
 
-Swapping an assumption means swapping a component, for example Poisson
-observations after a reporting delay:
+To change an assumption, swap the component that encodes it. This model
+observes the same infections with Poisson noise after a reporting delay:
 
 ``` r
 delayed <- IDModel(
@@ -77,13 +79,13 @@ delayed <- IDModel(
 )
 ```
 
-Constructors without an R wrapper are available through `component()`
-and `julia()`.
+`component()` and `julia()` reach ComposableTuringIDModels.jl
+constructors that have no R wrapper.
 
 ## Contributing
 
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for
-guidelines.
+Contributions are welcome. See
+[CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
 ## License
 
