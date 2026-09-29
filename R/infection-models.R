@@ -45,8 +45,8 @@ NULL
 #' @export
 Renewal <- function(generation_time, rt = NULL, initialisation = NULL,
                     transformation = NULL, D_gen = NULL, delta_d = NULL) {
-  checkmate::assert_number(D_gen, lower = 0, null.ok = TRUE)
-  checkmate::assert_number(delta_d, lower = 0, null.ok = TRUE)
+  .assert_positive(D_gen, "D_gen")
+  .assert_positive(delta_d, "delta_d")
   gen <- .as_delay(generation_time, D_gen, delta_d, drop_zero = TRUE,
                    max_name = "D_gen")
   rt <- .as_prior_slot(rt)

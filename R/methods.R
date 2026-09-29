@@ -155,7 +155,10 @@ plot.epiaware_fit <- function(x, type = c("cases", "Rt", "infections",
   if (is.null(quantity)) {
     stop(
       "No ", type, " trajectories are available for this model.",
-      if (type == "Rt") " `Rt` requires a `Renewal()` infection model.",
+      if (type == "Rt") paste(
+        " `Rt` needs a `Renewal()` infection model on its default scale, so",
+        "it is not derived when `transformation` is given."
+      ),
       call. = FALSE
     )
   }
@@ -208,7 +211,8 @@ plot.epiaware_fit <- function(x, type = c("cases", "Rt", "infections",
   if (is.null(fit$dates)) {
     return(seq_len(n))
   }
-  dates <- as.Date(fit$dates)
+  # Kept as given, so that sub-daily observations keep their time of day.
+  dates <- fit$dates
   step <- if (length(dates) > 1) dates[2] - dates[1] else 1
   dates[1] + step * (seq_len(n) - 1)
 }

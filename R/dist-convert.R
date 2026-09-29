@@ -21,8 +21,10 @@
 )
 
 # Distributions whose distspec parameters are also the positional arguments of
-# the Julia constructor, and which can therefore be given priors.
-.inferrable_distributions <- c("normal", "lognormal", "weibull", "beta")
+# the Julia constructor, and which can therefore be given priors. A normal
+# distribution qualifies but has mass below zero, so it is refused as a delay
+# before uncertainty is considered and is left out here.
+.inferrable_distributions <- c("lognormal", "weibull", "beta")
 
 # Distributions with mass below zero. Julia discretises a delay over
 # non-negative support only, so these need truncating first.
@@ -110,6 +112,14 @@
 
   distribution <- distspec::get_distribution(x)
   max <- .dist_max(x)
+  if (!is.null(max_delay) && is.finite(max) && max_delay != max) {
+    stop(
+      "`", arg_name, "` has a maximum of ", max, ", and `", max_name, "` is ",
+      max_delay, ". Give the horizon once, either on the distribution or as `",
+      max_name, "`.",
+      call. = FALSE
+    )
+  }
   if (is.null(max_delay) && is.finite(max)) max_delay <- max
 
   if (distribution %in% c("nonparametric", "fixed")) {
@@ -300,6 +310,20 @@
       "or set the maximum on the distribution itself.",
       call. = FALSE
     )
+  }
+  invisible(TRUE)
+}
+
+#' Check a discretisation argument that Julia requires to be positive
+#'
+#' @param x Numeric scalar, or `NULL` to use the Julia default.
+#' @param arg_name Name used in error messages.
+#' @return Invisibly `TRUE`.
+#' @keywords internal
+.assert_positive <- function(x, arg_name) {
+  checkmate::assert_number(x, null.ok = TRUE, .var.name = arg_name)
+  if (!is.null(x) && x <= 0) {
+    stop("`", arg_name, "` must be greater than zero.", call. = FALSE)
   }
   invisible(TRUE)
 }

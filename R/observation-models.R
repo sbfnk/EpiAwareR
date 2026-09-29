@@ -69,8 +69,8 @@ NormalError <- function(std = NULL) {
 #' @export
 LatentDelay <- function(model, delay, D = NULL, delta_d = NULL) {
   .assert_role(model, "observation")
-  checkmate::assert_number(D, lower = 0, null.ok = TRUE)
-  checkmate::assert_number(delta_d, lower = 0, null.ok = TRUE)
+  .assert_positive(D, "D")
+  .assert_positive(delta_d, "delta_d")
   delay <- .as_delay(delay, D, delta_d)
   max_delay <- delay$max_delay
   args <- list(model, delay$dist,

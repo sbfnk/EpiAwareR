@@ -38,9 +38,7 @@ test_that("a delay's maximum sets the discretisation horizon", {
     as_julia(delayed),
     "LatentDelay(PoissonError(), LogNormal(1.6, 0.42); D = 15.0)"
   )
-  explicit <- LatentDelay(
-    PoissonError(), LogNormal(1.6, 0.42, max = 15), D = 10
-  )
+  explicit <- LatentDelay(PoissonError(), LogNormal(1.6, 0.42), D = 10)
   expect_match(as_julia(explicit), "D = 10.0")
 })
 
@@ -57,6 +55,26 @@ test_that("a horizon cannot be given for an already discrete delay", {
   expect_error(
     Renewal(generation_time = NonParametric(c(0.5, 0.5)), delta_d = 0.5),
     "cannot be used with"
+  )
+})
+
+test_that("a horizon cannot be given twice, or as zero", {
+  expect_error(
+    LatentDelay(PoissonError(), LogNormal(1.6, 0.42, max = 30), D = 15),
+    "Give the horizon once"
+  )
+  # The same horizon twice is not a conflict
+  expect_match(
+    as_julia(LatentDelay(PoissonError(), LogNormal(1.6, 0.42, max = 15),
+                         D = 15)),
+    "D = 15.0"
+  )
+  expect_error(
+    LatentDelay(PoissonError(), LogNormal(1.6, 0.42), delta_d = 0),
+    "greater than zero"
+  )
+  expect_error(
+    Renewal(Gamma(shape = 2, rate = 1), D_gen = 0), "greater than zero"
   )
 })
 
@@ -127,4 +145,13 @@ test_that("unsupported uncertain delays fail with an explanation", {
     ),
     "parameterised differently"
   )
+  # A normal delay is refused for its support, so it is not offered as an
+  # alternative in the message above
+  expect_false(grepl("\\bnormal\\b", conditionMessage(tryCatch(
+    LatentDelay(
+      PoissonError(),
+      Gamma(shape = Normal(2, 0.5), rate = Normal(1, 0.1), max = 15)
+    ),
+    error = identity
+  ))))
 })
