@@ -9,7 +9,8 @@
   max_delay = NULL,
   delta_d = NULL,
   drop_zero = FALSE,
-  arg_name = deparse(substitute(x))
+  arg_name = deparse(substitute(x)),
+  max_name = "D"
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ to take it from the distribution's `max`.}
 vector and renormalise, as a generation time requires.}
 
 \item{arg_name}{Name used in error messages.}
+
+\item{max_name}{Name of the caller's maximum argument, used in error
+messages.}
 }
 \value{
 A list with the converted `dist` (a component or a list of

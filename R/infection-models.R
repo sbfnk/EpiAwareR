@@ -47,7 +47,8 @@ Renewal <- function(generation_time, rt = NULL, initialisation = NULL,
                     transformation = NULL, D_gen = NULL, delta_d = NULL) {
   checkmate::assert_number(D_gen, lower = 0, null.ok = TRUE)
   checkmate::assert_number(delta_d, lower = 0, null.ok = TRUE)
-  gen <- .as_delay(generation_time, D_gen, delta_d, drop_zero = TRUE)
+  gen <- .as_delay(generation_time, D_gen, delta_d, drop_zero = TRUE,
+                   max_name = "D_gen")
   rt <- .as_prior_slot(rt)
   initialisation <- .as_prior_slot(initialisation)
   .assert_role(transformation, "julia", null_ok = TRUE)

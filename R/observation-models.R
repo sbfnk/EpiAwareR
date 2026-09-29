@@ -71,10 +71,6 @@ LatentDelay <- function(model, delay, D = NULL, delta_d = NULL) {
   .assert_role(model, "observation")
   checkmate::assert_number(D, lower = 0, null.ok = TRUE)
   checkmate::assert_number(delta_d, lower = 0, null.ok = TRUE)
-  if (is.numeric(delay) && (!is.null(D) || !is.null(delta_d))) {
-    stop("`D` and `delta_d` only apply to a delay distribution.",
-         call. = FALSE)
-  }
   delay <- .as_delay(delay, D, delta_d)
   max_delay <- delay$max_delay
   args <- list(model, delay$dist,

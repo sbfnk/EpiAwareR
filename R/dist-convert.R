@@ -81,16 +81,19 @@
 #' @param drop_zero Logical. Whether to drop the zero delay from a probability
 #'   vector and renormalise, as a generation time requires.
 #' @param arg_name Name used in error messages.
+#' @param max_name Name of the caller's maximum argument, used in error
+#'   messages.
 #' @return A list with the converted `dist` (a component or a list of
 #'   probabilities) and the `max_delay` and `delta_d` still to be passed on,
 #'   which are `NULL` once the conversion has used them.
 #' @keywords internal
 .as_delay <- function(x, max_delay = NULL, delta_d = NULL, drop_zero = FALSE,
-                      arg_name = deparse(substitute(x))) {
+                      arg_name = deparse(substitute(x)),
+                      max_name = "D") {
+  given_horizon <- !is.null(max_delay) || !is.null(delta_d)
   if (is.numeric(x)) {
-    return(list(
-      dist = .as_pmf(x, arg_name), max_delay = max_delay, delta_d = delta_d
-    ))
+    .assert_no_horizon(given_horizon, arg_name, max_name)
+    return(list(dist = .as_pmf(x, arg_name), max_delay = NULL, delta_d = NULL))
   }
   if (!inherits(x, "dist_spec")) {
     .assert_role(x, "distribution", arg_name = arg_name)
@@ -105,6 +108,7 @@
   if (is.null(max_delay) && is.finite(max)) max_delay <- max
 
   if (distribution %in% c("nonparametric", "fixed")) {
+    .assert_no_horizon(given_horizon, arg_name, max_name)
     pmf <- distspec::get_pmf(distspec::discretise(x))
     if (drop_zero) pmf <- pmf[-1] / sum(pmf[-1])
     return(list(
@@ -257,4 +261,26 @@
     stop("A numeric `", arg_name, "` must sum to one.", call. = FALSE)
   }
   as.list(as.numeric(x))
+}
+
+#' Reject a discretisation horizon given for an already discrete distribution
+#'
+#' A probability vector is used as it stands, so a maximum or an interval
+#' width would be silently ignored.
+#'
+#' @param given_horizon Logical. Whether the caller supplied either.
+#' @param arg_name Name of the delay argument, used in error messages.
+#' @param max_name Name of the caller's maximum argument.
+#' @return Invisibly `TRUE`.
+#' @keywords internal
+.assert_no_horizon <- function(given_horizon, arg_name, max_name) {
+  if (given_horizon) {
+    stop(
+      "`", max_name, "` and `delta_d` only apply to a delay distribution that ",
+      "is discretised, so they cannot be used with `", arg_name, "` given as ",
+      "probabilities.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
 }
