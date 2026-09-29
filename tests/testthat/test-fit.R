@@ -16,6 +16,7 @@ test_that("fit() validates inputs before starting Julia", {
   expect_error(fit(model, c(1, NA, 3)), "missing values")
   expect_error(fit(model, 1:10, method = list()), "nuts")
   expect_error(fit(model, 1:10, dates = Sys.Date()), "one entry")
+  expect_error(fit(model, 1:10, dates = as.character(1:10)), "Date")
 })
 
 test_that(".trajectory_bands summarises draws and drops empty time points", {

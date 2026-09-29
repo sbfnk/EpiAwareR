@@ -67,8 +67,8 @@ print.epiaware_nuts <- function(x, ...) {
 #'   observations are not supported because NUTS cannot sample them, and
 #'   neither is a matrix of stratified observations.
 #' @param method Sampler settings from [nuts()].
-#' @param dates Optional vector of dates, one per observation, used when
-#'   plotting.
+#' @param dates Optional vector of dates (`Date` or `POSIXt`), one per
+#'   observation, used when plotting.
 #' @param seed Optional integer seed for the Julia random number generator.
 #'
 #' @return An object of class `epiaware_fit` with elements
@@ -121,6 +121,9 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
   if (!inherits(method, "epiaware_nuts")) {
     stop("`method` must be a sampler from `nuts()`.", call. = FALSE)
   }
+  checkmate::assert_multi_class(
+    dates, c("Date", "POSIXct", "POSIXlt"), null.ok = TRUE
+  )
   if (!is.null(dates) && length(dates) != length(y)) {
     stop("`dates` must have one entry per observation.", call. = FALSE)
   }

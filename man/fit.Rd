@@ -15,8 +15,8 @@ neither is a matrix of stratified observations.}
 
 \item{method}{Sampler settings from [nuts()].}
 
-\item{dates}{Optional vector of dates, one per observation, used when
-plotting.}
+\item{dates}{Optional vector of dates (`Date` or `POSIXt`), one per
+observation, used when plotting.}
 
 \item{seed}{Optional integer seed for the Julia random number generator.}
 }
