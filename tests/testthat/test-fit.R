@@ -54,3 +54,15 @@ test_that("fit() rejects stratified observations", {
   model <- IDModel(DirectInfections(Z = RandomWalk()), PoissonError())
   expect_error(fit(model, matrix(1:10, nrow = 2)), "Stratified data")
 })
+
+test_that(".time_axis keeps the resolution of the dates it is given", {
+  hourly <- as.POSIXct("2020-02-13 06:00:00", tz = "UTC") + 3600 * (0:4)
+  axis <- .time_axis(list(dates = hourly), 7)
+  expect_s3_class(axis, "POSIXct")
+  expect_length(axis, 7)
+  expect_identical(as.numeric(diff(axis)), rep(1, 6))
+
+  daily <- as.Date("2020-02-13") + 0:4
+  expect_s3_class(.time_axis(list(dates = daily), 5), "Date")
+  expect_identical(.time_axis(list(dates = NULL), 3), 1:3)
+})
