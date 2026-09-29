@@ -2,9 +2,9 @@
 % Please edit documentation in R/dist-convert.R
 \name{.assert_no_horizon}
 \alias{.assert_no_horizon}
-\title{Reject a discretisation horizon given for an already discrete distribution}
+\title{Reject a discretisation horizon given for an already discrete delay}
 \usage{
-.assert_no_horizon(given_horizon, arg_name, max_name)
+.assert_no_horizon(given_horizon, arg_name, max_name, given_as)
 }
 \arguments{
 \item{given_horizon}{Logical. Whether the caller supplied either.}
@@ -12,12 +12,15 @@
 \item{arg_name}{Name of the delay argument, used in error messages.}
 
 \item{max_name}{Name of the caller's maximum argument.}
+
+\item{given_as}{How the delay was given, used in error messages.}
 }
 \value{
 Invisibly `TRUE`.
 }
 \description{
-A probability vector is used as it stands, so a maximum or an interval
-width would be silently ignored.
+Probabilities are used as they stand, so a maximum or an interval width
+would be silently ignored. A distribution discretised in R takes its
+maximum from the distribution itself.
 }
 \keyword{internal}

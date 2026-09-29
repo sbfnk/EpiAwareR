@@ -46,17 +46,17 @@ test_that("a delay's maximum sets the discretisation horizon", {
 
 test_that("a horizon cannot be given for an already discrete delay", {
   expect_error(
-    LatentDelay(PoissonError(), c(0.5, 0.5), D = 3), "only apply"
+    LatentDelay(PoissonError(), c(0.5, 0.5), D = 3), "cannot be used with"
   )
   expect_error(
-    LatentDelay(PoissonError(), NonParametric(c(0.5, 0.5)), D = 3), "only apply"
+    LatentDelay(PoissonError(), NonParametric(c(0.5, 0.5)), D = 3), "cannot be used with"
   )
   expect_error(
     Renewal(generation_time = c(0.5, 0.5), D_gen = 10), "`D_gen`"
   )
   expect_error(
     Renewal(generation_time = NonParametric(c(0.5, 0.5)), delta_d = 0.5),
-    "only apply"
+    "cannot be used with"
   )
 })
 

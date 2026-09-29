@@ -54,7 +54,7 @@ test_that("observation models wrap other observation models", {
     "LatentDelay(PoissonError(), LogNormal(1.6, 0.42); D = 15.0)"
   )
   expect_error(LatentDelay(Normal(0, 1), c(0.5, 0.5)), "observation model")
-  expect_error(LatentDelay(PoissonError(), c(0.5, 0.5), D = 3), "only apply")
+  expect_error(LatentDelay(PoissonError(), c(0.5, 0.5), D = 3), "cannot be used with")
   expect_match(
     as_julia(Ascertainment(PoissonError(), Normal(-1, 0.1))),
     "^Ascertainment\\(PoissonError\\(\\), Normal"

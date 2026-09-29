@@ -97,7 +97,7 @@
                       max_name = "D") {
   given_horizon <- !is.null(max_delay) || !is.null(delta_d)
   if (is.numeric(x)) {
-    .assert_no_horizon(given_horizon, arg_name, max_name)
+    .assert_no_horizon(given_horizon, arg_name, max_name, "probabilities")
     return(list(dist = .as_pmf(x, arg_name), max_delay = NULL, delta_d = NULL))
   }
   if (!inherits(x, "dist_spec")) {
@@ -113,7 +113,9 @@
   if (is.null(max_delay) && is.finite(max)) max_delay <- max
 
   if (distribution %in% c("nonparametric", "fixed")) {
-    .assert_no_horizon(given_horizon, arg_name, max_name)
+    .assert_no_horizon(
+      given_horizon, arg_name, max_name, "a distribution discretised in R"
+    )
     pmf <- distspec::get_pmf(distspec::discretise(x))
     if (drop_zero) pmf <- pmf[-1] / sum(pmf[-1])
     return(list(
@@ -277,22 +279,25 @@
   as.list(as.numeric(x))
 }
 
-#' Reject a discretisation horizon given for an already discrete distribution
+#' Reject a discretisation horizon given for an already discrete delay
 #'
-#' A probability vector is used as it stands, so a maximum or an interval
-#' width would be silently ignored.
+#' Probabilities are used as they stand, so a maximum or an interval width
+#' would be silently ignored. A distribution discretised in R takes its
+#' maximum from the distribution itself.
 #'
 #' @param given_horizon Logical. Whether the caller supplied either.
 #' @param arg_name Name of the delay argument, used in error messages.
 #' @param max_name Name of the caller's maximum argument.
+#' @param given_as How the delay was given, used in error messages.
 #' @return Invisibly `TRUE`.
 #' @keywords internal
-.assert_no_horizon <- function(given_horizon, arg_name, max_name) {
+.assert_no_horizon <- function(given_horizon, arg_name, max_name, given_as) {
   if (given_horizon) {
     stop(
-      "`", max_name, "` and `delta_d` only apply to a delay distribution that ",
-      "is discretised, so they cannot be used with `", arg_name, "` given as ",
-      "probabilities.",
+      "`", max_name, "` and `delta_d` set how a delay distribution is ",
+      "discretised in Julia, so they cannot be used with `", arg_name,
+      "` given as ", given_as, ". Pass a continuous distribution to use them, ",
+      "or set the maximum on the distribution itself.",
       call. = FALSE
     )
   }
