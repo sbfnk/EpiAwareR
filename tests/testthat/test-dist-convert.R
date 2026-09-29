@@ -77,6 +77,9 @@ test_that("a horizon cannot be given twice, or as zero", {
   expect_error(
     Renewal(Gamma(shape = 2, rate = 1), D_gen = 0), "greater than zero"
   )
+  expect_error(
+    LatentDelay(PoissonError(), LogNormal(1.6, 0.42), D = Inf), "finite"
+  )
 })
 
 test_that("nonparametric and fixed delays become probability vectors", {

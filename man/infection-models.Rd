@@ -52,7 +52,8 @@ Models for the unobserved infection process. Each carries its own latent
 process: the log reproduction number for `Renewal()`, the log growth rate
 for `ExpGrowthRate()`, and log infections for `DirectInfections()`. Each
 wraps the constructor of the same name in ComposableTuringIDModels.jl.
-`NULL` arguments use the Julia default.
+`NULL` arguments use the Julia default, and `delta_d` is the discretisation
+width Julia spells with a Greek delta.
 }
 \examples{
 Renewal(

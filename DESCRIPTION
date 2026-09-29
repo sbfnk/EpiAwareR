@@ -26,7 +26,7 @@ Suggests:
     withr,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.2.0)
 Remotes:
     sbfnk/juliaready
 VignetteBuilder: knitr
