@@ -7,8 +7,8 @@
 .generated_list(generated)
 }
 \arguments{
-\item{generated}{List with `names` and a draws x time x quantities array
-of `values`.}
+\item{generated}{List with \code{names} and a draws x time x quantities array
+of \code{values}.}
 }
 \value{
 Named list of draws x time matrices.

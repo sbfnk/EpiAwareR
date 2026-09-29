@@ -7,36 +7,36 @@
 fit(model, y, method = nuts(), dates = NULL, seed = NULL)
 }
 \arguments{
-\item{model}{A composed model from [IDModel()], or a [julia()] expression
+\item{model}{A composed model from \code{\link[=IDModel]{IDModel()}}, or a \code{\link[=julia]{julia()}} expression
 that builds one.}
 
 \item{y}{Numeric vector of observations, one per time point. Missing
 observations are not supported, and neither is a matrix of stratified
 observations.}
 
-\item{method}{Sampler settings from [nuts()].}
+\item{method}{Sampler settings from \code{\link[=nuts]{nuts()}}.}
 
-\item{dates}{Optional vector of dates (`Date` or `POSIXt`), one per
+\item{dates}{Optional vector of dates (\code{Date} or \code{POSIXt}), one per
 observation, used when plotting.}
 
 \item{seed}{Optional integer seed for the Julia random number generator.}
 }
 \value{
-An object of class `cidm_fit` with elements
+An object of class \code{cidm_fit} with elements
 \describe{
-  \item{draws}{Posterior draws of the model parameters, a
-    [posterior::draws_df].}
-  \item{sampler}{Sampler diagnostics per draw (e.g. `numerical_error` for
-    divergent transitions), a [posterior::draws_df].}
-  \item{generated}{Named list of draws x time matrices of generated
-    quantities: `Z_t` (the latent process), `I_t` (infections),
-    `expected_y_t` (expected observations), `predicted_y_t` (posterior
-    predictive observations) and, for renewal models, `Rt`. It also holds
-    `generated_y_t`, which is the observed series repeated for every draw,
-    because the model was conditioned on it. In `expected_y_t` and
-    `predicted_y_t`, time points the model does not score, such as those
-    before a reporting delay has elapsed, are `NaN`.}
-  \item{model, y, dates, method}{The inputs.}
+\item{draws}{Posterior draws of the model parameters, a
+\link[posterior:draws_df]{posterior::draws_df}.}
+\item{sampler}{Sampler diagnostics per draw (e.g. \code{numerical_error} for
+divergent transitions), a \link[posterior:draws_df]{posterior::draws_df}.}
+\item{generated}{Named list of draws x time matrices of generated
+quantities: \code{Z_t} (the latent process), \code{I_t} (infections),
+\code{expected_y_t} (expected observations), \code{predicted_y_t} (posterior
+predictive observations) and, for renewal models, \code{Rt}. It also holds
+\code{generated_y_t}, which is the observed series repeated for every draw,
+because the model was conditioned on it. In \code{expected_y_t} and
+\code{predicted_y_t}, time points the model does not score, such as those
+before a reporting delay has elapsed, are \code{NaN}.}
+\item{model, y, dates, method}{The inputs.}
 }
 }
 \description{
@@ -56,8 +56,8 @@ plot(fitted, type = "Rt")
 }
 }
 \seealso{
-[predict.cidm_fit()] to forecast, [plot.cidm_fit()] to
-  visualise the fit.
+\code{\link[=predict.cidm_fit]{predict.cidm_fit()}} to forecast, \code{\link[=plot.cidm_fit]{plot.cidm_fit()}} to
+visualise the fit.
 
 Other inference: 
 \code{\link{nuts}()},

@@ -7,14 +7,14 @@
 \method{plot}{cidm_fit}(x, type = c("cases", "Rt", "infections", "latent"), horizon = 0, ...)
 }
 \arguments{
-\item{x}{An `cidm_fit` object from [fit()].}
+\item{x}{An \code{cidm_fit} object from \code{\link[=fit]{fit()}}.}
 
-\item{type}{Character string. What to plot: `"cases"` (posterior
-predictive observations with the data), `"Rt"` (reproduction number,
-renewal models only), `"infections"`, or `"latent"` (the latent process
+\item{type}{Character string. What to plot: \code{"cases"} (posterior
+predictive observations with the data), \code{"Rt"} (reproduction number,
+renewal models only), \code{"infections"}, or \code{"latent"} (the latent process
 on its own scale).}
 
-\item{horizon}{Integer. For `type = "cases"`, number of time points to
+\item{horizon}{Integer. For \code{type = "cases"}, number of time points to
 forecast.}
 
 \item{...}{Unused.}
@@ -23,7 +23,7 @@ forecast.}
 A ggplot2 object.
 }
 \description{
-Shows the posterior median and 50% and 90% credible intervals of a
+Shows the posterior median and 50\% and 90\% credible intervals of a
 generated quantity over time.
 }
 \examples{

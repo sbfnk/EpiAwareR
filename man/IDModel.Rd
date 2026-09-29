@@ -7,18 +7,18 @@
 IDModel(infection, observation)
 }
 \arguments{
-\item{infection}{An infection model, e.g. from [Renewal()].}
+\item{infection}{An infection model, e.g. from \code{\link[=Renewal]{Renewal()}}.}
 
 \item{observation}{An observation model, e.g. from
-[NegativeBinomialError()].}
+\code{\link[=NegativeBinomialError]{NegativeBinomialError()}}.}
 }
 \value{
-An object of class `cidm_model`.
+An object of class \code{cidm_model}.
 }
 \description{
 Joins an infection model, which carries its own latent process, to an
-observation model. The result can be simulated from with [simulate()] and
-fitted to data with [fit()].
+observation model. The result can be simulated from with \code{\link[=simulate]{simulate()}} and
+fitted to data with \code{\link[=fit]{fit()}}.
 }
 \examples{
 model <- IDModel(

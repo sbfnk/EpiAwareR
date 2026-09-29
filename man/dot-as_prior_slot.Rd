@@ -7,7 +7,7 @@
 .as_prior_slot(x, arg_name = deparse(substitute(x)))
 }
 \arguments{
-\item{x}{The slot value, or `NULL` to use the Julia default.}
+\item{x}{The slot value, or \code{NULL} to use the Julia default.}
 
 \item{arg_name}{Name used in error messages.}
 }

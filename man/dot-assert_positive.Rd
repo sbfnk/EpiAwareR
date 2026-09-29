@@ -7,12 +7,12 @@
 .assert_positive(x, arg_name)
 }
 \arguments{
-\item{x}{Numeric scalar, or `NULL` to use the Julia default.}
+\item{x}{Numeric scalar, or \code{NULL} to use the Julia default.}
 
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-Invisibly `TRUE`.
+Invisibly \code{TRUE}.
 }
 \description{
 Check a discretisation argument that Julia requires to be positive

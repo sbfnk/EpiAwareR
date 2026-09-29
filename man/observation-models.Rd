@@ -31,11 +31,11 @@ of the observation noise.}
 \item{delay}{The delay from infection to observation: a continuous
 distribution (discretised in Julia with double interval censoring), a
 numeric probability vector whose first entry is a delay of zero, or a
-`NonParametric()` or `Fixed()` distribution, which is discretised in R.
+\code{NonParametric()} or \code{Fixed()} distribution, which is discretised in R.
 Uncertain parameters give an inferred delay.}
 
 \item{D}{Numeric. Maximum delay used when discretising a distribution,
-taken from the distribution's `max` when it has one.}
+taken from the distribution's \code{max} when it has one.}
 
 \item{delta_d}{Numeric. Discretisation interval width.}
 
@@ -43,15 +43,15 @@ taken from the distribution's `max` when it has one.}
 constant ascertainment or a latent model for a time-varying one.}
 }
 \value{
-An object of class `cidm_observation`.
+An object of class \code{cidm_observation}.
 }
 \description{
 Models linking expected observations to data. Error models
-(`PoissonError()`, `NegativeBinomialError()`, `NormalError()`) define the
-likelihood; modifiers (`LatentDelay()`, `Ascertainment()`) wrap another
+(\code{PoissonError()}, \code{NegativeBinomialError()}, \code{NormalError()}) define the
+likelihood; modifiers (\code{LatentDelay()}, \code{Ascertainment()}) wrap another
 observation model to transform the expected observations first. Each wraps
-the constructor of the same name in ComposableTuringIDModels.jl. `NULL`
-arguments use the Julia default, and `delta_d` is the discretisation width
+the constructor of the same name in ComposableTuringIDModels.jl. \code{NULL}
+arguments use the Julia default, and \code{delta_d} is the discretisation width
 Julia spells with a Greek delta.
 }
 \examples{

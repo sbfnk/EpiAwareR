@@ -11,15 +11,15 @@
 
 \item{roles}{Character vector of accepted roles.}
 
-\item{null_ok}{Logical. Whether `NULL` is accepted.}
+\item{null_ok}{Logical. Whether \code{NULL} is accepted.}
 
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-Invisibly `TRUE`.
+Invisibly \code{TRUE}.
 }
 \description{
-Julia expressions created by [julia()] without a role are accepted for any
+Julia expressions created by \code{\link[=julia]{julia()}} without a role are accepted for any
 role.
 }
 \keyword{internal}

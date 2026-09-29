@@ -12,8 +12,8 @@
 \item{time}{Vector of time values, one per column.}
 }
 \value{
-A data frame with columns `time`, `median`, `q5`, `q25`, `q75`
-  and `q95`, omitting time points without values.
+A data frame with columns \code{time}, \code{median}, \code{q5}, \code{q25}, \code{q75}
+and \code{q95}, omitting time points without values.
 }
 \description{
 Summarise trajectories by time point

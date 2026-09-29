@@ -10,7 +10,7 @@
 \item{x}{A distspec distribution.}
 }
 \value{
-The maximum, or `Inf` if it is unbounded.
+The maximum, or \code{Inf} if it is unbounded.
 }
 \description{
 Maximum of a distspec distribution

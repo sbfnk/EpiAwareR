@@ -15,34 +15,35 @@ truncated(dist, lower = -Inf, upper = Inf)
 
 \item{dist}{A distribution to truncate.}
 
-\item{lower, upper}{Numeric truncation bounds. Use `-Inf` or `Inf` to leave
+\item{lower, upper}{Numeric truncation bounds. Use \code{-Inf} or \code{Inf} to leave
 a side unbounded.}
 }
 \value{
-A component of class `cidm_distribution`.
+A component of class \code{cidm_distribution}.
 }
 \description{
 Distributions are specified with
-[distspec](https://epiforecasts.io/distspec/), whose constructors
-`Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
-`Beta()`, `Fixed()` and `NonParametric()` composableIDModelR re-exports. Parameters
-can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a mean and
-standard deviation (`Gamma(mean = 4, sd = 2)`).
+\href{https://epiforecasts.io/distspec/}{distspec}, whose constructors
+\code{Normal()}, \code{Gamma()}, \code{LogNormal()}, \code{Exponential()}, \code{Weibull()},
+\code{Beta()}, \code{Fixed()} and \code{NonParametric()} composableIDModelR re-exports. Parameters
+can be given naturally (\code{Gamma(shape = 2, rate = 0.5)}) or as a mean and
+standard deviation (\code{Gamma(mean = 4, sd = 2)}).
 }
 \details{
 composableIDModelR adds two constructors of its own:
-
-- `HalfNormal()`, the prior from ComposableTuringIDModels.jl, parameterised
-  by its mean.
-- `truncated()`, which bounds a distribution below as well as above. The
-  `max` argument of a distspec distribution bounds it above only.
+\itemize{
+\item \code{HalfNormal()}, the prior from ComposableTuringIDModels.jl, parameterised
+by its mean.
+\item \code{truncated()}, which bounds a distribution below as well as above. The
+\code{max} argument of a distspec distribution bounds it above only.
+}
 
 Where a distribution is used decides what it may contain. A prior, such as
-the damping of an [AR()] process, needs fixed parameters. A delay or
+the damping of an \code{\link[=AR]{AR()}} process, needs fixed parameters. A delay or
 generation time may have uncertain parameters (for example
-`LogNormal(meanlog = Normal(1.6, 0.2), sdlog = 0.4, max = 15)`), and is
+\code{LogNormal(meanlog = Normal(1.6, 0.2), sdlog = 0.4, max = 15)}), and is
 then inferred along with the rest of the model; such a distribution needs a
-finite `max` to bound its support.
+finite \code{max} to bound its support.
 }
 \examples{
 # A prior bounded to [0, 1]

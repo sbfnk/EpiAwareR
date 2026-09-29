@@ -9,11 +9,11 @@ julia(code, role = NULL)
 \arguments{
 \item{code}{Character string of Julia code.}
 
-\item{role}{Optional role (see [component()]). Without a role the
+\item{role}{Optional role (see \code{\link[=component]{component()}}). Without a role the
 expression is accepted wherever a component is expected.}
 }
 \value{
-An object of class `cidm_julia`.
+An object of class \code{cidm_julia}.
 }
 \description{
 Marks a string as Julia source to be inserted verbatim when a model is

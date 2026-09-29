@@ -12,8 +12,8 @@
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-`x` as a list of doubles, so a length-one PMF still renders as a
-  Julia vector.
+\code{x} as a list of doubles, so a length-one PMF still renders as a
+Julia vector.
 }
 \description{
 Validate a probability mass function

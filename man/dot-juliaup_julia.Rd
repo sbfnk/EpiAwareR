@@ -7,13 +7,13 @@
 .juliaup_julia(version, verbose = TRUE)
 }
 \arguments{
-\item{version}{Character string with the Julia version (e.g. `"1.12"`).}
+\item{version}{Character string with the Julia version (e.g. \code{"1.12"}).}
 
-\item{verbose}{Logical. If `TRUE`, prints progress messages.}
+\item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
 }
 \value{
-Path to the Julia executable, or `NULL` if juliaup is unavailable
-  or the installation failed.
+Path to the Julia executable, or \code{NULL} if juliaup is unavailable
+or the installation failed.
 }
 \description{
 Install a Julia version with juliaup

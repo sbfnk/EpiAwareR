@@ -7,8 +7,8 @@
 .julia_project()
 }
 \value{
-Path to the directory holding `Project.toml`, `Manifest.toml` and
-  the `composableIDModelR` Julia package.
+Path to the directory holding \code{Project.toml}, \code{Manifest.toml} and
+the \code{composableIDModelR} Julia package.
 }
 \description{
 Locate the bundled Julia project

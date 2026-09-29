@@ -7,7 +7,7 @@
 \method{predict}{cidm_fit}(object, horizon = 0, seed = NULL, ...)
 }
 \arguments{
-\item{object}{An `cidm_fit` object from [fit()].}
+\item{object}{An \code{cidm_fit} object from \code{\link[=fit]{fit()}}.}
 
 \item{horizon}{Integer. Number of time points to forecast.}
 
@@ -18,11 +18,11 @@ used for the forecast. In-sample predictions are drawn when fitting.}
 }
 \value{
 A matrix with one row per posterior draw and one column per time
-  point, covering the fitted period followed by the forecast horizon.
+point, covering the fitted period followed by the forecast horizon.
 }
 \description{
 Draws observations from the posterior predictive distribution over the
-fitted period and, if `horizon` is positive, forecasts beyond it. The
+fitted period and, if \code{horizon} is positive, forecasts beyond it. The
 forecast extends the latent process with fresh innovations for each
 posterior draw.
 }

@@ -30,6 +30,7 @@ Suggests:
 Remotes:
     sbfnk/juliaready
 VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 SystemRequirements: Julia (>= 1.12), Julia packages: ComposableTuringIDModels,
     Turing, Distributions (installed automatically)

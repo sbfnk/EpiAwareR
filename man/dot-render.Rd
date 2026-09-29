@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{An R value or component.}
 
-\item{ascii}{Logical. See [as_julia()].}
+\item{ascii}{Logical. See \code{\link[=as_julia]{as_julia()}}.}
 }
 \value{
 A character string of Julia code.

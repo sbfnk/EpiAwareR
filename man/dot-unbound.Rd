@@ -10,7 +10,7 @@
 \item{x}{A distspec distribution.}
 }
 \value{
-`x` without its `max` attribute.
+\code{x} without its \code{max} attribute.
 }
 \description{
 A delay distribution's maximum is passed to Julia as the discretisation

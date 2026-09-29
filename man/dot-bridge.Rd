@@ -7,7 +7,7 @@
 .bridge(fn, ...)
 }
 \arguments{
-\item{fn}{Name of a function in the `composableIDModelR` Julia module.}
+\item{fn}{Name of a function in the \code{composableIDModelR} Julia module.}
 
 \item{...}{Arguments passed to the function.}
 }

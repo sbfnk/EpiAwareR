@@ -7,12 +7,12 @@
 \method{summary}{cidm_fit}(object, ...)
 }
 \arguments{
-\item{object}{An `cidm_fit` object from [fit()].}
+\item{object}{An \code{cidm_fit} object from \code{\link[=fit]{fit()}}.}
 
-\item{...}{Passed to [posterior::summarise_draws()].}
+\item{...}{Passed to \code{\link[posterior:draws_summary]{posterior::summarise_draws()}}.}
 }
 \value{
-A `draws_summary` tibble with one row per parameter.
+A \code{draws_summary} tibble with one row per parameter.
 }
 \description{
 Summarise the posterior of a fitted model

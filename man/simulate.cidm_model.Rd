@@ -10,7 +10,7 @@
 \method{simulate}{cidm_julia}(object, nsim = 1, seed = NULL, n, ...)
 }
 \arguments{
-\item{object}{A composed model from [IDModel()], or a [julia()] expression
+\item{object}{A composed model from \code{\link[=IDModel]{IDModel()}}, or a \code{\link[=julia]{julia()}} expression
 that builds one.}
 
 \item{nsim}{Integer. Number of simulations.}
@@ -22,11 +22,11 @@ that builds one.}
 \item{...}{Unused.}
 }
 \value{
-A named list of `nsim` x `n` matrices: `generated_y_t` (simulated
-  observations), `expected_y_t`, `I_t`, `Z_t` and, for renewal models built
-  with [Renewal()], `Rt`. A model written as [julia()] code gets no `Rt`,
-  since its latent scale is not known to R. Time points without an
-  observation (e.g. before a reporting delay has elapsed) are `NaN`.
+A named list of \code{nsim} x \code{n} matrices: \code{generated_y_t} (simulated
+observations), \code{expected_y_t}, \code{I_t}, \code{Z_t} and, for renewal models built
+with \code{\link[=Renewal]{Renewal()}}, \code{Rt}. A model written as \code{\link[=julia]{julia()}} code gets no \code{Rt},
+since its latent scale is not known to R. Time points without an
+observation (e.g. before a reporting delay has elapsed) are \code{NaN}.
 }
 \description{
 Draws parameters from their priors and simulates the latent process,

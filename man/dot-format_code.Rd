@@ -17,7 +17,7 @@
 Character vector of lines.
 }
 \description{
-Calls that fit within `width` stay on one line; longer ones put each
+Calls that fit within \code{width} stay on one line; longer ones put each
 argument on its own line.
 }
 \keyword{internal}

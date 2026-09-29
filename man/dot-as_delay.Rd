@@ -17,8 +17,8 @@
 \item{x}{A distspec distribution, an composableIDModelR component, or a numeric
 probability vector.}
 
-\item{max_delay}{Numeric. Maximum value used when discretising, or `NULL`
-to take it from the distribution's `max`.}
+\item{max_delay}{Numeric. Maximum value used when discretising, or \code{NULL}
+to take it from the distribution's \code{max}.}
 
 \item{delta_d}{Numeric. Discretisation interval width.}
 
@@ -32,9 +32,9 @@ requires. A numeric probability vector is passed through as given.}
 messages.}
 }
 \value{
-A list with the converted `dist` (a component or a list of
-  probabilities) and the `max_delay` and `delta_d` still to be passed on,
-  which are `NULL` once the conversion has used them.
+A list with the converted \code{dist} (a component or a list of
+probabilities) and the \code{max_delay} and \code{delta_d} still to be passed on,
+which are \code{NULL} once the conversion has used them.
 }
 \description{
 Delays and generation times are discretised, so a distribution may also be

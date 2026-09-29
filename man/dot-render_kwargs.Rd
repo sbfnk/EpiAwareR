@@ -9,13 +9,13 @@
 \arguments{
 \item{kwargs}{Named list of R values.}
 
-\item{ascii}{Logical. See [as_julia()].}
+\item{ascii}{Logical. See \code{\link[=as_julia]{as_julia()}}.}
 }
 \value{
 Character vector of rendered keyword arguments.
 }
 \description{
-In ASCII mode, names with non-ASCII characters are splatted in as `Symbol`
+In ASCII mode, names with non-ASCII characters are splatted in as \code{Symbol}
 pairs built from Unicode escapes, so the code survives transfer to Julia on
 any platform.
 }

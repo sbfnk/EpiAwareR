@@ -27,19 +27,19 @@ adaptation. Increase towards one if there are divergent transitions.}
 \item{max_depth}{Integer. Maximum tree depth.}
 
 \item{ad}{Character string. Automatic differentiation backend:
-`"forwarddiff"` works for every model and is fast for models with few
-parameters; `"mooncake"` scales better to long time series but compiles
+\code{"forwarddiff"} works for every model and is fast for models with few
+parameters; \code{"mooncake"} scales better to long time series but compiles
 slowly on first use.}
 }
 \value{
-An object of class `cidm_nuts`.
+An object of class \code{cidm_nuts}.
 }
 \description{
-Settings for the No-U-Turn Sampler used by [fit()].
+Settings for the No-U-Turn Sampler used by \code{\link[=fit]{fit()}}.
 }
 \details{
 Chains run in parallel only if Julia was started with more than one
-thread; set the environment variable `JULIA_NUM_THREADS` (e.g. to `"4"`)
+thread; set the environment variable \code{JULIA_NUM_THREADS} (e.g. to \code{"4"})
 before Julia starts.
 }
 \examples{

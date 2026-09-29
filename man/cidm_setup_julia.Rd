@@ -7,10 +7,10 @@
 cidm_setup_julia(verbose = TRUE)
 }
 \arguments{
-\item{verbose}{Logical. If `TRUE`, prints progress messages.}
+\item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
 }
 \value{
-Invisibly `TRUE` on success.
+Invisibly \code{TRUE} on success.
 }
 \description{
 Installs the pinned Julia dependencies of composableIDModelR
@@ -19,11 +19,11 @@ a Julia session with them loaded. This happens automatically on first use,
 so it only needs calling directly to see progress or to troubleshoot.
 }
 \details{
-If [juliaup](https://github.com/JuliaLang/juliaup) is available, the Julia
+If \href{https://github.com/JuliaLang/juliaup}{juliaup} is available, the Julia
 version the dependencies were resolved with is installed and used.
-Otherwise the Julia on the `PATH` (or in `JULIA_BINDIR`) is used, which
-must be new enough for the bundled `Manifest.toml`. Set the
-environment variable `JULIA_NUM_THREADS` before Julia starts to sample MCMC
+Otherwise the Julia on the \code{PATH} (or in \code{JULIA_BINDIR}) is used, which
+must be new enough for the bundled \code{Manifest.toml}. Set the
+environment variable \code{JULIA_NUM_THREADS} before Julia starts to sample MCMC
 chains in parallel.
 
 The first call can take several minutes while Julia packages are installed

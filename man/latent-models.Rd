@@ -33,15 +33,15 @@ DiffLatentModel(model, init = NULL)
 distributions (one per lag) or, for order one, a latent model for a
 time-varying coefficient. The two are on different scales: a distribution
 is a prior on the coefficient itself, while a latent model is squashed
-through `tanh` to keep the process stationary.}
+through \code{tanh} to keep the process stationary.}
 
 \item{init}{Prior for the initial values: a distribution or a list of
 distributions (one per lag or difference).}
 
 \item{epsilon_t}{Model for the innovations, typically a
-`HierarchicalNormal()`.}
+\code{HierarchicalNormal()}.}
 
-\item{theta}{Prior for the moving-average coefficients, as for `damp`.}
+\item{theta}{Prior for the moving-average coefficients, as for \code{damp}.}
 
 \item{dist}{A distribution.}
 
@@ -54,32 +54,33 @@ distributions (one per lag or difference).}
 \item{model}{A latent model for the differenced process.}
 }
 \value{
-An object of class `cidm_latent`.
+An object of class \code{cidm_latent}.
 }
 \description{
 Models for the latent paths that drive infection models, such as the log
-reproduction number in [Renewal()]. Each wraps the constructor of the same
+reproduction number in \code{\link[=Renewal]{Renewal()}}. Each wraps the constructor of the same
 name in ComposableTuringIDModels.jl; see its
-[documentation](https://composableturingidmodels.epiaware.org/stable/) for
-the full model definitions. `NULL` arguments use the Julia default.
+\href{https://composableturingidmodels.epiaware.org/stable/}{documentation} for
+the full model definitions. \code{NULL} arguments use the Julia default.
 }
 \details{
 Arguments that Julia spells with a Greek letter are spelled out here:
-`epsilon_t` is its innovation slot and `theta` its moving-average
+\code{epsilon_t} is its innovation slot and \code{theta} its moving-average
 coefficients.
-
-- `AR()`: autoregressive process whose order is the number of damping
-  priors.
-- `MA()`: moving-average process whose order is the number of coefficient
-  priors.
-- `RandomWalk()`: random walk.
-- `IID()`: independent draws from a distribution.
-- `Intercept()`: a single draw repeated over time.
-- `FixedIntercept()`: a fixed value repeated over time.
-- `HierarchicalNormal()`: non-centred normal draws with an inferred standard
-  deviation, the default innovation model.
-- `DiffLatentModel()`: a process whose differences follow `model`, giving
-  e.g. ARIMA-style processes when `model` is an `AR()`.
+\itemize{
+\item \code{AR()}: autoregressive process whose order is the number of damping
+priors.
+\item \code{MA()}: moving-average process whose order is the number of coefficient
+priors.
+\item \code{RandomWalk()}: random walk.
+\item \code{IID()}: independent draws from a distribution.
+\item \code{Intercept()}: a single draw repeated over time.
+\item \code{FixedIntercept()}: a fixed value repeated over time.
+\item \code{HierarchicalNormal()}: non-centred normal draws with an inferred standard
+deviation, the default innovation model.
+\item \code{DiffLatentModel()}: a process whose differences follow \code{model}, giving
+e.g. ARIMA-style processes when \code{model} is an \code{AR()}.
+}
 }
 \examples{
 # AR(2) on log Rt, as in Mishra et al. (2020)

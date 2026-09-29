@@ -14,25 +14,25 @@ and named arguments become keyword arguments. Keyword names may contain
 non-ASCII characters.}
 
 \item{role}{Character string. What the component is, used to check that
-components are composed sensibly: one of `"distribution"`, `"latent"`,
-`"infection"`, `"observation"` or `"model"`.}
+components are composed sensibly: one of \code{"distribution"}, \code{"latent"},
+\code{"infection"}, \code{"observation"} or \code{"model"}.}
 }
 \value{
-An object of class `cidm_component`.
+An object of class \code{cidm_component}.
 }
 \description{
 Low-level constructor behind every component in the package. Use it to
-reach any `ComposableTuringIDModels.jl` (or `Distributions.jl`) constructor
+reach any \code{ComposableTuringIDModels.jl} (or \code{Distributions.jl}) constructor
 that has no dedicated R wrapper.
 }
 \details{
-Arguments are rendered to Julia as follows: components and [julia()]
+Arguments are rendered to Julia as follows: components and \code{\link[=julia]{julia()}}
 expressions are inserted as code, numeric vectors of length one become
 scalars and longer ones become vectors, unnamed lists become vectors,
-`NA` becomes `missing`, and character strings become Julia strings.
-Integers (e.g. `2L`) render as Julia integers and doubles as floats.
-A `NULL` keyword argument is dropped, so the Julia default applies; a
-`NULL` positional argument is an error, since dropping it would renumber
+\code{NA} becomes \code{missing}, and character strings become Julia strings.
+Integers (e.g. \code{2L}) render as Julia integers and doubles as floats.
+A \code{NULL} keyword argument is dropped, so the Julia default applies; a
+\code{NULL} positional argument is an error, since dropping it would renumber
 the arguments that follow.
 }
 \examples{

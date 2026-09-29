@@ -10,8 +10,8 @@
 \item{project}{Path to the bundled Julia project.}
 }
 \value{
-Character string with the major and minor version (e.g. `"1.12"`),
-  or `NULL` if it cannot be read.
+Character string with the major and minor version (e.g. \code{"1.12"}),
+or \code{NULL} if it cannot be read.
 }
 \description{
 Julia version the bundled Manifest was resolved with

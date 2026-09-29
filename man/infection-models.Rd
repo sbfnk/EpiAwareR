@@ -24,35 +24,35 @@ ExpGrowthRate(rt = NULL, initialisation = NULL, transformation = NULL)
 \item{generation_time}{The generation interval: a continuous distribution
 (discretised in Julia with double interval censoring), or a numeric
 probability vector whose first entry is a delay of one day. A
-`NonParametric()` or `Fixed()` distribution is discretised in R, and its
+\code{NonParametric()} or \code{Fixed()} distribution is discretised in R, and its
 zero-day mass is dropped and the rest renormalised, as Julia does when it
 discretises a continuous distribution. Uncertain parameters give an
 inferred generation interval.}
 
-\item{rt}{Latent model for the log reproduction number (`Renewal()`) or the
-growth rate (`ExpGrowthRate()`). A distribution gives a constant value.}
+\item{rt}{Latent model for the log reproduction number (\code{Renewal()}) or the
+growth rate (\code{ExpGrowthRate()}). A distribution gives a constant value.}
 
 \item{initialisation}{Prior for initial infections on the log scale.}
 
-\item{transformation}{A [julia()] function mapping the latent scale to
+\item{transformation}{A \code{\link[=julia]{julia()}} function mapping the latent scale to
 infections.}
 
 \item{D_gen}{Numeric. Maximum generation interval used when discretising a
-distribution, taken from the distribution's `max` when it has one.}
+distribution, taken from the distribution's \code{max} when it has one.}
 
 \item{delta_d}{Numeric. Discretisation interval width.}
 
 \item{Z}{Latent model for log infections.}
 }
 \value{
-An object of class `cidm_infection`.
+An object of class \code{cidm_infection}.
 }
 \description{
 Models for the unobserved infection process. Each carries its own latent
-process: the log reproduction number for `Renewal()`, the log growth rate
-for `ExpGrowthRate()`, and log infections for `DirectInfections()`. Each
+process: the log reproduction number for \code{Renewal()}, the log growth rate
+for \code{ExpGrowthRate()}, and log infections for \code{DirectInfections()}. Each
 wraps the constructor of the same name in ComposableTuringIDModels.jl.
-`NULL` arguments use the Julia default, and `delta_d` is the discretisation
+\code{NULL} arguments use the Julia default, and \code{delta_d} is the discretisation
 width Julia spells with a Greek delta.
 }
 \examples{

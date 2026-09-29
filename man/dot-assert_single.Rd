@@ -12,7 +12,7 @@
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-Invisibly `TRUE`.
+Invisibly \code{TRUE}.
 }
 \description{
 Check that a distribution is a single distribution

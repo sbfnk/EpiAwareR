@@ -11,10 +11,10 @@
 
 \item{names}{Character vector of variable names.}
 
-\item{index}{List with `.chain` and `.iteration` vectors.}
+\item{index}{List with \code{.chain} and \code{.iteration} vectors.}
 }
 \value{
-A [posterior::draws_df].
+A \link[posterior:draws_df]{posterior::draws_df}.
 }
 \description{
 Convert bridge output to a draws_df

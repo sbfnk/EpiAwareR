@@ -12,7 +12,7 @@
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-A component of class `cidm_distribution`.
+A component of class \code{cidm_distribution}.
 }
 \description{
 Priors are sampled by the model, so their parameters must be fixed.

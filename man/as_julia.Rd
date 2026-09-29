@@ -7,11 +7,11 @@
 as_julia(x, ascii = FALSE)
 }
 \arguments{
-\item{x}{A model component, e.g. from [IDModel()] or [Renewal()].}
+\item{x}{A model component, e.g. from \code{\link[=IDModel]{IDModel()}} or \code{\link[=Renewal]{Renewal()}}.}
 
-\item{ascii}{Logical. If `TRUE`, keyword names with non-ASCII characters
+\item{ascii}{Logical. If \code{TRUE}, keyword names with non-ASCII characters
 are written with Unicode escapes, as string literals always are. Code
-supplied through [julia()] is inserted verbatim either way. The default
+supplied through \code{\link[=julia]{julia()}} is inserted verbatim either way. The default
 gives the more readable form that can be pasted into Julia.}
 }
 \value{

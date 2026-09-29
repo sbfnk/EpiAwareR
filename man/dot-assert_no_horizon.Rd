@@ -16,7 +16,7 @@
 \item{given_as}{How the delay was given, used in error messages.}
 }
 \value{
-Invisibly `TRUE`.
+Invisibly \code{TRUE}.
 }
 \description{
 Probabilities are used as they stand, so a maximum or an interval width
