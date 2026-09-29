@@ -16,7 +16,7 @@ An environment holding the handle, released when collected.
 }
 \description{
 The session token travels with the handle because handles are numbered
-from zero in every Julia session, so one from an earlier session would
-otherwise name whichever fit now holds that number.
+from the same base in every Julia session, so one from an earlier session
+would otherwise name whichever fit now holds that number.
 }
 \keyword{internal}

@@ -145,8 +145,8 @@ epiaware_available <- function() {
   if (!epiaware_available()) epiaware_setup_julia(verbose = FALSE)
   released <- .epiaware_env$released
   .epiaware_env$released <- NULL
-  for (handle in released) {
-    try(juliaready::call_julia("EpiAwareR.release!", handle),
+  for (fit in released) {
+    try(juliaready::call_julia("EpiAwareR.release!", fit$handle, fit$session),
         silent = TRUE)
   }
   juliaready::call_julia(paste0("EpiAwareR.", fn), ...)
@@ -155,8 +155,8 @@ epiaware_available <- function() {
 #' Keep a Julia-side object alive while an R object refers to it
 #'
 #' The session token travels with the handle because handles are numbered
-#' from zero in every Julia session, so one from an earlier session would
-#' otherwise name whichever fit now holds that number.
+#' from the same base in every Julia session, so one from an earlier session
+#' would otherwise name whichever fit now holds that number.
 #'
 #' @param handle Integer handle returned by the bridge.
 #' @param session Character token identifying the Julia session.
@@ -167,7 +167,9 @@ epiaware_available <- function() {
   env$handle <- handle
   env$session <- session
   reg.finalizer(env, function(e) {
-    .epiaware_env$released <- c(.epiaware_env$released, e$handle)
+    .epiaware_env$released <- c(
+      .epiaware_env$released, list(list(handle = e$handle, session = e$session))
+    )
   })
   env
 }

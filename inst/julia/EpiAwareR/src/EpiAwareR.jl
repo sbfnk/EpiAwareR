@@ -16,8 +16,8 @@ using Turing: Turing, NUTS, MCMCSerial, MCMCThreads, sample, predict
 const HANDLES = Dict{Int, Any}()
 const NEXT_HANDLE = Ref(0)
 
-# Handles count from zero in every session, so a handle from an earlier one
-# would name a different fit here. The token tells the two apart.
+# Handles count from the same base in every session, so a handle from an
+# earlier one would name a different fit here. The token tells the two apart.
 const SESSION = Ref("")
 
 function __init__()
@@ -31,7 +31,12 @@ function keep!(x)
     return NEXT_HANDLE[]
 end
 
-release!(handle::Integer) = (delete!(HANDLES, Int(handle)); nothing)
+# A handle from a dead session names whichever fit now holds that number, so
+# releasing it would destroy a live fit.
+function release!(handle::Integer, session::AbstractString)
+    session == SESSION[] && delete!(HANDLES, Int(handle))
+    return nothing
+end
 
 # Julia errors from deep inside a model print type signatures that run to
 # pages; only the message is useful in R.
@@ -186,8 +191,9 @@ function _fit(
 end
 
 # Posterior predictive draws of `y_t[from:to]` from a chain returned by
-# `predict`, as a draws x time matrix. Time points a delay leaves unmodelled
-# are absent from the chain and become NaN.
+# `predict`, as a draws x time matrix. The chain stores `y_t` whole or per
+# element, and indexing reads both; a time point a delay leaves unmodelled is
+# absent either way and becomes NaN.
 function observation_draws(pred, from, to)
     ndraws = prod(size(pred))
     cols = map(from:to) do i
@@ -199,6 +205,10 @@ function observation_draws(pred, from, to)
         end
         Float64[ismissing(v) ? NaN : Float64(v) for v in values]
     end
+    all(col -> all(isnan, col), cols) && error(
+        "No observations found in the chain for t = $from:$to. The model's " *
+            "observations may be named something other than `y_t`."
+    )
     return reduce(hcat, cols)
 end
 
