@@ -24,6 +24,10 @@
 # the Julia constructor, and which can therefore be given priors.
 .inferrable_distributions <- c("normal", "lognormal", "weibull", "beta")
 
+# Distributions with mass below zero. Julia discretises a delay over
+# non-negative support only, so these need truncating first.
+.negative_support <- "normal"
+
 #' Convert a distribution used as a prior to a Julia component
 #'
 #' Priors are sampled by the model, so their parameters must be fixed.
@@ -119,6 +123,15 @@
     stop(
       "`", arg_name, "` is a ", distribution, " distribution, which cannot be ",
       "used as a delay.",
+      call. = FALSE
+    )
+  }
+  if (distribution %in% .negative_support) {
+    stop(
+      "`", arg_name, "` is a ", distribution, " distribution, which has mass ",
+      "below zero, and a delay is discretised over non-negative values only. ",
+      "Truncate it first, e.g. `truncated(Normal(5, 2), 0, Inf)`, and give ",
+      "`", max_name, "` explicitly.",
       call. = FALSE
     )
   }

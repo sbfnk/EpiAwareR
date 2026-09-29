@@ -85,6 +85,22 @@ test_that("uncertain delays become inferred delays with bounded priors", {
   )
 })
 
+test_that("a delay with mass below zero is refused", {
+  expect_error(
+    LatentDelay(PoissonError(), Normal(5, 2, max = 15)), "mass below zero"
+  )
+  expect_error(
+    Renewal(generation_time = Normal(mean = Normal(5, 1), sd = 2, max = 15)),
+    "mass below zero"
+  )
+  # A truncated normal is fine, since it has no mass below zero
+  expect_match(
+    as_julia(LatentDelay(PoissonError(), truncated(Normal(5, 2), 0, Inf),
+                         D = 15)),
+    "truncated\\(Normal\\(5.0, 2.0\\), 0.0, Inf\\); D = 15.0"
+  )
+})
+
 test_that("unsupported uncertain delays fail with an explanation", {
   expect_error(
     LatentDelay(
