@@ -26,7 +26,7 @@
 #'   distribution, taken from the distribution's `max` when it has one.
 #' @param delta_d Numeric. Discretisation interval width.
 #'
-#' @return An object of class `epiaware_infection`.
+#' @return An object of class `cidm_infection`.
 #'
 #' @family components
 #' @name infection-models

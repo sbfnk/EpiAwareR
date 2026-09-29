@@ -19,18 +19,18 @@ truncated(dist, lower = -Inf, upper = Inf)
 a side unbounded.}
 }
 \value{
-A component of class `epiaware_distribution`.
+A component of class `cidm_distribution`.
 }
 \description{
 Distributions are specified with
 [distspec](https://epiforecasts.io/distspec/), whose constructors
 `Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
-`Beta()`, `Fixed()` and `NonParametric()` EpiAwareR re-exports. Parameters
+`Beta()`, `Fixed()` and `NonParametric()` composableIDModelR re-exports. Parameters
 can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a mean and
 standard deviation (`Gamma(mean = 4, sd = 2)`).
 }
 \details{
-EpiAwareR adds two constructors of its own:
+composableIDModelR adds two constructors of its own:
 
 - `HalfNormal()`, the prior from ComposableTuringIDModels.jl, parameterised
   by its mean.

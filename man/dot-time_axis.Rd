@@ -7,7 +7,7 @@
 .time_axis(fit, n)
 }
 \arguments{
-\item{fit}{An `epiaware_fit` object.}
+\item{fit}{An `cidm_fit` object.}
 
 \item{n}{Number of time points, which may extend beyond the data.}
 }

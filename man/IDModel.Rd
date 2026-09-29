@@ -13,7 +13,7 @@ IDModel(infection, observation)
 [NegativeBinomialError()].}
 }
 \value{
-An object of class `epiaware_model`.
+An object of class `cidm_model`.
 }
 \description{
 Joins an infection model, which carries its own latent process, to an

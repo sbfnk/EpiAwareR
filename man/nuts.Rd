@@ -32,7 +32,7 @@ parameters; `"mooncake"` scales better to long time series but compiles
 slowly on first use.}
 }
 \value{
-An object of class `epiaware_nuts`.
+An object of class `cidm_nuts`.
 }
 \description{
 Settings for the No-U-Turn Sampler used by [fit()].
@@ -48,9 +48,9 @@ nuts(draws = 500, warmup = 500, chains = 2)
 \seealso{
 Other inference: 
 \code{\link{fit}()},
-\code{\link{plot.epiaware_fit}()},
-\code{\link{predict.epiaware_fit}()},
-\code{\link{simulate.epiaware_model}()},
-\code{\link{summary.epiaware_fit}()}
+\code{\link{plot.cidm_fit}()},
+\code{\link{predict.cidm_fit}()},
+\code{\link{simulate.cidm_model}()},
+\code{\link{summary.cidm_fit}()}
 }
 \concept{inference}

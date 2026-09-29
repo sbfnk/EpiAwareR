@@ -27,7 +27,7 @@
 #'   components are composed sensibly: one of `"distribution"`, `"latent"`,
 #'   `"infection"`, `"observation"` or `"model"`.
 #'
-#' @return An object of class `epiaware_component`.
+#' @return An object of class `cidm_component`.
 #'
 #' @family components
 #' @examples
@@ -71,7 +71,7 @@ component <- function(fn, ..., role) {
       args = unname(dots[keep & !named]),
       kwargs = dots[keep & named]
     ),
-    class = c(paste0("epiaware_", role), "epiaware_component")
+    class = c(paste0("cidm_", role), "cidm_component")
   )
 }
 
@@ -85,7 +85,7 @@ component <- function(fn, ..., role) {
 #' @param role Optional role (see [component()]). Without a role the
 #'   expression is accepted wherever a component is expected.
 #'
-#' @return An object of class `epiaware_julia`.
+#' @return An object of class `cidm_julia`.
 #'
 #' @family components
 #' @examples
@@ -98,8 +98,8 @@ julia <- function(code, role = NULL) {
   structure(
     list(code = code),
     class = c(
-      if (!is.null(role)) paste0("epiaware_", role),
-      "epiaware_julia", "epiaware_component"
+      if (!is.null(role)) paste0("cidm_", role),
+      "cidm_julia", "cidm_component"
     )
   )
 }
@@ -136,10 +136,10 @@ as_julia <- function(x, ascii = FALSE) {
     # is read as a prior.
     return(.render(.as_prior(x), ascii = ascii))
   }
-  if (inherits(x, "epiaware_julia")) {
+  if (inherits(x, "cidm_julia")) {
     return(x$code)
   }
-  if (inherits(x, "epiaware_component")) {
+  if (inherits(x, "cidm_component")) {
     return(.render_call(
       x$fn,
       vapply(x$args, .render, character(1), ascii = ascii),
@@ -281,9 +281,9 @@ as_julia <- function(x, ascii = FALSE) {
 .format_code <- function(x, width = 78L, indent = 0L) {
   pad <- strrep("    ", indent)
   flat <- .render(x, ascii = FALSE)
-  is_vector <- is.list(x) && !inherits(x, "epiaware_component")
-  if (nchar(pad) + nchar(flat) <= width || inherits(x, "epiaware_julia") ||
-        !(is_vector || inherits(x, "epiaware_component"))) {
+  is_vector <- is.list(x) && !inherits(x, "cidm_component")
+  if (nchar(pad) + nchar(flat) <= width || inherits(x, "cidm_julia") ||
+        !(is_vector || inherits(x, "cidm_component"))) {
     return(paste0(pad, flat))
   }
   if (is_vector) {
@@ -335,10 +335,10 @@ as_julia <- function(x, ascii = FALSE) {
 .assert_role <- function(x, roles, null_ok = FALSE,
                          arg_name = deparse(substitute(x))) {
   untyped_julia <- identical(
-    class(x), c("epiaware_julia", "epiaware_component")
+    class(x), c("cidm_julia", "cidm_component")
   )
   if ((is.null(x) && null_ok) || untyped_julia ||
-        inherits(x, paste0("epiaware_", roles))) {
+        inherits(x, paste0("cidm_", roles))) {
     return(invisible(TRUE))
   }
   labels <- c(
@@ -356,10 +356,10 @@ as_julia <- function(x, ascii = FALSE) {
 }
 
 #' @export
-print.epiaware_component <- function(x, ...) {
-  role <- sub("^epiaware_", "", class(x)[1])
+print.cidm_component <- function(x, ...) {
+  role <- sub("^cidm_", "", class(x)[1])
   label <- if (role %in% .roles) paste(role, "component") else "Julia code"
-  cat("<EpiAwareR ", label, ">\n", sep = "")
+  cat("<composableIDModelR ", label, ">\n", sep = "")
   cat(.format_code(x), sep = "\n")
   invisible(x)
 }

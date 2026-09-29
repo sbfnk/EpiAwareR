@@ -1,11 +1,11 @@
 
-# EpiAwareR
+# composableIDModelR
 
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-**EpiAwareR** is an R interface to
+**composableIDModelR** is an R interface to
 [ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl),
 the composable probabilistic infectious disease modelling package of the
 [EpiAware](https://epiaware.org) ecosystem. Models are assembled in R
@@ -16,21 +16,21 @@ model can be shown as the Julia code it runs.
 
 ## Installation
 
-EpiAwareR needs [Julia](https://julialang.org) (\>= 1.12), the version
+composableIDModelR needs [Julia](https://julialang.org) (\>= 1.12), the version
 its pinned dependencies were resolved with. We recommend installing it
 with [juliaup](https://github.com/JuliaLang/juliaup), which lets
-EpiAwareR use the Julia version its dependencies were resolved with.
+composableIDModelR use the Julia version its dependencies were resolved with.
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("sbfnk/EpiAwareR")
+remotes::install_github("sbfnk/composableIDModelR")
 ```
 
 Julia packages are installed on first use. To watch progress, run:
 
 ``` r
-library(EpiAwareR)
-epiaware_setup_julia()
+library(composableIDModelR)
+cidm_setup_julia()
 ```
 
 ## Quick start
@@ -40,10 +40,10 @@ following Mishra et al. (2020): an AR(2) process on log $R_t$ drives a
 renewal model, observed with negative binomial noise.
 
 ``` r
-library(EpiAwareR)
+library(composableIDModelR)
 
 cases <- read.csv(system.file("extdata", "south_korea_data.csv",
-                              package = "EpiAwareR"))[45:80, ]
+                              package = "composableIDModelR"))[45:80, ]
 
 renewal <- Renewal(
   generation_time = Gamma(shape = 6.5, scale = 0.62),
@@ -104,12 +104,12 @@ specification. Contributions of any kind are welcome!
 
 ### Code
 
-<a href="https://github.com/sbfnk/EpiAwareR/commits?author=sbfnk">sbfnk</a>
+<a href="https://github.com/sbfnk/composableIDModelR/commits?author=sbfnk">sbfnk</a>
 
 ### Issues
 
-<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>,
-<a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
+<a href="https://github.com/sbfnk/composableIDModelR/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>,
+<a href="https://github.com/sbfnk/composableIDModelR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
 
 <!-- markdownlint-enable -->
 

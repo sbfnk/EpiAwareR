@@ -43,7 +43,7 @@ taken from the distribution's `max` when it has one.}
 constant ascertainment or a latent model for a time-varying one.}
 }
 \value{
-An object of class `epiaware_observation`.
+An object of class `cidm_observation`.
 }
 \description{
 Models linking expected observations to data. Error models

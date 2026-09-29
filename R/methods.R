@@ -1,6 +1,6 @@
 #' @export
-print.epiaware_fit <- function(x, ...) {
-  cat("<EpiAwareR fit>\n")
+print.cidm_fit <- function(x, ...) {
+  cat("<composableIDModelR fit>\n")
   cat("Model:\n")
   cat(paste0("  ", .format_code(x$model, width = 76L)), sep = "\n")
   cat("\nData:", length(x$y), "time points\n")
@@ -22,14 +22,14 @@ print.epiaware_fit <- function(x, ...) {
 
 #' Summarise the posterior of a fitted model
 #'
-#' @param object An `epiaware_fit` object from [fit()].
+#' @param object An `cidm_fit` object from [fit()].
 #' @param ... Passed to [posterior::summarise_draws()].
 #'
 #' @return A `draws_summary` tibble with one row per parameter.
 #'
 #' @family inference
 #' @export
-summary.epiaware_fit <- function(object, ...) {
+summary.cidm_fit <- function(object, ...) {
   posterior::summarise_draws(object$draws, ...)
 }
 
@@ -42,7 +42,7 @@ summary.epiaware_fit <- function(object, ...) {
 #'
 #' Forecasting uses the Julia session in which the model was fitted.
 #'
-#' @param object An `epiaware_fit` object from [fit()].
+#' @param object An `cidm_fit` object from [fit()].
 #' @param horizon Integer. Number of time points to forecast.
 #' @param seed Optional integer seed for the Julia random number generator,
 #'   used for the forecast. In-sample predictions are drawn when fitting.
@@ -58,14 +58,14 @@ summary.epiaware_fit <- function(object, ...) {
 #' }
 #' @importFrom stats predict
 #' @export
-predict.epiaware_fit <- function(object, horizon = 0, seed = NULL, ...) {
+predict.cidm_fit <- function(object, horizon = 0, seed = NULL, ...) {
   checkmate::assert_count(horizon)
   checkmate::assert_int(seed, null.ok = TRUE)
   in_sample <- object$generated$predicted_y_t
   if (horizon == 0) {
     return(in_sample)
   }
-  if (!identical(object$julia$owner, .epiaware_env)) {
+  if (!identical(object$julia$owner, .cidm_env)) {
     stop(
       "This fit was loaded from disk, and forecasting needs the Julia ",
       "session it was fitted in. Refit the model to forecast from it; the ",
@@ -91,31 +91,31 @@ predict.epiaware_fit <- function(object, horizon = 0, seed = NULL, ...) {
 
 #' @importFrom posterior as_draws_df
 #' @export
-as_draws_df.epiaware_fit <- function(x, ...) {
+as_draws_df.cidm_fit <- function(x, ...) {
   posterior::as_draws_df(x$draws, ...)
 }
 
 #' @importFrom posterior as_draws_array
 #' @export
-as_draws_array.epiaware_fit <- function(x, ...) {
+as_draws_array.cidm_fit <- function(x, ...) {
   posterior::as_draws_array(x$draws, ...)
 }
 
 #' @importFrom posterior as_draws_matrix
 #' @export
-as_draws_matrix.epiaware_fit <- function(x, ...) {
+as_draws_matrix.cidm_fit <- function(x, ...) {
   posterior::as_draws_matrix(x$draws, ...)
 }
 
 #' @importFrom posterior as_draws_list
 #' @export
-as_draws_list.epiaware_fit <- function(x, ...) {
+as_draws_list.cidm_fit <- function(x, ...) {
   posterior::as_draws_list(x$draws, ...)
 }
 
 #' @importFrom posterior as_draws_rvars
 #' @export
-as_draws_rvars.epiaware_fit <- function(x, ...) {
+as_draws_rvars.cidm_fit <- function(x, ...) {
   posterior::as_draws_rvars(x$draws, ...)
 }
 
@@ -124,7 +124,7 @@ as_draws_rvars.epiaware_fit <- function(x, ...) {
 #' Shows the posterior median and 50% and 90% credible intervals of a
 #' generated quantity over time.
 #'
-#' @param x An `epiaware_fit` object from [fit()].
+#' @param x An `cidm_fit` object from [fit()].
 #' @param type Character string. What to plot: `"cases"` (posterior
 #'   predictive observations with the data), `"Rt"` (reproduction number,
 #'   renewal models only), `"infections"`, or `"latent"` (the latent process
@@ -142,7 +142,7 @@ as_draws_rvars.epiaware_fit <- function(x, ...) {
 #' plot(fitted, type = "cases", horizon = 14)
 #' }
 #' @export
-plot.epiaware_fit <- function(x, type = c("cases", "Rt", "infections",
+plot.cidm_fit <- function(x, type = c("cases", "Rt", "infections",
                                           "latent"),
                               horizon = 0, ...) {
   type <- match.arg(type)
@@ -203,7 +203,7 @@ plot.epiaware_fit <- function(x, type = c("cases", "Rt", "infections",
 
 #' Time axis for plotting
 #'
-#' @param fit An `epiaware_fit` object.
+#' @param fit An `cidm_fit` object.
 #' @param n Number of time points, which may extend beyond the data.
 #' @return Dates if the fit has them, otherwise integers.
 #' @keywords internal

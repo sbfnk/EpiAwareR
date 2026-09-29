@@ -1,6 +1,6 @@
-# Review criteria for EpiAwareR
+# Review criteria for composableIDModelR
 
-EpiAwareR is a thin R interface to the Julia package
+composableIDModelR is a thin R interface to the Julia package
 ComposableTuringIDModels.jl. R builds model specifications, renders them to
 Julia source, and reads results back. Most defects worth finding live at that
 boundary, where a wrong answer is silent: the model runs, the numbers look

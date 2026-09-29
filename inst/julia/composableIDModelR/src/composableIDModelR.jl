@@ -1,8 +1,8 @@
-# Julia side of EpiAwareR. R renders model components to Julia source; the
+# Julia side of composableIDModelR. R renders model components to Julia source; the
 # functions here build, simulate from and fit those models, and return plain
 # arrays that JuliaConnectoR translates into R objects. Fitted chains stay in
 # Julia behind integer handles so that predictions can reuse them.
-module EpiAwareR
+module composableIDModelR
 
 using ComposableTuringIDModels: ComposableTuringIDModels, as_turing_model
 using ADTypes: AutoForwardDiff, AutoMooncake

@@ -18,7 +18,7 @@ components are composed sensibly: one of `"distribution"`, `"latent"`,
 `"infection"`, `"observation"` or `"model"`.}
 }
 \value{
-An object of class `epiaware_component`.
+An object of class `cidm_component`.
 }
 \description{
 Low-level constructor behind every component in the package. Use it to

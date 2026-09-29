@@ -48,7 +48,7 @@
 #' @param std Prior for the standard deviation.
 #' @param model A latent model for the differenced process.
 #'
-#' @return An object of class `epiaware_latent`.
+#' @return An object of class `cidm_latent`.
 #'
 #' @family components
 #' @name latent-models
@@ -135,7 +135,7 @@ HierarchicalNormal <- function(mean = NULL, std = NULL) {
 DiffLatentModel <- function(model, init = NULL) {
   model <- .as_prior_slot(model)
   init <- .as_prior_slot(init)
-  if (inherits(init, "epiaware_distribution")) init <- list(init)
+  if (inherits(init, "cidm_distribution")) init <- list(init)
   component("DiffLatentModel", model = model, init = init, role = "latent")
 }
 

@@ -25,7 +25,7 @@ in early 2020, following the
 of the same analysis.
 
 ```{r load, message = FALSE}
-library(EpiAwareR)
+library(composableIDModelR)
 ```
 
 ## Data
@@ -35,7 +35,7 @@ We fit the first wave, from 13 February to 19 March 2020.
 
 ```{r data}
 south_korea <- read.csv(
-  system.file("extdata", "south_korea_data.csv", package = "EpiAwareR")
+  system.file("extdata", "south_korea_data.csv", package = "composableIDModelR")
 )
 south_korea$date <- as.Date(south_korea$date)
 first_wave <- south_korea[45:80, ]

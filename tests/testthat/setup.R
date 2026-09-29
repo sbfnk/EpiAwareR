@@ -2,10 +2,10 @@
 # its packages are unavailable.
 skip_if_no_julia <- function() {
   testthat::skip_on_cran()
-  if (!epiaware_available()) {
+  if (!cidm_available()) {
     ok <- tryCatch(
       {
-        epiaware_setup_julia(verbose = FALSE)
+        cidm_setup_julia(verbose = FALSE)
         TRUE
       },
       error = function(e) FALSE

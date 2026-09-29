@@ -47,7 +47,7 @@ jobs:
 
       - name: Setup Julia dependencies
         run: |
-          EpiAwareR::epiaware_setup_julia(verbose = TRUE)
+          composableIDModelR::cidm_setup_julia(verbose = TRUE)
         shell: Rscript {0}
 
       - name: Build site

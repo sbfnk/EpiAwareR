@@ -4,10 +4,10 @@
 # ------------------------------------------------
  
 cff-version: 1.2.0
-message: 'To cite package "EpiAwareR" in publications use:'
+message: 'To cite package "composableIDModelR" in publications use:'
 type: software
 license: MIT
-title: 'EpiAwareR: Composable Infectious Disease Models via ''ComposableTuringIDModels.jl'''
+title: 'composableIDModelR: Composable Infectious Disease Models via ''ComposableTuringIDModels.jl'''
 version: 0.2.0.9000
 abstract: Provides an R interface to 'ComposableTuringIDModels.jl', the composable
   probabilistic infectious disease modelling package of the 'EpiAware' ecosystem.
@@ -18,8 +18,8 @@ authors:
 - family-names: Funk
   given-names: Sebastian
   email: sebastian.funk@lshtm.ac.uk
-repository-code: https://github.com/sbfnk/EpiAwareR
-url: https://github.com/sbfnk/EpiAwareR
+repository-code: https://github.com/sbfnk/composableIDModelR
+url: https://github.com/sbfnk/composableIDModelR
 contact:
 - family-names: Funk
   given-names: Sebastian
@@ -115,7 +115,7 @@ references:
   title: juliaready
   abstract: 'juliaready: Robust Julia Setup for R Packages'
   notes: Imports
-  url: https://github.com/sbfnk/juliaready
+  url: https://sbfnk.github.io/juliaready/
   authors:
   - family-names: Funk
     given-names: Sebastian
@@ -262,5 +262,5 @@ references:
     email: hadley@posit.co
   year: '2026'
   doi: 10.32614/CRAN.package.testthat
-  version: '>= 3.0.0'
+  version: '>= 3.2.0'
 

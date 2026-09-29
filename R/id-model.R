@@ -8,7 +8,7 @@
 #' @param observation An observation model, e.g. from
 #'   [NegativeBinomialError()].
 #'
-#' @return An object of class `epiaware_model`.
+#' @return An object of class `cidm_model`.
 #'
 #' @family components
 #' @examples

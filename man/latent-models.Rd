@@ -54,7 +54,7 @@ distributions (one per lag or difference).}
 \item{model}{A latent model for the differenced process.}
 }
 \value{
-An object of class `epiaware_latent`.
+An object of class `cidm_latent`.
 }
 \description{
 Models for the latent paths that drive infection models, such as the log

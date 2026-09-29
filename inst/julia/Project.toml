@@ -1,7 +1,7 @@
 [deps]
 ComposableTuringIDModels = "cbebd14a-101c-4997-a79f-d008ad7c07b2"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-EpiAwareR = "7ca7df52-c47f-458f-a692-0a5ec5e13965"
+composableIDModelR = "7ca7df52-c47f-458f-a692-0a5ec5e13965"
 
 [compat]
 ComposableTuringIDModels = "0.1.2"

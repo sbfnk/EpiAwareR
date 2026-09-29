@@ -1,6 +1,6 @@
-# Contributing to EpiAwareR
+# Contributing to composableIDModelR
 
-Thank you for your interest in contributing to EpiAwareR! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to composableIDModelR! This document provides guidelines for contributing to the project.
 
 ## Code of Conduct
 
@@ -21,9 +21,9 @@ If you find a bug, please open an issue with:
 
 We welcome suggestions for new features! Please:
 
-- Check if the feature already exists in the Julia EpiAware package
+- Check if the feature already exists in ComposableTuringIDModels.jl
 - Describe the use case and expected behavior
-- Consider whether it should be a dedicated R wrapper or accessible via `epiaware_call()`
+- Consider whether it should be a dedicated R wrapper or reached via `component()` or `julia()`
 
 ### Code Contributions
 
@@ -51,13 +51,13 @@ We welcome suggestions for new features! Please:
 ```r
 # Clone the repository
 git clone https://github.com/CDCgov/Rt-without-renewal.git
-cd Rt-without-renewal/EpiAwareR
+cd Rt-without-renewal/composableIDModelR
 
 # Load package for development
 devtools::load_all()
 
 # Set up Julia
-epiaware_setup_julia()
+cidm_setup_julia()
 ```
 
 ## Code Style
@@ -101,10 +101,10 @@ my_function <- function(param1, param2) {
 
 ### S3 Classes
 
-EpiAwareR uses S3 classes for simplicity:
+composableIDModelR uses S3 classes for simplicity:
 
 - **Constructor pattern**: Validate inputs, call Julia, return structured list with `julia_ref`
-- **Class inheritance**: Use multiple inheritance (e.g., `c("epiaware_ar", "epiaware_latent", "epiaware_model")`)
+- **Class inheritance**: Use multiple inheritance (e.g., `c("cidm_ar", "cidm_latent", "cidm_model")`)
 - **Print methods**: Always provide informative `print()` methods
 
 ## Testing
@@ -115,7 +115,7 @@ EpiAwareR uses S3 classes for simplicity:
 - Use descriptive test names: `test_that("function validates inputs", { ... })`
 - Test edge cases and error conditions
 - Skip long-running tests with `skip_on_cran()`
-- Skip tests requiring Julia with `skip_if_not(epiaware_available())`
+- Skip tests requiring Julia with `skip_if_not(cidm_available())`
 
 ### Running Tests
 
@@ -161,13 +161,13 @@ MyNewModel <- function(param1) {
   # Return S3 object
   structure(
     list(julia_ref = julia_obj, spec = list(param1 = param1)),
-    class = c("epiaware_mynew", "epiaware_latent", "epiaware_model")
+    class = c("cidm_mynew", "cidm_latent", "cidm_model")
   )
 }
 
 #' @export
-print.epiaware_mynew <- function(x, ...) {
-  cat("<EpiAware My New Model>\n")
+print.cidm_mynew <- function(x, ...) {
+  cat("<My New Model>\n")
   cat("  Param1:", x$spec$param1, "\n")
   invisible(x)
 }
@@ -175,10 +175,10 @@ print.epiaware_mynew <- function(x, ...) {
 
 ### Adding Access to Julia Features
 
-For features not yet wrapped, users can use `epiaware_call()`:
+For features not yet wrapped, users can use `cidm_call()`:
 
 ```r
-custom_model <- epiaware_call("JuliaFunction", param1 = value1)
+custom_model <- cidm_call("JuliaFunction", param1 = value1)
 ```
 
 Document these in the function reference with guidance on when explicit wrappers are warranted.
@@ -218,7 +218,7 @@ If you have questions about contributing:
 
 - Open a discussion on GitHub
 - Contact the package maintainer: sebastian.funk@lshtm.ac.uk
-- Refer to the [EpiAware Julia documentation](https://cdcgov.github.io/Rt-without-renewal/)
+- Refer to the [ComposableTuringIDModels.jl documentation](https://composableturingidmodels.epiaware.org/stable/)
 
 ## License
 

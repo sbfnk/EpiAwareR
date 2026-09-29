@@ -8,7 +8,7 @@
 }
 \value{
 Path to the directory holding `Project.toml`, `Manifest.toml` and
-  the `EpiAwareR` Julia package.
+  the `composableIDModelR` Julia package.
 }
 \description{
 Locate the bundled Julia project

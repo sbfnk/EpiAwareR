@@ -18,7 +18,7 @@
 #'   parameters; `"mooncake"` scales better to long time series but compiles
 #'   slowly on first use.
 #'
-#' @return An object of class `epiaware_nuts`.
+#' @return An object of class `cidm_nuts`.
 #'
 #' @family inference
 #' @examples
@@ -41,13 +41,13 @@ nuts <- function(draws = 1000, warmup = 1000, chains = 4,
       max_depth = as.integer(max_depth),
       ad = match.arg(ad)
     ),
-    class = "epiaware_nuts"
+    class = "cidm_nuts"
   )
 }
 
 #' @export
-print.epiaware_nuts <- function(x, ...) {
-  cat("<EpiAwareR NUTS sampler>\n")
+print.cidm_nuts <- function(x, ...) {
+  cat("<composableIDModelR NUTS sampler>\n")
   cat("  Chains:", x$chains, "\n")
   cat("  Warmup:", x$warmup, "per chain\n")
   cat("  Draws:", x$draws, "per chain\n")
@@ -72,7 +72,7 @@ print.epiaware_nuts <- function(x, ...) {
 #'   observation, used when plotting.
 #' @param seed Optional integer seed for the Julia random number generator.
 #'
-#' @return An object of class `epiaware_fit` with elements
+#' @return An object of class `cidm_fit` with elements
 #' \describe{
 #'   \item{draws}{Posterior draws of the model parameters, a
 #'     [posterior::draws_df].}
@@ -90,7 +90,7 @@ print.epiaware_nuts <- function(x, ...) {
 #' }
 #'
 #' @family inference
-#' @seealso [predict.epiaware_fit()] to forecast, [plot.epiaware_fit()] to
+#' @seealso [predict.cidm_fit()] to forecast, [plot.cidm_fit()] to
 #'   visualise the fit.
 #' @examples
 #' \dontrun{
@@ -116,7 +116,7 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
   }
   if (anyNA(y)) {
     stop(
-      "`y` contains missing values, which EpiAwareR cannot pass to Julia: ",
+      "`y` contains missing values, which composableIDModelR cannot pass to Julia: ",
       "an `NA` becomes a number on the way, so it cannot be marked as ",
       "unobserved. Fit a window without gaps, and do not simply delete the ",
       "missing entries, which would move every later observation earlier in ",
@@ -124,7 +124,7 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
       call. = FALSE
     )
   }
-  if (!inherits(method, "epiaware_nuts")) {
+  if (!inherits(method, "cidm_nuts")) {
     stop("`method` must be a sampler from `nuts()`.", call. = FALSE)
   }
   checkmate::assert_multi_class(
@@ -155,7 +155,7 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
       method = method,
       julia = .julia_handle(result$handle, result$session)
     ),
-    class = "epiaware_fit"
+    class = "cidm_fit"
   )
 }
 
@@ -189,7 +189,7 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
 #' }
 #' @importFrom stats simulate
 #' @export
-simulate.epiaware_model <- function(object, nsim = 1, seed = NULL, n, ...) {
+simulate.cidm_model <- function(object, nsim = 1, seed = NULL, n, ...) {
   # An untyped `julia()` expression dispatches here too, as do typed ones of
   # every role, so the role is checked rather than left to dispatch.
   .assert_role(object, "model")
@@ -203,9 +203,9 @@ simulate.epiaware_model <- function(object, nsim = 1, seed = NULL, n, ...) {
   .with_rt(.generated_list(result), object)
 }
 
-#' @rdname simulate.epiaware_model
+#' @rdname simulate.cidm_model
 #' @export
-simulate.epiaware_julia <- simulate.epiaware_model
+simulate.cidm_julia <- simulate.cidm_model
 
 #' Convert bridge output to a draws_df
 #'
@@ -252,7 +252,7 @@ simulate.epiaware_julia <- simulate.epiaware_model
 #'   as Julia code has no components to read, so it gets none.
 #' @keywords internal
 .with_rt <- function(generated, model) {
-  if (inherits(model, "epiaware_julia")) {
+  if (inherits(model, "cidm_julia")) {
     return(generated)
   }
   infection <- model$args[[1]]

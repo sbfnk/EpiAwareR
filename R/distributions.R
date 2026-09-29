@@ -1,4 +1,4 @@
-# Distributions come from distspec, which EpiAwareR converts to Julia code.
+# Distributions come from distspec, which composableIDModelR converts to Julia code.
 # Only the two distributions with no distspec equivalent are defined here.
 
 #' Probability distributions
@@ -6,11 +6,11 @@
 #' Distributions are specified with
 #' [distspec](https://epiforecasts.io/distspec/), whose constructors
 #' `Normal()`, `Gamma()`, `LogNormal()`, `Exponential()`, `Weibull()`,
-#' `Beta()`, `Fixed()` and `NonParametric()` EpiAwareR re-exports. Parameters
+#' `Beta()`, `Fixed()` and `NonParametric()` composableIDModelR re-exports. Parameters
 #' can be given naturally (`Gamma(shape = 2, rate = 0.5)`) or as a mean and
 #' standard deviation (`Gamma(mean = 4, sd = 2)`).
 #'
-#' EpiAwareR adds two constructors of its own:
+#' composableIDModelR adds two constructors of its own:
 #'
 #' - `HalfNormal()`, the prior from ComposableTuringIDModels.jl, parameterised
 #'   by its mean.
@@ -29,7 +29,7 @@
 #' @param lower,upper Numeric truncation bounds. Use `-Inf` or `Inf` to leave
 #'   a side unbounded.
 #'
-#' @return A component of class `epiaware_distribution`.
+#' @return A component of class `cidm_distribution`.
 #'
 #' @family components
 #' @name distributions

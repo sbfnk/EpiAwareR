@@ -7,12 +7,12 @@
 .as_prior(x, arg_name = deparse(substitute(x)))
 }
 \arguments{
-\item{x}{A distspec distribution or an EpiAwareR component.}
+\item{x}{A distspec distribution or an composableIDModelR component.}
 
 \item{arg_name}{Name used in error messages.}
 }
 \value{
-A component of class `epiaware_distribution`.
+A component of class `cidm_distribution`.
 }
 \description{
 Priors are sampled by the model, so their parameters must be fixed.

@@ -1,13 +1,13 @@
 # Environment tracking Julia initialisation and fitted-model handles.
-.epiaware_env <- new.env(parent = emptyenv())
+.cidm_env <- new.env(parent = emptyenv())
 
 #' Locate the bundled Julia project
 #'
 #' @return Path to the directory holding `Project.toml`, `Manifest.toml` and
-#'   the `EpiAwareR` Julia package.
+#'   the `composableIDModelR` Julia package.
 #' @keywords internal
 .julia_project <- function() {
-  project <- system.file("julia", package = "EpiAwareR")
+  project <- system.file("julia", package = "composableIDModelR")
   if (!nzchar(project) || !file.exists(file.path(project, "Project.toml"))) {
     # Development load (pkgload::load_all) from the source tree.
     project <- file.path(getwd(), "inst", "julia")
@@ -68,9 +68,9 @@
   if (length(bins) == 0) NULL else bins[1]
 }
 
-#' Set up Julia for EpiAwareR
+#' Set up Julia for composableIDModelR
 #'
-#' Installs the pinned Julia dependencies of EpiAwareR
+#' Installs the pinned Julia dependencies of composableIDModelR
 #' (ComposableTuringIDModels.jl, Turing.jl and their dependencies) and starts
 #' a Julia session with them loaded. This happens automatically on first use,
 #' so it only needs calling directly to see progress or to troubleshoot.
@@ -90,11 +90,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' epiaware_setup_julia()
+#' cidm_setup_julia()
 #' }
 #' @export
-epiaware_setup_julia <- function(verbose = TRUE) {
-  if (epiaware_available()) {
+cidm_setup_julia <- function(verbose = TRUE) {
+  if (cidm_available()) {
     return(invisible(TRUE))
   }
   project <- .julia_project()
@@ -106,13 +106,13 @@ epiaware_setup_julia <- function(verbose = TRUE) {
 
   juliaready::julia_ready(
     packages = c("ComposableTuringIDModels", "Distributions",
-                 "EpiAwareR"),
-    state_env = .epiaware_env,
+                 "composableIDModelR"),
+    state_env = .cidm_env,
     project = project,
     verbose = verbose
   )
 
-  if (verbose) message("EpiAwareR Julia backend ready")
+  if (verbose) message("composableIDModelR Julia backend ready")
   invisible(TRUE)
 }
 
@@ -128,19 +128,19 @@ epiaware_setup_julia <- function(verbose = TRUE) {
 #' @return Logical. `TRUE` if Julia has been set up in this R session.
 #'
 #' @examples
-#' epiaware_available()
+#' cidm_available()
 #' @export
-epiaware_available <- function() {
-  if (!isTRUE(.epiaware_env$ready)) {
+cidm_available <- function() {
+  if (!isTRUE(.cidm_env$ready)) {
     return(FALSE)
   }
   running <- tryCatch(
-    isTRUE(juliaready::eval_julia("isdefined(Main, :EpiAwareR)")),
+    isTRUE(juliaready::eval_julia("isdefined(Main, :composableIDModelR)")),
     error = function(e) FALSE
   )
   if (!running) {
     # The same environment is kept, because handle ownership is its identity.
-    .epiaware_env$ready <- FALSE
+    .cidm_env$ready <- FALSE
   }
   running
 }
@@ -151,19 +151,23 @@ epiaware_available <- function() {
 #' making the call. Releasing waits until here because finalisers may run
 #' while another Julia call is in progress.
 #'
-#' @param fn Name of a function in the `EpiAwareR` Julia module.
+#' @param fn Name of a function in the `composableIDModelR` Julia module.
 #' @param ... Arguments passed to the function.
 #' @return The translated result of the call.
 #' @keywords internal
 .bridge <- function(fn, ...) {
-  if (!epiaware_available()) epiaware_setup_julia(verbose = FALSE)
-  released <- .epiaware_env$released
-  .epiaware_env$released <- NULL
+  if (!cidm_available()) cidm_setup_julia(verbose = FALSE)
+  released <- .cidm_env$released
+  .cidm_env$released <- NULL
   for (fit in released) {
-    try(juliaready::call_julia("EpiAwareR.release!", fit$handle, fit$session),
-        silent = TRUE)
+    try(
+      juliaready::call_julia(
+        "composableIDModelR.release!", fit$handle, fit$session
+      ),
+      silent = TRUE
+    )
   }
-  juliaready::call_julia(paste0("EpiAwareR.", fn), ...)
+  juliaready::call_julia(paste0("composableIDModelR.", fn), ...)
 }
 
 #' Keep a Julia-side object alive while an R object refers to it
@@ -185,13 +189,13 @@ epiaware_available <- function() {
   env <- new.env(parent = emptyenv())
   env$handle <- handle
   env$session <- session
-  env$owner <- .epiaware_env
+  env$owner <- .cidm_env
   reg.finalizer(env, function(e) {
-    if (!identical(e$owner, .epiaware_env)) {
+    if (!identical(e$owner, .cidm_env)) {
       return(invisible(NULL))
     }
-    .epiaware_env$released <- c(
-      .epiaware_env$released, list(list(handle = e$handle, session = e$session))
+    .cidm_env$released <- c(
+      .cidm_env$released, list(list(handle = e$handle, session = e$session))
     )
   })
   env

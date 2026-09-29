@@ -22,7 +22,7 @@ observation, used when plotting.}
 \item{seed}{Optional integer seed for the Julia random number generator.}
 }
 \value{
-An object of class `epiaware_fit` with elements
+An object of class `cidm_fit` with elements
 \describe{
   \item{draws}{Posterior draws of the model parameters, a
     [posterior::draws_df].}
@@ -56,14 +56,14 @@ plot(fitted, type = "Rt")
 }
 }
 \seealso{
-[predict.epiaware_fit()] to forecast, [plot.epiaware_fit()] to
+[predict.cidm_fit()] to forecast, [plot.cidm_fit()] to
   visualise the fit.
 
 Other inference: 
 \code{\link{nuts}()},
-\code{\link{plot.epiaware_fit}()},
-\code{\link{predict.epiaware_fit}()},
-\code{\link{simulate.epiaware_model}()},
-\code{\link{summary.epiaware_fit}()}
+\code{\link{plot.cidm_fit}()},
+\code{\link{predict.cidm_fit}()},
+\code{\link{simulate.cidm_model}()},
+\code{\link{summary.cidm_fit}()}
 }
 \concept{inference}

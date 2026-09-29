@@ -45,7 +45,7 @@ distribution, taken from the distribution's `max` when it has one.}
 \item{Z}{Latent model for log infections.}
 }
 \value{
-An object of class `epiaware_infection`.
+An object of class `cidm_infection`.
 }
 \description{
 Models for the unobserved infection process. Each carries its own latent

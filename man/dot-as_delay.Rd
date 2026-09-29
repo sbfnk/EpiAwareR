@@ -14,7 +14,7 @@
 )
 }
 \arguments{
-\item{x}{A distspec distribution, an EpiAwareR component, or a numeric
+\item{x}{A distspec distribution, an composableIDModelR component, or a numeric
 probability vector.}
 
 \item{max_delay}{Numeric. Maximum value used when discretising, or `NULL`

@@ -34,9 +34,9 @@
 #'
 #' Priors are sampled by the model, so their parameters must be fixed.
 #'
-#' @param x A distspec distribution or an EpiAwareR component.
+#' @param x A distspec distribution or an composableIDModelR component.
 #' @param arg_name Name used in error messages.
-#' @return A component of class `epiaware_distribution`.
+#' @return A component of class `cidm_distribution`.
 #' @keywords internal
 .as_prior <- function(x, arg_name = deparse(substitute(x))) {
   if (!inherits(x, "dist_spec")) {
@@ -79,7 +79,7 @@
 #' given as a probability vector, as a point mass, or with priors on its
 #' parameters.
 #'
-#' @param x A distspec distribution, an EpiAwareR component, or a numeric
+#' @param x A distspec distribution, an composableIDModelR component, or a numeric
 #'   probability vector.
 #' @param max_delay Numeric. Maximum value used when discretising, or `NULL`
 #'   to take it from the distribution's `max`.
@@ -159,7 +159,7 @@
   # constructor, which the model samples and rediscretises per draw.
   if (!distribution %in% .inferrable_distributions) {
     stop(
-      "`", arg_name, "` has uncertain parameters, which EpiAwareR supports ",
+      "`", arg_name, "` has uncertain parameters, which composableIDModelR supports ",
       "for ", paste(.inferrable_distributions, collapse = ", "),
       " distributions only. A ", distribution, " distribution is parameterised",
       " differently in Julia, so a prior on its parameters cannot be carried ",
@@ -260,7 +260,7 @@
   if (is.null(x)) {
     return(NULL)
   }
-  if (is.list(x) && !inherits(x, c("epiaware_component", "dist_spec"))) {
+  if (is.list(x) && !inherits(x, c("cidm_component", "dist_spec"))) {
     return(lapply(seq_along(x), function(i) {
       .as_prior(x[[i]], paste0(arg_name, "[[", i, "]]"))
     }))

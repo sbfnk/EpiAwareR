@@ -12,17 +12,17 @@ test_that(".manifest_julia_version reads the version from the Manifest", {
 test_that("a handle belongs to the session that created it", {
   handle <- .julia_handle(7L, "session-token")
   expect_identical(handle$handle, 7L)
-  expect_true(identical(handle$owner, .epiaware_env))
+  expect_true(identical(handle$owner, .cidm_env))
 
   # Saving copies the environment by value, so a reloaded fit does not own
   # the Julia object and must not be taken for the original.
   file <- withr::local_tempfile()
   saveRDS(handle, file)
-  expect_false(identical(readRDS(file)$owner, .epiaware_env))
+  expect_false(identical(readRDS(file)$owner, .cidm_env))
 })
 
 test_that("only the owning session queues a handle for release", {
-  .epiaware_env$released <- NULL
+  .cidm_env$released <- NULL
   local({
     owned <- .julia_handle(11L, "session-token")
     foreign <- .julia_handle(12L, "session-token")
@@ -30,10 +30,10 @@ test_that("only the owning session queues a handle for release", {
     NULL
   })
   gc()
-  queued <- vapply(.epiaware_env$released, function(x) x$handle, integer(1))
+  queued <- vapply(.cidm_env$released, function(x) x$handle, integer(1))
   expect_true(11L %in% queued)
   expect_false(12L %in% queued)
-  .epiaware_env$released <- NULL
+  .cidm_env$released <- NULL
 })
 
 test_that("a fit loaded from disk says so rather than blaming Julia", {
@@ -43,22 +43,22 @@ test_that("a fit loaded from disk says so rather than blaming Julia", {
       julia = list(handle = 1L, session = "session-token",
                    owner = new.env())
     ),
-    class = "epiaware_fit"
+    class = "cidm_fit"
   )
   expect_error(predict(reloaded, horizon = 2), "loaded from disk")
   expect_identical(dim(predict(reloaded)), c(2L, 2L))
 })
 
 test_that("a Julia process that has gone away clears the setup flag", {
-  was_ready <- .epiaware_env$ready
-  withr::defer(.epiaware_env$ready <- was_ready)
+  was_ready <- .cidm_env$ready
+  withr::defer(.cidm_env$ready <- was_ready)
   # Julia was set up and has since died, so the probe fails and the flag must
   # clear for the next call to set it up again.
   local_mocked_bindings(
     eval_julia = function(...) stop("Julia has gone away"),
     .package = "juliaready"
   )
-  .epiaware_env$ready <- TRUE
-  expect_false(epiaware_available())
-  expect_false(isTRUE(.epiaware_env$ready))
+  .cidm_env$ready <- TRUE
+  expect_false(cidm_available())
+  expect_false(isTRUE(.cidm_env$ready))
 })

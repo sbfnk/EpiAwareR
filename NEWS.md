@@ -1,8 +1,11 @@
-# EpiAwareR (development version)
+# composableIDModelR (development version)
 
 ## Breaking changes
 
-* EpiAwareR now wraps
+* The package has been renamed from EpiAwareR to composableIDModelR, and
+  `epiaware_setup_julia()` and `epiaware_available()` are now
+  `cidm_setup_julia()` and `cidm_available()`.
+* The package now wraps
   [ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl),
   the successor to EpiAware.jl, and the interface has been rewritten around it.
   Code written for earlier versions needs updating.

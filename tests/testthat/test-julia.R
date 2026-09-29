@@ -44,7 +44,7 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
   fitted <- fit(
     model, y, method = nuts(draws = 50, warmup = 50, chains = 2), seed = 4
   )
-  expect_s3_class(fitted, "epiaware_fit")
+  expect_s3_class(fitted, "cidm_fit")
   expect_identical(posterior::ndraws(fitted$draws), 100L)
   expect_identical(posterior::nchains(fitted$draws), 2L)
   expect_identical(dim(fitted$generated$I_t), c(100L, 25L))

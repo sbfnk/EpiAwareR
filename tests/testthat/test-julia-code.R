@@ -66,7 +66,7 @@ test_that("printing breaks long models over lines", {
   lines <- .format_code(model)
   expect_gt(length(lines), 1)
   expect_true(all(nchar(lines) <= 78))
-  expect_output(print(model), "<EpiAwareR model component>")
+  expect_output(print(model), "<composableIDModelR model component>")
   expect_output(print(HalfNormal(0.1)), "HalfNormal\\(0.1\\)")
 })
 

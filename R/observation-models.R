@@ -26,7 +26,7 @@
 #' @param latent_model Ascertainment on the log scale: a distribution for a
 #'   constant ascertainment or a latent model for a time-varying one.
 #'
-#' @return An object of class `epiaware_observation`.
+#' @return An object of class `cidm_observation`.
 #'
 #' @family components
 #' @name observation-models

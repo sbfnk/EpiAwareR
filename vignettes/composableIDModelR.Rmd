@@ -1,8 +1,8 @@
 ---
-title: "Getting started with EpiAwareR"
+title: "Getting started with composableIDModelR"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with EpiAwareR}
+  %\VignetteIndexEntry{Getting started with composableIDModelR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-EpiAwareR builds infectious disease models from interchangeable parts and runs
+composableIDModelR builds infectious disease models from interchangeable parts and runs
 them with
 [ComposableTuringIDModels.jl](https://github.com/EpiAware/ComposableTuringIDModels.jl)
 in Julia.
@@ -34,12 +34,12 @@ counterpart, so the
 applies directly.
 
 ```{r load}
-library(EpiAwareR)
+library(composableIDModelR)
 ```
 
 ## Setting up Julia
 
-EpiAwareR needs Julia (>= 1.12), the version its pinned dependencies were
+composableIDModelR needs Julia (>= 1.12), the version its pinned dependencies were
 resolved with, ideally installed with
 [juliaup](https://github.com/JuliaLang/juliaup).
 The Julia packages are installed and loaded the first time a model is simulated
@@ -47,7 +47,7 @@ or fitted, which can take several minutes.
 To follow progress, run the setup yourself:
 
 ```{r julia_setup, eval = FALSE}
-epiaware_setup_julia()
+cidm_setup_julia()
 ```
 
 To run MCMC chains in parallel, set `JULIA_NUM_THREADS` before Julia starts:

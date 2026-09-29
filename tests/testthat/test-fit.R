@@ -1,6 +1,6 @@
 test_that("nuts() validates settings", {
   sampler <- nuts(draws = 100, warmup = 50, chains = 2)
-  expect_s3_class(sampler, "epiaware_nuts")
+  expect_s3_class(sampler, "cidm_nuts")
   expect_identical(sampler$draws, 100L)
   expect_identical(sampler$ad, "forwarddiff")
   expect_error(nuts(draws = 0))
