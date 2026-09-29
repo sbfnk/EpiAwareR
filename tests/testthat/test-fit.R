@@ -19,12 +19,15 @@ test_that("fit() validates inputs before starting Julia", {
   expect_error(fit(model, 1:10, dates = as.character(1:10)), "Date")
 })
 
-test_that("simulate() accepts a model given as Julia code", {
-  expect_false(is.null(getS3method("simulate", "epiaware_julia")))
-  expect_identical(
-    getS3method("simulate", "epiaware_julia"),
-    getS3method("simulate", "epiaware_model")
+test_that("simulate() takes a model given as Julia code, but not a part", {
+  # Dispatch reaches the method for every `julia()` role, so the role is
+  # checked before Julia starts.
+  expect_error(
+    simulate(julia("Normal(0, 1)", role = "distribution"), n = 10),
+    "composed model"
   )
+  # A component has no method at all, so dispatch still rejects it
+  expect_error(simulate(RandomWalk(), n = 10), "applicable method")
 })
 
 test_that(".trajectory_bands summarises draws and drops empty time points", {
@@ -35,6 +38,7 @@ test_that(".trajectory_bands summarises draws and drops empty time points", {
 })
 
 test_that(".with_rt adds Rt only for renewal models with the default link", {
+  expect_null(.with_rt(list(Z_t = matrix(0, 1, 2)), julia("IDModel()"))$Rt)
   gen <- list(Z_t = matrix(0, 1, 2))
   renewal <- IDModel(Renewal(Gamma(shape = 2, rate = 1)), PoissonError())
   direct <- IDModel(DirectInfections(), PoissonError())

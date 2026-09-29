@@ -23,9 +23,10 @@ that builds one.}
 }
 \value{
 A named list of `nsim` x `n` matrices: `generated_y_t` (simulated
-  observations), `expected_y_t`, `I_t`, `Z_t` and, for renewal models,
-  `Rt`. Time points without an observation (e.g. before a reporting delay
-  has elapsed) are `NaN`.
+  observations), `expected_y_t`, `I_t`, `Z_t` and, for renewal models built
+  with [Renewal()], `Rt`. A model written as [julia()] code gets no `Rt`,
+  since its latent scale is not known to R. Time points without an
+  observation (e.g. before a reporting delay has elapsed) are `NaN`.
 }
 \description{
 Draws parameters from their priors and simulates the latent process,

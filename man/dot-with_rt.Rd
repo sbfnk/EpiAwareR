@@ -12,7 +12,8 @@
 \item{model}{The composed model.}
 }
 \value{
-`generated`, with an `Rt` element where applicable.
+`generated`, with an `Rt` element where applicable. A model given
+  as Julia code has no components to read, so it gets none.
 }
 \description{
 With the default transformation, the latent process of a renewal model is

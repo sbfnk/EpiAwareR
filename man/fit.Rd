@@ -32,7 +32,9 @@ An object of class `epiaware_fit` with elements
     `expected_y_t` (expected observations), `predicted_y_t` (posterior
     predictive observations) and, for renewal models, `Rt`. It also holds
     `generated_y_t`, which is the observed series repeated for every draw,
-    because the model was conditioned on it.}
+    because the model was conditioned on it. Time points without an
+    observation, such as those before a reporting delay has elapsed, are
+    `NaN`.}
   \item{model, y, dates, method}{The inputs.}
 }
 }

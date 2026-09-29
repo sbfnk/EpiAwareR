@@ -82,7 +82,9 @@ print.epiaware_nuts <- function(x, ...) {
 #'     `expected_y_t` (expected observations), `predicted_y_t` (posterior
 #'     predictive observations) and, for renewal models, `Rt`. It also holds
 #'     `generated_y_t`, which is the observed series repeated for every draw,
-#'     because the model was conditioned on it.}
+#'     because the model was conditioned on it. Time points without an
+#'     observation, such as those before a reporting delay has elapsed, are
+#'     `NaN`.}
 #'   \item{model, y, dates, method}{The inputs.}
 #' }
 #'
@@ -166,9 +168,10 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
 #' @param ... Unused.
 #'
 #' @return A named list of `nsim` x `n` matrices: `generated_y_t` (simulated
-#'   observations), `expected_y_t`, `I_t`, `Z_t` and, for renewal models,
-#'   `Rt`. Time points without an observation (e.g. before a reporting delay
-#'   has elapsed) are `NaN`.
+#'   observations), `expected_y_t`, `I_t`, `Z_t` and, for renewal models built
+#'   with [Renewal()], `Rt`. A model written as [julia()] code gets no `Rt`,
+#'   since its latent scale is not known to R. Time points without an
+#'   observation (e.g. before a reporting delay has elapsed) are `NaN`.
 #'
 #' @family inference
 #' @examples
@@ -183,6 +186,9 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
 #' @importFrom stats simulate
 #' @export
 simulate.epiaware_model <- function(object, nsim = 1, seed = NULL, n, ...) {
+  # An untyped `julia()` expression dispatches here too, as do typed ones of
+  # every role, so the role is checked rather than left to dispatch.
+  .assert_role(object, "model")
   checkmate::assert_count(nsim, positive = TRUE)
   checkmate::assert_count(n, positive = TRUE)
   checkmate::assert_int(seed, null.ok = TRUE)
@@ -238,9 +244,13 @@ simulate.epiaware_julia <- simulate.epiaware_model
 #'
 #' @param generated Named list of matrices.
 #' @param model The composed model.
-#' @return `generated`, with an `Rt` element where applicable.
+#' @return `generated`, with an `Rt` element where applicable. A model given
+#'   as Julia code has no components to read, so it gets none.
 #' @keywords internal
 .with_rt <- function(generated, model) {
+  if (inherits(model, "epiaware_julia")) {
+    return(generated)
+  }
   infection <- model$args[[1]]
   if (identical(infection$fn, "Renewal") &&
         is.null(infection$kwargs$transformation) &&
