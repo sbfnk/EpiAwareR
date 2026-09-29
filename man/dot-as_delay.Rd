@@ -22,8 +22,9 @@ to take it from the distribution's `max`.}
 
 \item{delta_d}{Numeric. Discretisation interval width.}
 
-\item{drop_zero}{Logical. Whether to drop the zero delay from a probability
-vector and renormalise, as a generation time requires.}
+\item{drop_zero}{Logical. Whether to drop the zero delay from a
+distribution discretised in R and renormalise, as a generation time
+requires. A numeric probability vector is passed through as given.}
 
 \item{arg_name}{Name used in error messages.}
 

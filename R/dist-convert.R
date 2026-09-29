@@ -82,8 +82,9 @@
 #' @param max_delay Numeric. Maximum value used when discretising, or `NULL`
 #'   to take it from the distribution's `max`.
 #' @param delta_d Numeric. Discretisation interval width.
-#' @param drop_zero Logical. Whether to drop the zero delay from a probability
-#'   vector and renormalise, as a generation time requires.
+#' @param drop_zero Logical. Whether to drop the zero delay from a
+#'   distribution discretised in R and renormalise, as a generation time
+#'   requires. A numeric probability vector is passed through as given.
 #' @param arg_name Name used in error messages.
 #' @param max_name Name of the caller's maximum argument, used in error
 #'   messages.
