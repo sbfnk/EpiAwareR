@@ -36,3 +36,8 @@ test_that(".with_rt adds Rt only for renewal models with the default link", {
   expect_null(.with_rt(gen, direct)$Rt)
   expect_null(.with_rt(gen, linked)$Rt)
 })
+
+test_that("fit() rejects stratified observations", {
+  model <- IDModel(DirectInfections(Z = RandomWalk()), PoissonError())
+  expect_error(fit(model, matrix(1:10, nrow = 2)), "Stratified data")
+})
