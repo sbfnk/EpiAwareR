@@ -19,4 +19,10 @@ The session token travels with the handle because handles are numbered
 from the same base in every Julia session, so one from an earlier session
 would otherwise name whichever fit now holds that number.
 }
+\details{
+Saving a fit copies the environment by value but not its finaliser, so a
+reloaded fit names a Julia object it does not own. Recording this session's
+state environment tells the two apart, because a copy of it is no longer
+the same object.
+}
 \keyword{internal}

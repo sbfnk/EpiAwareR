@@ -65,6 +65,14 @@ predict.epiaware_fit <- function(object, horizon = 0, seed = NULL, ...) {
   if (horizon == 0) {
     return(in_sample)
   }
+  if (!identical(object$julia$owner, .epiaware_env)) {
+    stop(
+      "This fit was loaded from disk, and forecasting needs the Julia ",
+      "session it was fitted in. Refit the model to forecast from it; the ",
+      "draws and generated quantities it holds are still usable.",
+      call. = FALSE
+    )
+  }
   forecasts <- tryCatch(
     .bridge(
       "forecast_observations", object$julia$handle, as.integer(horizon),

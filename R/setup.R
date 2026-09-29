@@ -108,7 +108,6 @@ epiaware_setup_julia <- function(verbose = TRUE) {
                  "EpiAwareR"),
     state_env = .epiaware_env,
     project = project,
-    install = FALSE,
     verbose = verbose
   )
 
@@ -158,6 +157,11 @@ epiaware_available <- function() {
 #' from the same base in every Julia session, so one from an earlier session
 #' would otherwise name whichever fit now holds that number.
 #'
+#' Saving a fit copies the environment by value but not its finaliser, so a
+#' reloaded fit names a Julia object it does not own. Recording this session's
+#' state environment tells the two apart, because a copy of it is no longer
+#' the same object.
+#'
 #' @param handle Integer handle returned by the bridge.
 #' @param session Character token identifying the Julia session.
 #' @return An environment holding the handle, released when collected.
@@ -166,7 +170,11 @@ epiaware_available <- function() {
   env <- new.env(parent = emptyenv())
   env$handle <- handle
   env$session <- session
+  env$owner <- .epiaware_env
   reg.finalizer(env, function(e) {
+    if (!identical(e$owner, .epiaware_env)) {
+      return(invisible(NULL))
+    }
     .epiaware_env$released <- c(
       .epiaware_env$released, list(list(handle = e$handle, session = e$session))
     )

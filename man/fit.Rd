@@ -10,8 +10,8 @@ fit(model, y, method = nuts(), dates = NULL, seed = NULL)
 \item{model}{A composed model from [IDModel()].}
 
 \item{y}{Numeric vector of observations, one per time point. Missing
-observations are not supported because NUTS cannot sample them, and
-neither is a matrix of stratified observations.}
+observations are not supported, and neither is a matrix of stratified
+observations.}
 
 \item{method}{Sampler settings from [nuts()].}
 

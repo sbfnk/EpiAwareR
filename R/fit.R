@@ -64,8 +64,8 @@ print.epiaware_nuts <- function(x, ...) {
 #'
 #' @param model A composed model from [IDModel()].
 #' @param y Numeric vector of observations, one per time point. Missing
-#'   observations are not supported because NUTS cannot sample them, and
-#'   neither is a matrix of stratified observations.
+#'   observations are not supported, and neither is a matrix of stratified
+#'   observations.
 #' @param method Sampler settings from [nuts()].
 #' @param dates Optional vector of dates (`Date` or `POSIXt`), one per
 #'   observation, used when plotting.
@@ -115,8 +115,11 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
   }
   if (anyNA(y)) {
     stop(
-      "`y` contains missing values, which cannot be fitted with NUTS. ",
-      "Remove them, e.g. by fitting a shorter window.",
+      "`y` contains missing values, which EpiAwareR cannot pass to Julia: ",
+      "an `NA` becomes a number on the way, so it cannot be marked as ",
+      "unobserved. Fit a window without gaps, and do not simply delete the ",
+      "missing entries, which would move every later observation earlier in ",
+      "time.",
       call. = FALSE
     )
   }
