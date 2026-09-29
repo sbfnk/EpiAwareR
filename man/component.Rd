@@ -31,7 +31,9 @@ expressions are inserted as code, numeric vectors of length one become
 scalars and longer ones become vectors, unnamed lists become vectors,
 `NA` becomes `missing`, and character strings become Julia strings.
 Integers (e.g. `2L`) render as Julia integers and doubles as floats.
-`NULL` arguments are dropped, so the Julia default applies.
+A `NULL` keyword argument is dropped, so the Julia default applies; a
+`NULL` positional argument is an error, since dropping it would renumber
+the arguments that follow.
 }
 \examples{
 # A Frechet distribution, which distspec does not provide

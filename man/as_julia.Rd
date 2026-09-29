@@ -10,7 +10,8 @@ as_julia(x, ascii = FALSE)
 \item{x}{A model component, e.g. from [IDModel()] or [Renewal()].}
 
 \item{ascii}{Logical. If `TRUE`, keyword names with non-ASCII characters
-are written with Unicode escapes so the code is pure ASCII. The default
+are written with Unicode escapes, as string literals always are. Code
+supplied through [julia()] is inserted verbatim either way. The default
 gives the more readable form that can be pasted into Julia.}
 }
 \value{

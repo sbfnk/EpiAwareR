@@ -15,7 +15,9 @@
 #' scalars and longer ones become vectors, unnamed lists become vectors,
 #' `NA` becomes `missing`, and character strings become Julia strings.
 #' Integers (e.g. `2L`) render as Julia integers and doubles as floats.
-#' `NULL` arguments are dropped, so the Julia default applies.
+#' A `NULL` keyword argument is dropped, so the Julia default applies; a
+#' `NULL` positional argument is an error, since dropping it would renumber
+#' the arguments that follow.
 #'
 #' @param fn Character string. Name of the Julia constructor.
 #' @param ... Arguments to the constructor. Unnamed arguments are positional
@@ -43,6 +45,26 @@ component <- function(fn, ..., role) {
   if (is.null(arg_names)) arg_names <- rep("", length(dots))
   keep <- !vapply(dots, is.null, logical(1))
   named <- nzchar(arg_names)
+  if (any(!keep & !named)) {
+    stop(
+      "A positional argument is `NULL`. Dropping it would renumber the ",
+      "arguments that follow, so pass a value or use a keyword argument, ",
+      "which takes the Julia default when `NULL`.",
+      call. = FALSE
+    )
+  }
+  # Julia identifiers may hold letters from any script, as its own models do
+  # with Greek ones, so letters are matched rather than ASCII.
+  bad <- arg_names[named][
+    !grepl("^[\\p{L}_][\\p{L}\\p{N}_!]*$", arg_names[named], perl = TRUE)
+  ]
+  if (length(bad) > 0) {
+    stop(
+      "Keyword names must be Julia identifiers: ",
+      paste(bad, collapse = ", "),
+      call. = FALSE
+    )
+  }
   structure(
     list(
       fn = fn,
@@ -86,7 +108,8 @@ julia <- function(code, role = NULL) {
 #'
 #' @param x A model component, e.g. from [IDModel()] or [Renewal()].
 #' @param ascii Logical. If `TRUE`, keyword names with non-ASCII characters
-#'   are written with Unicode escapes so the code is pure ASCII. The default
+#'   are written with Unicode escapes, as string literals always are. Code
+#'   supplied through [julia()] is inserted verbatim either way. The default
 #'   gives the more readable form that can be pasted into Julia.
 #'
 #' @return A character string of Julia code that constructs the component.
@@ -225,13 +248,21 @@ as_julia <- function(x, ascii = FALSE) {
 #' @return A character string.
 #' @keywords internal
 .render_string <- function(x) {
-  chars <- vapply(utf8ToInt(enc2utf8(x)), function(code) {
+  codes <- utf8ToInt(enc2utf8(x))
+  if (anyNA(codes)) {
+    stop("Cannot render a string that is not valid UTF-8.", call. = FALSE)
+  }
+  chars <- vapply(codes, function(code) {
     if (code %in% c(34L, 36L, 92L)) {
       paste0("\\", intToUtf8(code))
     } else if (code >= 32L && code <= 126L) {
       intToUtf8(code)
-    } else {
+    } else if (code <= 0xFFFFL) {
       sprintf("\\u%04x", code)
+    } else {
+      # Julia's \u takes at most four hex digits, so anything above the basic
+      # plane needs the eight-digit escape.
+      sprintf("\\U%08x", code)
     }
   }, character(1))
   paste0("\"", paste(chars, collapse = ""), "\"")

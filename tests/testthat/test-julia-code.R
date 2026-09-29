@@ -69,3 +69,26 @@ test_that("printing breaks long models over lines", {
   expect_output(print(model), "<EpiAwareR model component>")
   expect_output(print(HalfNormal(0.1)), "HalfNormal\\(0.1\\)")
 })
+
+test_that("strings outside the basic plane use the eight-digit escape", {
+  # Julia's \u takes at most four hex digits, so ὠ0 would be two
+  # characters rather than one emoji.
+  expect_identical(.render("a\U0001F600b"), "\"a\\U0001f600b\"")
+  expect_identical(.render("café"), "\"caf\\u00e9\"")
+})
+
+test_that("arguments that would render as invalid or renumbered are refused", {
+  expect_error(
+    component("g", 1, NULL, 3, role = "latent"), "positional argument"
+  )
+  expect_error(
+    component("F", `a b` = 1, role = "latent"), "Julia identifiers"
+  )
+  # Julia identifiers may use letters from any script
+  expect_identical(
+    as_julia(AR(epsilon_t = HierarchicalNormal())),
+    "AR(; ϵ_t = HierarchicalNormal())"
+  )
+  expect_identical(as_julia(component("F", a = NULL, b = 2, role = "latent")),
+                   "F(; b = 2.0)")
+})
