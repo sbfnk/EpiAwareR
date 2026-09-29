@@ -65,7 +65,12 @@ test_that("nonparametric and fixed delays become probability vectors", {
     as_julia(LatentDelay(PoissonError(), Fixed(2))),
     "LatentDelay(PoissonError(), [0.0, 0.0, 1.0])"
   )
-  # A generation time drops the zero-day mass and renormalises
+  # A numeric generation time already starts at a delay of one day
+  expect_identical(
+    as_julia(Renewal(generation_time = c(0.5, 0.25, 0.25))),
+    "Renewal(; generation_time = [0.5, 0.25, 0.25])"
+  )
+  # A distribution discretised in R starts at zero, so that mass is dropped
   expect_identical(
     as_julia(Renewal(NonParametric(c(0.5, 0.25, 0.25)))),
     "Renewal(; generation_time = [0.5, 0.5])"
