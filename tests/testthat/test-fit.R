@@ -66,3 +66,13 @@ test_that(".time_axis keeps the resolution of the dates it is given", {
   expect_s3_class(.time_axis(list(dates = daily), 5), "Date")
   expect_identical(.time_axis(list(dates = NULL), 3), 1:3)
 })
+
+test_that(".time_axis keeps irregular dates and extends from the last one", {
+  dates <- as.Date("2020-02-13") + c(0, 1, 3, 7)
+  expect_identical(.time_axis(list(dates = dates), 4), dates)
+  expect_identical(
+    .time_axis(list(dates = dates), 6),
+    c(dates, as.Date("2020-02-24") + c(0, 4))
+  )
+  expect_identical(.time_axis(list(dates = dates), 2), dates[1:2])
+})

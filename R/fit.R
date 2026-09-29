@@ -69,7 +69,8 @@ print.cidm_nuts <- function(x, ...) {
 #'   observations.
 #' @param method Sampler settings from [nuts()].
 #' @param dates Optional vector of dates (`Date` or `POSIXt`), one per
-#'   observation, used when plotting.
+#'   observation, used when plotting. Forecasts continue at the spacing of
+#'   the last two dates.
 #' @param seed Optional integer seed for the Julia random number generator.
 #'
 #' @return An object of class `cidm_fit` with elements

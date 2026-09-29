@@ -17,7 +17,8 @@ observations.}
 \item{method}{Sampler settings from \code{\link[=nuts]{nuts()}}.}
 
 \item{dates}{Optional vector of dates (\code{Date} or \code{POSIXt}), one per
-observation, used when plotting.}
+observation, used when plotting. Forecasts continue at the spacing of
+the last two dates.}
 
 \item{seed}{Optional integer seed for the Julia random number generator.}
 }

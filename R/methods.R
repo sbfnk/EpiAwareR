@@ -213,8 +213,13 @@ plot.cidm_fit <- function(x, type = c("cases", "Rt", "infections",
   }
   # Kept as given, so that sub-daily observations keep their time of day.
   dates <- fit$dates
-  step <- if (length(dates) > 1) dates[2] - dates[1] else 1
-  dates[1] + step * (seq_len(n) - 1)
+  n_dates <- length(dates)
+  if (n <= n_dates) {
+    return(dates[seq_len(n)])
+  }
+  # Forecasts continue at the spacing of the last two observations.
+  step <- if (n_dates > 1) dates[n_dates] - dates[n_dates - 1] else 1
+  c(dates, dates[n_dates] + step * seq_len(n - n_dates))
 }
 
 #' Summarise trajectories by time point
