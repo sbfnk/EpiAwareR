@@ -54,6 +54,11 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
   expect_identical(dim(forecasts), c(100L, 30L))
   expect_false(anyNA(forecasts[, 26:30]))
 
+  # A handle from a previous Julia session would name a different fit
+  stale <- fitted
+  stale$julia <- list(handle = fitted$julia$handle, session = "other-session")
+  expect_error(predict(stale, horizon = 2), "no longer available")
+
   expect_s3_class(plot(fitted), "ggplot")
   expect_s3_class(plot(fitted, type = "infections"), "ggplot")
   expect_s3_class(plot(fitted, type = "cases", horizon = 3), "ggplot")

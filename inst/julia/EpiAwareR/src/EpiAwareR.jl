@@ -16,6 +16,15 @@ using Turing: Turing, NUTS, MCMCSerial, MCMCThreads, sample, predict
 const HANDLES = Dict{Int, Any}()
 const NEXT_HANDLE = Ref(0)
 
+# Handles count from zero in every session, so a handle from an earlier one
+# would name a different fit here. The token tells the two apart.
+const SESSION = Ref("")
+
+function __init__()
+    SESSION[] = string(rand(Random.RandomDevice(), UInt128); base = 16)
+    return nothing
+end
+
 function keep!(x)
     NEXT_HANDLE[] += 1
     HANDLES[NEXT_HANDLE[]] = x
@@ -165,6 +174,7 @@ function _fit(
     handle = keep!((; model, y, chain))
     return (
         handle = handle,
+        session = SESSION[],
         chain = repeat(1:nc; inner = ni),
         iteration = repeat(1:ni; outer = nc),
         parameter_names = par_names,
@@ -197,12 +207,16 @@ function predicted_observations(model, chain, n)
 end
 
 # Forecast observations over `horizon` time points after the fitted period.
-function forecast_observations(handle::Integer, horizon::Integer, seed)
-    return concise_errors(() -> _forecast_observations(handle, horizon, seed))
+function forecast_observations(
+        handle::Integer, horizon::Integer, seed, session::AbstractString
+    )
+    return concise_errors(
+        () -> _forecast_observations(handle, horizon, seed, session)
+    )
 end
 
-function _forecast_observations(handle, horizon, seed)
-    haskey(HANDLES, Int(handle)) ||
+function _forecast_observations(handle, horizon, seed, session)
+    session == SESSION[] && haskey(HANDLES, Int(handle)) ||
         error("This fit is no longer available in the Julia session.")
     (; model, y, chain) = HANDLES[Int(handle)]
     n = length(y)

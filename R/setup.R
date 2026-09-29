@@ -154,12 +154,18 @@ epiaware_available <- function() {
 
 #' Keep a Julia-side object alive while an R object refers to it
 #'
+#' The session token travels with the handle because handles are numbered
+#' from zero in every Julia session, so one from an earlier session would
+#' otherwise name whichever fit now holds that number.
+#'
 #' @param handle Integer handle returned by the bridge.
+#' @param session Character token identifying the Julia session.
 #' @return An environment holding the handle, released when collected.
 #' @keywords internal
-.julia_handle <- function(handle) {
+.julia_handle <- function(handle, session) {
   env <- new.env(parent = emptyenv())
   env$handle <- handle
+  env$session <- session
   reg.finalizer(env, function(e) {
     .epiaware_env$released <- c(.epiaware_env$released, e$handle)
   })

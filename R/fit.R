@@ -142,7 +142,7 @@ fit <- function(model, y, method = nuts(), dates = NULL, seed = NULL) {
       y = y,
       dates = dates,
       method = method,
-      julia = .julia_handle(result$handle)
+      julia = .julia_handle(result$handle, result$session)
     ),
     class = "epiaware_fit"
   )

@@ -4,15 +4,19 @@
 \alias{.julia_handle}
 \title{Keep a Julia-side object alive while an R object refers to it}
 \usage{
-.julia_handle(handle)
+.julia_handle(handle, session)
 }
 \arguments{
 \item{handle}{Integer handle returned by the bridge.}
+
+\item{session}{Character token identifying the Julia session.}
 }
 \value{
 An environment holding the handle, released when collected.
 }
 \description{
-Keep a Julia-side object alive while an R object refers to it
+The session token travels with the handle because handles are numbered
+from zero in every Julia session, so one from an earlier session would
+otherwise name whichever fit now holds that number.
 }
 \keyword{internal}

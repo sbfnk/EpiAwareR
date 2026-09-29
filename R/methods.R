@@ -68,7 +68,7 @@ predict.epiaware_fit <- function(object, horizon = 0, seed = NULL, ...) {
   forecasts <- tryCatch(
     .bridge(
       "forecast_observations", object$julia$handle, as.integer(horizon),
-      if (!is.null(seed)) as.integer(seed)
+      if (!is.null(seed)) as.integer(seed), object$julia$session
     ),
     error = function(e) {
       stop(
