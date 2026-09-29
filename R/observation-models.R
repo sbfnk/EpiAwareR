@@ -7,7 +7,8 @@
 #' likelihood; modifiers (`LatentDelay()`, `Ascertainment()`) wrap another
 #' observation model to transform the expected observations first. Each wraps
 #' the constructor of the same name in ComposableTuringIDModels.jl. `NULL`
-#' arguments use the Julia default.
+#' arguments use the Julia default, and `delta_d` is the discretisation width
+#' Julia spells with a Greek delta.
 #'
 #' @param cluster_factor Prior for the negative binomial cluster factor,
 #'   \eqn{\sqrt{1/\phi}}, which is approximately the coefficient of variation

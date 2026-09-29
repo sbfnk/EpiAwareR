@@ -64,6 +64,10 @@ name in ComposableTuringIDModels.jl; see its
 the full model definitions. `NULL` arguments use the Julia default.
 }
 \details{
+Arguments that Julia spells with a Greek letter are spelled out here:
+`epsilon_t` is its innovation slot and `theta` its moving-average
+coefficients.
+
 - `AR()`: autoregressive process whose order is the number of damping
   priors.
 - `MA()`: moving-average process whose order is the number of coefficient
