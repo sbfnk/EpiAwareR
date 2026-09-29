@@ -22,7 +22,7 @@
   removed.
 * `epiaware_call()` has been replaced by `component()` and `julia()`.
 * `plot(type = "posterior")` has been removed; use bayesplot on
-  `as_draws_array(fit)` instead.
+  `posterior::as_draws_array(fit)` instead.
 
 ## New features
 

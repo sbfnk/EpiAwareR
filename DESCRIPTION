@@ -31,7 +31,7 @@ Remotes:
     sbfnk/juliaready
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
-SystemRequirements: Julia (>= 1.11), Julia packages: ComposableTuringIDModels,
+SystemRequirements: Julia (>= 1.12), Julia packages: ComposableTuringIDModels,
     Turing, Distributions (installed automatically)
 URL: https://github.com/sbfnk/EpiAwareR
 BugReports: https://github.com/sbfnk/EpiAwareR/issues

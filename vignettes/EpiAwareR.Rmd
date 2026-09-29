@@ -39,7 +39,8 @@ library(EpiAwareR)
 
 ## Setting up Julia
 
-EpiAwareR needs Julia (>= 1.11), ideally installed with
+EpiAwareR needs Julia (>= 1.12), the version its pinned dependencies were
+resolved with, ideally installed with
 [juliaup](https://github.com/JuliaLang/juliaup).
 The Julia packages are installed and loaded the first time a model is simulated
 or fitted, which can take several minutes.

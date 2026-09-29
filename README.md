@@ -2,6 +2,7 @@
 # EpiAwareR
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 **EpiAwareR** is an R interface to
@@ -15,10 +16,10 @@ model can be shown as the Julia code it runs.
 
 ## Installation
 
-EpiAwareR needs [Julia](https://julialang.org) (\>= 1.11). We recommend
-installing it with [juliaup](https://github.com/JuliaLang/juliaup),
-which lets EpiAwareR use the Julia version its dependencies were
-resolved with.
+EpiAwareR needs [Julia](https://julialang.org) (\>= 1.12), the version
+its pinned dependencies were resolved with. We recommend installing it
+with [juliaup](https://github.com/JuliaLang/juliaup), which lets
+EpiAwareR use the Julia version its dependencies were resolved with.
 
 ``` r
 # install.packages("remotes")
@@ -45,7 +46,7 @@ cases <- read.csv(system.file("extdata", "south_korea_data.csv",
                               package = "EpiAwareR"))[45:80, ]
 
 renewal <- Renewal(
-  generation_time = Gamma(6.5, 0.62),
+  generation_time = Gamma(shape = 6.5, scale = 0.62),
   rt = AR(
     damp = list(truncated(Normal(0.8, 0.05), 0, 1),
                 truncated(Normal(0.1, 0.05), 0, 1)),
@@ -91,7 +92,9 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+
 <!-- prettier-ignore-start -->
+
 <!-- markdownlint-disable -->
 
 All contributions to this project are gratefully acknowledged using the
@@ -109,5 +112,7 @@ specification. Contributions of any kind are welcome!
 <a href="https://github.com/sbfnk/EpiAwareR/issues?q=is%3Aissue+author%3Aowenjonesuob">owenjonesuob</a>
 
 <!-- markdownlint-enable -->
+
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->

@@ -67,7 +67,10 @@ test_that("fit() recovers draws, generated quantities and forecasts", {
 
   # A handle from a previous Julia session would name a different fit
   stale <- fitted
-  stale$julia <- list(handle = fitted$julia$handle, session = "other-session")
+  stale$julia <- list(
+    handle = fitted$julia$handle, session = "other-session",
+    owner = fitted$julia$owner
+  )
   expect_error(predict(stale, horizon = 2), "no longer available")
 
   expect_s3_class(plot(fitted), "ggplot")

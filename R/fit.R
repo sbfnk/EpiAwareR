@@ -62,7 +62,8 @@ print.epiaware_nuts <- function(x, ...) {
 #' Conditions a composed model on an observed time series and samples from the
 #' posterior with NUTS.
 #'
-#' @param model A composed model from [IDModel()].
+#' @param model A composed model from [IDModel()], or a [julia()] expression
+#'   that builds one.
 #' @param y Numeric vector of observations, one per time point. Missing
 #'   observations are not supported, and neither is a matrix of stratified
 #'   observations.
@@ -82,9 +83,9 @@ print.epiaware_nuts <- function(x, ...) {
 #'     `expected_y_t` (expected observations), `predicted_y_t` (posterior
 #'     predictive observations) and, for renewal models, `Rt`. It also holds
 #'     `generated_y_t`, which is the observed series repeated for every draw,
-#'     because the model was conditioned on it. Time points without an
-#'     observation, such as those before a reporting delay has elapsed, are
-#'     `NaN`.}
+#'     because the model was conditioned on it. In `expected_y_t` and
+#'     `predicted_y_t`, time points the model does not score, such as those
+#'     before a reporting delay has elapsed, are `NaN`.}
 #'   \item{model, y, dates, method}{The inputs.}
 #' }
 #'

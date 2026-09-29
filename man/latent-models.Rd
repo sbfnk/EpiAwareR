@@ -31,7 +31,9 @@ DiffLatentModel(model, init = NULL)
 \arguments{
 \item{damp}{Prior for the damping coefficients: a distribution, a list of
 distributions (one per lag) or, for order one, a latent model for a
-time-varying coefficient.}
+time-varying coefficient. The two are on different scales: a distribution
+is a prior on the coefficient itself, while a latent model is squashed
+through `tanh` to keep the process stationary.}
 
 \item{init}{Prior for the initial values: a distribution or a list of
 distributions (one per lag or difference).}

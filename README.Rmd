@@ -14,7 +14,8 @@ No Julia code is needed, but every model can be shown as the Julia code it runs.
 
 ## Installation
 
-EpiAwareR needs [Julia](https://julialang.org) (>= 1.11). We recommend
+EpiAwareR needs [Julia](https://julialang.org) (>= 1.12), the version its
+pinned dependencies were resolved with. We recommend
 installing it with [juliaup](https://github.com/JuliaLang/juliaup), which lets
 EpiAwareR use the Julia version its dependencies were resolved with.
 

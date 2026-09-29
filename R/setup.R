@@ -77,7 +77,8 @@
 #'
 #' If [juliaup](https://github.com/JuliaLang/juliaup) is available, the Julia
 #' version the dependencies were resolved with is installed and used.
-#' Otherwise the Julia on the `PATH` (or in `JULIA_BINDIR`) is used. Set the
+#' Otherwise the Julia on the `PATH` (or in `JULIA_BINDIR`) is used, which
+#' must be new enough for the bundled `Manifest.toml`. Set the
 #' environment variable `JULIA_NUM_THREADS` before Julia starts to sample MCMC
 #' chains in parallel.
 #'
