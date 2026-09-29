@@ -118,17 +118,29 @@ epiaware_setup_julia <- function(verbose = TRUE) {
 
 #' Check whether the Julia backend is running
 #'
+#' A Julia process that has gone away, whether it was stopped or died during
+#' sampling, leaves the setup flag behind. Clearing it here lets the next call
+#' set Julia up again rather than failing on a session that no longer holds
+#' the bridge.
+#'
 #' @return Logical. `TRUE` if Julia has been set up in this R session.
 #'
 #' @examples
 #' epiaware_available()
 #' @export
 epiaware_available <- function() {
-  isTRUE(.epiaware_env$ready) &&
-    tryCatch(
-      isTRUE(juliaready::eval_julia("isdefined(Main, :EpiAwareR)")),
-      error = function(e) FALSE
-    )
+  if (!isTRUE(.epiaware_env$ready)) {
+    return(FALSE)
+  }
+  running <- tryCatch(
+    isTRUE(juliaready::eval_julia("isdefined(Main, :EpiAwareR)")),
+    error = function(e) FALSE
+  )
+  if (!running) {
+    # The same environment is kept, because handle ownership is its identity.
+    .epiaware_env$ready <- FALSE
+  }
+  running
 }
 
 #' Call a bridge function, starting Julia if needed

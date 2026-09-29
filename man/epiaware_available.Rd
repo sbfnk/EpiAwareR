@@ -10,7 +10,10 @@ epiaware_available()
 Logical. `TRUE` if Julia has been set up in this R session.
 }
 \description{
-Check whether the Julia backend is running
+A Julia process that has gone away, whether it was stopped or died during
+sampling, leaves the setup flag behind. Clearing it here lets the next call
+set Julia up again rather than failing on a session that no longer holds
+the bridge.
 }
 \examples{
 epiaware_available()

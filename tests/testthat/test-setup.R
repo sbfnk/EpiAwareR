@@ -48,3 +48,17 @@ test_that("a fit loaded from disk says so rather than blaming Julia", {
   expect_error(predict(reloaded, horizon = 2), "loaded from disk")
   expect_identical(dim(predict(reloaded)), c(2L, 2L))
 })
+
+test_that("a Julia process that has gone away clears the setup flag", {
+  was_ready <- .epiaware_env$ready
+  withr::defer(.epiaware_env$ready <- was_ready)
+  # Julia was set up and has since died, so the probe fails and the flag must
+  # clear for the next call to set it up again.
+  local_mocked_bindings(
+    eval_julia = function(...) stop("Julia has gone away"),
+    .package = "juliaready"
+  )
+  .epiaware_env$ready <- TRUE
+  expect_false(epiaware_available())
+  expect_false(isTRUE(.epiaware_env$ready))
+})
